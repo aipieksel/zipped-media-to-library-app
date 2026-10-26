@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ArrowLeft,ArrowRight,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle} from 'lucide-react';
+import {ArrowLeft,ArrowRight,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle} from 'lucide-react';
 import type {ArchiveMeta,HtmlPage,ImportBundle,ItemKind,ItemOrganization,Snapshot,WorkspaceFolder} from './types';
 import {listWorkspace,saveImport,putSnapshot,deleteRoot,getPreference,setPreference,createFolder,setItemFavorite,moveItemsToFolder} from './db';
 import {importImages} from './archive';
@@ -13,6 +13,7 @@ import {ImageViewer} from './components/ImageViewer';
 import {ImageGallery} from './components/ImageGallery';
 import {downloadWorkspaceItem,downloadHtmlSource} from './download';
 import {createDemoZip} from './demo';
+import {fetchGoogleDriveFile} from './googleDrive';
 
 type Preferences={selectedId:string|null;selectedByKind?:Partial<Record<ItemKind,string>>;kind?:ItemKind;expanded:string[];viewport:number;fit:boolean};
 type ImportResult={name:string;ok:boolean;message:string};
@@ -71,6 +72,9 @@ export default function App(){
   const [toast,setToast]=useState('');
   const [warnings,setWarnings]=useState<string[]>([]);
   const [warningsOpen,setWarningsOpen]=useState(false);
+  const [driveOpen,setDriveOpen]=useState(false);
+  const [driveUrl,setDriveUrl]=useState('');
+  const [driveError,setDriveError]=useState('');
   const inputRef=useRef<HTMLInputElement>(null);
   const searchRef=useRef<HTMLInputElement>(null);
   const importLock=useRef(false);
@@ -95,7 +99,7 @@ export default function App(){
   const favoriteCount=kindItems.filter(item=>organization.get(item.id)?.favorite).length;
   const selectedFavorite=!!selectedId&&!!organization.get(selectedId)?.favorite;
   const selectedFolder=selectedId?organization.get(selectedId)?.folderId??null:null;
-  const anyModal=helpOpen||importsOpen||captureDialog||reportOpen||!!removeId||!!folderDialog||warningsOpen;
+  const anyModal=helpOpen||importsOpen||captureDialog||reportOpen||!!removeId||!!folderDialog||warningsOpen||driveOpen;
   const notify=useCallback((message:string)=>{setToast(message);clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setToast(''),6000);},[]);
 
   useEffect(()=>{
@@ -255,6 +259,21 @@ export default function App(){
     if(failed||results.some(result=>result.message.startsWith('No HTML')))setReportOpen(true);
   };
 
+  const importFromDrive=async()=>{
+    const source=driveUrl.trim();
+    if(!source||importLock.current)return;
+    if(!loaded||storageError){setDriveError('Enable browser storage and reload before importing files.');return;}
+    setDriveError('');setImporting(true);setImportProgress('Connecting to Google Drive…');
+    try{
+      const file=await fetchGoogleDriveFile(source,message=>setImportProgress(message));
+      setDriveOpen(false);setDriveUrl('');
+      await importFiles([file]);
+    }catch(error){
+      setDriveError(error instanceof Error?error.message:'Could not import this Google Drive file.');
+      setImporting(false);setImportProgress('');
+    }
+  };
+
   const runCaptures=async(targets:HtmlPage[],options=captureOptions)=>{
     const htmlTargets=targets.filter(item=>itemKind(item)==='html');
     if(captureAbort.current||!htmlTargets.length){if(!htmlTargets.length)notify('Every matching HTML page already has a screenshot. Enable replace to capture again.');return;}
@@ -352,6 +371,7 @@ export default function App(){
           <button role="tab" aria-selected={kind==='image'} className={kind==='image'?'active':''} onClick={()=>switchKind('image')}><Images size={14}/>Images<span>{imageCount}</span></button>
         </div>
         <button className="icon-button" aria-label="Import files" title="Import ZIPs or images" disabled={!loaded||importing} onClick={()=>inputRef.current?.click()}><Plus size={17}/></button>
+        <button className="icon-button" aria-label="Import from Google Drive" title="Import from Google Drive" disabled={!loaded||importing} onClick={()=>{setDriveError('');setDriveOpen(true);}}><CloudDownload size={16}/></button>
       </div>
       <div className="search-field"><Search size={14}/><input ref={searchRef} value={query} onChange={event=>setQuery(event.target.value)} placeholder="Find a file…" aria-label="Find a file" onKeyDown={event=>{if(event.key==='Escape'){setQuery('');event.currentTarget.blur();}}}/>{query?<button className="icon-button tiny" aria-label="Clear search" onClick={()=>setQuery('')}><X size={13}/></button>:<kbd>/</kbd>}</div>
       <div className="tree-actions">
@@ -429,13 +449,14 @@ export default function App(){
             {favoritesOnly?<Star size={24}/>:kind==='image'?<Images size={26}/>:<FileCode2 size={26}/>}
             <h1>{query?'No matching files':favoritesOnly?'No favorites yet':kind==='image'?'Your images, all in one place':'Drop a ZIP. Browse every page.'}</h1>
             <p>{query?'Try another filename or folder name.':favoritesOnly?'Star a file to keep it close.':'Drop ZIPs or images anywhere, or use the + button to import.'}</p>
-            {!query&&!favoritesOnly&&<div className="empty-actions"><button className="button primary" onClick={()=>inputRef.current?.click()} disabled={!loaded||importing}><Upload size={14}/>Import files</button>{!items.length&&<button className="text-button" disabled={!loaded||importing} onClick={()=>void createDemoZip().then(file=>importFiles([file]))}>Try a sample collection</button>}</div>}
+            {!query&&!favoritesOnly&&<div className="empty-actions"><button className="button primary" onClick={()=>inputRef.current?.click()} disabled={!loaded||importing}><Upload size={14}/>Import files</button><button className="button" onClick={()=>{setDriveError('');setDriveOpen(true);}} disabled={!loaded||importing}><CloudDownload size={14}/>Google Drive link</button>{!items.length&&<button className="text-button" disabled={!loaded||importing} onClick={()=>void createDemoZip().then(file=>importFiles([file]))}>Try a sample collection</button>}</div>}
           </div>}
       </div>
     </main>
     {dragging&&<div className="drop-overlay"><span><Upload size={18}/>Drop ZIPs or images</span></div>}
     {toast&&<div className="toast" role="status"><span>{toast}</span><button className="icon-button tiny" aria-label="Dismiss notification" onClick={()=>setToast('')}><X size={13}/></button></div>}
 
+    {driveOpen&&<Modal title="Import from Google Drive" onClose={()=>{if(!importing){setDriveOpen(false);setDriveError('');}}}><form onSubmit={event=>{event.preventDefault();void importFromDrive();}}><div className="modal-body"><p className="modal-intro">Paste a Google Drive share link for a ZIP or supported image. The file must be downloadable by anyone with the link.</p><label className="field-label" htmlFor="drive-url">Google Drive file link</label><input autoFocus id="drive-url" className="text-input" type="url" value={driveUrl} onChange={event=>{setDriveUrl(event.target.value);setDriveError('');}} placeholder="https://drive.google.com/file/d/…" required disabled={importing}/>{driveError&&<p className="form-error" role="alert">{driveError}</p>}{importing&&<p className="form-note"><LoaderCircle size={12} className="spin"/> {importProgress||'Downloading…'}</p>}<p className="form-note">Single-file Drive links are supported. Folder links and private files that require sign-in are not.</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>{setDriveOpen(false);setDriveError('');}} disabled={importing}>Cancel</button><button className="button primary" disabled={importing||!driveUrl.trim()}>{importing?<><LoaderCircle size={14} className="spin"/>Importing…</>:<><CloudDownload size={14}/>Import from Drive</>}</button></div></form></Modal>}
     {folderDialog&&<Modal title={folderDialog.moveId?'Create folder & move item':'New folder'} onClose={()=>{if(!savingFolder)setFolderDialog(null);}}><form onSubmit={submitFolder}><div className="modal-body"><label className="field-label" htmlFor="folder-name">Folder name</label><input autoFocus id="folder-name" className="text-input" value={folderName} onChange={event=>setFolderName(event.target.value)} maxLength={80} placeholder="e.g. Keepers" required/>{folderError&&<p className="form-error" role="alert">{folderError}</p>}<p className="form-note">HTML and images can share a folder. Linked resources stay attached to their pages.</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>setFolderDialog(null)} disabled={savingFolder}>Cancel</button><button className="button primary" disabled={savingFolder||!folderName.trim()}>{savingFolder?'Saving…':folderDialog.moveId?'Create & move':'Create folder'}</button></div></form></Modal>}
     {captureDialog&&<Modal title="Capture HTML pages" onClose={()=>setCaptureDialog(false)}><div className="modal-body"><p className="modal-intro"><strong>{pendingCaptures.length} pages</strong> to capture{query?' matching “'+query+'”':favoritesOnly?' in favorites':''}. You can keep browsing.</p><div className="form-grid"><label>Viewport width<select value={captureOptions.width} onChange={event=>setCaptureOptions({...captureOptions,width:Number(event.target.value)})}><option value={1440}>Desktop · 1440 px</option><option value={1920}>Wide · 1920 px</option><option value={768}>Tablet · 768 px</option><option value={390}>Mobile · 390 px</option></select></label><label>Wait after loading<select value={captureOptions.delay} onChange={event=>setCaptureOptions({...captureOptions,delay:Number(event.target.value)})}><option value={500}>0.5 seconds</option><option value={1000}>1 second</option><option value={2500}>2.5 seconds</option><option value={5000}>5 seconds</option></select></label></div><label className="check-field"><input type="checkbox" checked={captureOptions.fullPage} onChange={event=>setCaptureOptions({...captureOptions,fullPage:event.target.checked})}/>Capture full page</label><label className="check-field"><input type="checkbox" checked={recapture} onChange={event=>setRecapture(event.target.checked)}/>Replace existing screenshots</label><p className="form-note">Keep this tab open. Browser captures may differ for remote images, embedded video, or some effects.</p></div><div className="modal-footer"><button className="button" onClick={()=>setCaptureDialog(false)}>Cancel</button><button className="button primary" disabled={!pendingCaptures.length||queue.running} onClick={()=>{setCaptureDialog(false);void runCaptures(pendingCaptures);}}><Camera size={14}/>Capture {pendingCaptures.length} pages</button></div></Modal>}
     {reportOpen&&<Modal title="Import details" onClose={()=>setReportOpen(false)}><div className="report-list">{importResults.map((result,index)=><div className="report-item" key={index}>{result.ok?<Check size={16}/>:<AlertTriangle size={16}/>}<div><strong>{result.name}</strong><p>{result.message}</p></div></div>)}</div></Modal>}
@@ -443,7 +464,7 @@ export default function App(){
     {removeId&&<Modal title="Remove this import?" onClose={()=>setRemoveId(null)}><div className="modal-body"><p><strong>{archiveMap.get(removeId)?.name}</strong></p><p>Its files, favorites, and screenshots will be removed from this browser. Your original files are unaffected. Items moved into your folders are part of this import.</p></div><div className="modal-footer"><button className="button" onClick={()=>setRemoveId(null)}>Cancel</button><button className="button danger" onClick={()=>void removeArchive()}>Remove import</button></div></Modal>}
     {warningsOpen&&<Modal title="Page notices" onClose={()=>setWarningsOpen(false)}><div className="modal-body">{selected&&captureErrors.has(selected.id)&&<div className="error-card"><strong>Screenshot could not be saved</strong><p>{captureErrors.get(selected.id)}</p><button className="button" disabled={queue.running} onClick={()=>{setWarningsOpen(false);void runCaptures([selected]);}}><Camera size={14}/>Retry capture</button></div>}<ul className="notice-list">{warnings.map((warning,index)=><li key={index}>{warning}</li>)}</ul></div></Modal>}
     {helpOpen&&<Modal title="Workspace help" onClose={()=>setHelpOpen(false)}><div className="modal-body help-content">
-      <section><h3>Import and browse</h3><p>Drop several ZIPs or images anywhere. Nested ZIPs keep their hierarchy. HTML and Images have separate tabs; HTML resources stay attached behind the scenes. Index pages use their folder names.</p><p><kbd>↑</kbd> <kbd>↓</kbd> or the top arrows cycle through every matching file across folders, including collapsed ones. The last file loops to the first. <kbd>←</kbd> <kbd>→</kbd> control focused tree branches. <kbd>/</kbd> finds a file. Typing fields keep their own arrow keys.</p></section>
+      <section><h3>Import and browse</h3><p>Drop several ZIPs or images anywhere, use the + button, or import one downloadable ZIP/image from a Google Drive share link. Nested ZIPs keep their hierarchy. HTML and Images have separate tabs; HTML resources stay attached behind the scenes. Index pages use their folder names.</p><p><kbd>↑</kbd> <kbd>↓</kbd> or the top arrows cycle through every matching file across folders, including collapsed ones. The last file loops to the first. <kbd>←</kbd> <kbd>→</kbd> control focused tree branches. <kbd>/</kbd> finds a file. Typing fields keep their own arrow keys.</p></section>
       <section><h3>Keep what matters</h3><p>Star a file, filter Favorites, or use Move to folder. Create folders with the sidebar folder-plus button or directly from the move menu. Folders organize references; original paths and linked resources stay intact.</p><p>Download saves original image bytes. For HTML, it downloads a ZIP containing the page’s owning archive and its assets. Source-only HTML and saved PNGs are available in Settings.</p></section>
       <section><h3>Views and screenshots</h3><p>Settings contains preview width, fit, live/screenshot view, and current or batch captures. Gallery shows saved HTML screenshots or your original images. Captures run in the browser while you browse. These are DOM renderings, not server-side Playwright screenshots; remote resources, video, frames, canvas effects, and some CSS may differ.</p></section>
       <section><h3>Saved in this browser</h3><p>Imports, favorites, folders, and screenshots survive a normal refresh. They are not uploaded or synced. Keep your originals: clearing site storage clears this workspace. Imported scripts run in an isolated frame and can still request their external resources.</p><p>Supported images: PNG, JPEG, WebP, GIF, AVIF, SVG, BMP, and ICO. Limits: 256 MB per ZIP, 768 MB extracted per import, 128 MB per file, 20,000 entries, eight nested ZIP levels. Available browser storage limits the total collection. Password-protected ZIPs and server applications are unsupported.</p></section>
