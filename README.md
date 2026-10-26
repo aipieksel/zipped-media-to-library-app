@@ -1,10 +1,10 @@
 # HTML and image workspace
 
-A compact browser workspace for browsing exported HTML pages and images without unpacking each file by hand. Import several ZIPs together, including ZIPs inside ZIPs, or drop supported image files directly. The application keeps imported files in this browser's IndexedDB storage.
+A compact browser workspace for browsing exported HTML pages and images without unpacking each file by hand. Import several ZIPs together, including ZIPs inside ZIPs, drop supported image files directly, or paste a downloadable Google Drive file link. The application keeps imported files in this browser's IndexedDB storage.
 
 ## Using the workspace
 
-1. Drop ZIPs or images anywhere in the workspace, or use the **+** button beside the HTML and Images tabs. The one-line hint at the bottom of the sidebar is also an import button.
+1. Drop ZIPs or images anywhere in the workspace, use the **+** button beside the HTML and Images tabs, or use the Google Drive button to paste a share link for one downloadable ZIP/image. Drive folder links are not supported, and private files must be changed to “Anyone with the link” with downloads allowed. The one-line hint at the bottom of the sidebar is also an import button.
 2. Select **HTML** or **Images**. Archive names and folders form the tree; HTML's supporting assets remain available without appearing in the HTML tree. An `index.html` or `index.htm` page uses its containing folder or archive name.
 3. Use **Previous / Next** or **↑ / ↓** to cycle through all matching files in the current tab, including files beneath collapsed branches. Navigation wraps at either end. Search and Favorites narrow the same order used by the tree and gallery.
 4. Star the current item, create a folder in the sidebar, or use **Move to folder**. HTML and images can belong to the same user folder. Choose **Original archive** in the move picker to return an item to its original tree position.
@@ -44,6 +44,7 @@ An additive IndexedDB v2 upgrade preserves existing HTML identifiers, screenshot
 | Boundary | Limit |
 | --- | --- |
 | Compressed ZIP | 256 MiB per ZIP |
+| Google Drive remote file | 256 MiB per file |
 | Extracted bytes | 768 MiB per import |
 | Individual file | 128 MiB |
 | Archive entries | 20,000 per recursive import |
