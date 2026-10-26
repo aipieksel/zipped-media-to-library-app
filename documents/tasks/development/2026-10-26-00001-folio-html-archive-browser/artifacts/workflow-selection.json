@@ -1,0 +1,489 @@
+{
+  "catalogueFingerprint": "438486f892fa59c209076f271c549404e3ed50ace35fd38505d470b4d4004ca3",
+  "intent": "implement",
+  "request": "Build and privately publish Folio: recursive ZIP HTML browser, keyboard tree, local asset rendering and background screenshot gallery tested on real Library banners.",
+  "evaluated": [
+    {
+      "id": "command:G0",
+      "disposition": "not-applicable",
+      "reason": "Multiple import, preview and capture subsystems exceed a quick scoped change."
+    },
+    {
+      "id": "command:GS",
+      "disposition": "not-applicable",
+      "reason": "No existing application codebase; GA includes new-project discovery plus architectural consultation."
+    },
+    {
+      "id": "command:GPL",
+      "disposition": "not-applicable",
+      "reason": "User requested an implemented hosted app, not goal planning alone."
+    },
+    {
+      "id": "command:GCP",
+      "disposition": "not-applicable",
+      "reason": "GA supplies the reviewed implementation plan; separate code planning duplicates it."
+    },
+    {
+      "id": "command:GA",
+      "disposition": "not-applicable",
+      "reason": "Its complementary operations are expanded into one deduplicated atomic chain, preserving architecture and review gates."
+    },
+    {
+      "id": "command:G1",
+      "disposition": "not-applicable",
+      "reason": "GA adds necessary isolation/capture architecture consultation to the standard build."
+    },
+    {
+      "id": "command:GB",
+      "disposition": "not-applicable",
+      "reason": "Archive trust and screenshot compatibility need explicit design consultation rather than fast-build assumptions."
+    },
+    {
+      "id": "command:GT",
+      "disposition": "not-applicable",
+      "reason": "New standalone utility can use focused meaningful tests in GA; red-first implementation is not required."
+    },
+    {
+      "id": "command:G7",
+      "disposition": "not-applicable",
+      "reason": "No existing application to replicate; generated design reference is integrated in GA UI implementation."
+    },
+    {
+      "id": "command:GEA",
+      "disposition": "not-applicable",
+      "reason": "Root owns implementation; browser verification is a later selected stage."
+    },
+    {
+      "id": "command:GCA",
+      "disposition": "not-applicable",
+      "reason": "Independent reviewer must remain read-only; root builds the new application."
+    },
+    {
+      "id": "command:GR",
+      "disposition": "not-applicable",
+      "reason": "No old feature to clean up; keep implementation scope focused."
+    },
+    {
+      "id": "command:GH",
+      "disposition": "not-applicable",
+      "reason": "No existing repository hygiene issue."
+    },
+    {
+      "id": "command:GF",
+      "disposition": "not-applicable",
+      "reason": "No partially completed feature to finalise."
+    },
+    {
+      "id": "command:GC",
+      "disposition": "not-applicable",
+      "reason": "Equivalent build in GA and independent review in selected review-code."
+    },
+    {
+      "id": "command:GX",
+      "disposition": "not-applicable",
+      "reason": "Equivalent bounded verification in selected review-security; repairs remain root execution."
+    },
+    {
+      "id": "command:GU",
+      "disposition": "not-applicable",
+      "reason": "Equivalent interaction verification in selected review-accessibility and run-e2e."
+    },
+    {
+      "id": "command:GE",
+      "disposition": "not-applicable",
+      "reason": "Equivalent GA build followed by selected run-e2e."
+    },
+    {
+      "id": "command:GJ",
+      "disposition": "not-applicable",
+      "reason": "No requirement for ongoing customer/admin browser suite beyond this utility acceptance."
+    },
+    {
+      "id": "command:GP",
+      "disposition": "not-applicable",
+      "reason": "Resource bounds are covered in import/capture tests; a separate performance programme is disproportionate."
+    },
+    {
+      "id": "command:GD",
+      "disposition": "not-applicable",
+      "reason": "README delivery accompanies GA; no separate full build/docs pipeline."
+    },
+    {
+      "id": "command:G6",
+      "disposition": "not-applicable",
+      "reason": "Duplicates GA and selected e2e/code review operations."
+    },
+    {
+      "id": "command:GAS",
+      "disposition": "not-applicable",
+      "reason": "New-project assessment is covered by GA planning; no separate standalone record."
+    },
+    {
+      "id": "command:GRS",
+      "disposition": "not-applicable",
+      "reason": "Architecture consultation researched the precise unresolved capture question."
+    },
+    {
+      "id": "command:GDA",
+      "disposition": "not-applicable",
+      "reason": "New UI has no pre-existing implementation to audit."
+    },
+    {
+      "id": "command:GAA",
+      "disposition": "not-applicable",
+      "reason": "Equivalent architecture advice already supplied inside GA."
+    },
+    {
+      "id": "command:GDS",
+      "disposition": "not-applicable",
+      "reason": "New UI spec is prepared inside GA from concept and required controls."
+    },
+    {
+      "id": "command:GPP",
+      "disposition": "not-applicable",
+      "reason": "Equivalent implementation planning inside GA."
+    },
+    {
+      "id": "command:GPR",
+      "disposition": "not-applicable",
+      "reason": "Equivalent actual critique inside GA before admission."
+    },
+    {
+      "id": "command:GTF",
+      "disposition": "not-applicable",
+      "reason": "No test-first contract; tests will verify substantive archive boundaries."
+    },
+    {
+      "id": "command:GEX",
+      "disposition": "not-applicable",
+      "reason": "Equivalent execution already owned by GA stage 3."
+    },
+    {
+      "id": "command:GTE",
+      "disposition": "not-applicable",
+      "reason": "No verified red-test prerequisite or requested TDD workflow."
+    },
+    {
+      "id": "command:GUT",
+      "disposition": "not-applicable",
+      "reason": "GA executes focused unit/integration checks; no duplicate test stage needed."
+    },
+    {
+      "id": "command:GVE",
+      "disposition": "not-applicable",
+      "reason": "Selected modular run-e2e supplies this equivalent operation against the source snapshot."
+    },
+    {
+      "id": "command:GVR",
+      "disposition": "not-applicable",
+      "reason": "Selected modular review-code supplies this equivalent operation."
+    },
+    {
+      "id": "command:GVS",
+      "disposition": "not-applicable",
+      "reason": "Selected modular review-security supplies this equivalent operation."
+    },
+    {
+      "id": "command:GVA",
+      "disposition": "not-applicable",
+      "reason": "Selected modular review-accessibility supplies this equivalent operation."
+    },
+    {
+      "id": "command:GVP",
+      "disposition": "not-applicable",
+      "reason": "Bounded timing/recovery checks belong to acceptance; separate benchmark is not needed."
+    },
+    {
+      "id": "command:GVD",
+      "disposition": "not-applicable",
+      "reason": "README/help are part of normal delivery; no dedicated docs-only command."
+    },
+    {
+      "id": "command:GCL",
+      "disposition": "not-applicable",
+      "reason": "No separate behaviour-preserving cleanup requested or required."
+    },
+    {
+      "id": "command:GRC",
+      "disposition": "not-applicable",
+      "reason": "Task is a specific new product, not repository-wide contribution discovery."
+    },
+    {
+      "id": "stage:research-technical",
+      "disposition": "not-applicable",
+      "reason": "Architecture consultation inside GA resolves the screenshot/runtime question."
+    },
+    {
+      "id": "stage:discover-contributions",
+      "disposition": "not-applicable",
+      "reason": "No existing repo-wide portfolio requested."
+    },
+    {
+      "id": "stage:assess-codebase",
+      "disposition": "selected",
+      "reason": "Verify new checkout, actual package versions and empty existing UI."
+    },
+    {
+      "id": "stage:diagnose-failure",
+      "disposition": "not-applicable",
+      "reason": "No existing failure to diagnose before building."
+    },
+    {
+      "id": "stage:extract-behaviour-spec",
+      "disposition": "not-applicable",
+      "reason": "No legacy application is being migrated."
+    },
+    {
+      "id": "stage:plan-goals",
+      "disposition": "not-applicable",
+      "reason": "GA captures all requested outcomes directly."
+    },
+    {
+      "id": "stage:design-architecture",
+      "disposition": "selected",
+      "reason": "Resolve actual archive execution, persistence and screenshot runtime boundaries with architect."
+    },
+    {
+      "id": "stage:design-ui",
+      "disposition": "not-applicable",
+      "reason": "GA includes a concrete reference-based workspace specification."
+    },
+    {
+      "id": "stage:review-ui-spec",
+      "disposition": "not-applicable",
+      "reason": "Independent plan critique reviews the same UI contract before implementation."
+    },
+    {
+      "id": "stage:plan-code",
+      "disposition": "selected",
+      "reason": "Map authorised outcomes to owned files and meaningful tests."
+    },
+    {
+      "id": "stage:plan-tests",
+      "disposition": "not-applicable",
+      "reason": "GA test-plan maps every requested outcome to decisive checks."
+    },
+    {
+      "id": "stage:review-plan",
+      "disposition": "selected",
+      "reason": "Critique scope, module handling and isolation checks before implementation."
+    },
+    {
+      "id": "stage:write-red-tests",
+      "disposition": "not-applicable",
+      "reason": "No red-first testing contract; boundaries receive meaningful tests."
+    },
+    {
+      "id": "stage:execute-plan",
+      "disposition": "selected",
+      "reason": "One implementation owner executes the current reviewed plan."
+    },
+    {
+      "id": "stage:fix-reviewed-defects",
+      "disposition": "not-applicable",
+      "reason": "Scoped findings are repaired within GA execution; do not add a second executor."
+    },
+    {
+      "id": "stage:run-tests",
+      "disposition": "selected",
+      "reason": "Run focused archive, type and build verification once code stabilises."
+    },
+    {
+      "id": "stage:run-e2e",
+      "disposition": "selected",
+      "reason": "Real imported HTML, assets, keyboard selection, captures and reload require browser evidence."
+    },
+    {
+      "id": "stage:review-code",
+      "disposition": "selected",
+      "reason": "Independent review of archive IDs, path rewriting, queue races and storage lifecycle."
+    },
+    {
+      "id": "stage:review-ui",
+      "disposition": "not-applicable",
+      "reason": "Concept/render comparison is part of GA frontend verification."
+    },
+    {
+      "id": "stage:review-accessibility",
+      "disposition": "selected",
+      "reason": "Keyboard-first tree browsing and focus preservation are explicit user requirements."
+    },
+    {
+      "id": "stage:review-security",
+      "disposition": "selected",
+      "reason": "Uploaded script execution and resource message bridging create concrete isolation boundaries."
+    },
+    {
+      "id": "stage:review-dependencies",
+      "disposition": "not-applicable",
+      "reason": "Pinned small standard dependencies and capture implementation inspected during architecture/build; no extra independent supply-chain audit requested."
+    },
+    {
+      "id": "stage:verify-goal",
+      "disposition": "not-applicable",
+      "reason": "GA reconciles all R criteria and native deployment evidence at completion."
+    },
+    {
+      "id": "stage:update-docs",
+      "disposition": "not-applicable",
+      "reason": "GA includes README/help reflecting actual behavior."
+    },
+    {
+      "id": "stage:verify-docs",
+      "disposition": "not-applicable",
+      "reason": "Code review checks delivered limitations; separate documentation stage adds no missing evidence."
+    },
+    {
+      "id": "stage:verify-performance",
+      "disposition": "not-applicable",
+      "reason": "Extraction bounds and serial capture recovery tested within GA acceptance."
+    },
+    {
+      "id": "pipeline:quick-safe-change",
+      "disposition": "not-applicable",
+      "reason": "Too small for archive execution and screenshot architecture."
+    },
+    {
+      "id": "pipeline:standard-verified-build",
+      "disposition": "not-applicable",
+      "reason": "GA supplies core build and selected verification adds only required checks."
+    },
+    {
+      "id": "pipeline:test-first-feature",
+      "disposition": "not-applicable",
+      "reason": "No red-first requirement; meaningful fixture tests within GA suffice."
+    },
+    {
+      "id": "pipeline:ui-design-fidelity",
+      "disposition": "not-applicable",
+      "reason": "No existing product UI to preserve; new concept applied inside GA."
+    },
+    {
+      "id": "pipeline:high-assurance-delivery",
+      "disposition": "not-applicable",
+      "reason": "Would add migration mining, TDD and broad audit stages irrelevant to this new browser-local utility."
+    },
+    {
+      "id": "specialist:react-frontend",
+      "disposition": "selected",
+      "reason": "React 19 component/state-driven viewer and gallery are in package.json."
+    },
+    {
+      "id": "specialist:editor-schema",
+      "disposition": "selected",
+      "reason": "Canonical archive/page/screenshot IDs and persisted tree workspace must agree."
+    },
+    {
+      "id": "specialist:wordpress-woocommerce",
+      "disposition": "not-applicable",
+      "reason": "No WordPress or WooCommerce runtime; HTML files are viewed, not converted into plugins."
+    },
+    {
+      "id": "specialist:whmcs",
+      "disposition": "not-applicable",
+      "reason": "No WHMCS hook, module or client API is changed."
+    },
+    {
+      "id": "specialist:vscode-agents-pro",
+      "disposition": "not-applicable",
+      "reason": "Browser app has no VS Code extension or native queue integration."
+    },
+    {
+      "id": "specialist:plugins-mcp",
+      "disposition": "not-applicable",
+      "reason": "Invoking the workflow plugin does not change its tools or host adapter."
+    },
+    {
+      "id": "specialist:browser-extraction",
+      "disposition": "not-applicable",
+      "reason": "App renders saved HTML but does not extract or reconstruct existing designs; browser evidence is covered by run-e2e."
+    },
+    {
+      "id": "specialist:native-yaml-archives",
+      "disposition": "selected",
+      "reason": "Nested ZIP inventory, asset preservation and safe path/size handling are core requirements."
+    },
+    {
+      "id": "specialist:content-seo",
+      "disposition": "not-applicable",
+      "reason": "No content/metadata migration or SEO page authoring."
+    },
+    {
+      "id": "specialist:python-data",
+      "disposition": "not-applicable",
+      "reason": "Product runtime is browser TypeScript; Python only supports local evidence preparation."
+    },
+    {
+      "id": "specialist:database",
+      "disposition": "not-applicable",
+      "reason": "IndexedDB wrapper has no SQL/schema migration or multi-tenant data access; canonical persistence covered by editor-schema."
+    },
+    {
+      "id": "specialist:infrastructure",
+      "disposition": "not-applicable",
+      "reason": "Sites supported static publication, no custom networking/server provisioning."
+    },
+    {
+      "id": "specialist:migration-release",
+      "disposition": "not-applicable",
+      "reason": "Fresh app; no stalled release or source reconciliation to recover."
+    },
+    {
+      "id": "specialist:realtime-native",
+      "disposition": "not-applicable",
+      "reason": "No realtime media or native desktop lifecycle."
+    }
+  ],
+  "chain": [
+    {
+      "id": "stage:assess-codebase",
+      "why": "Verify new checkout, actual package versions and empty existing UI."
+    },
+    {
+      "id": "stage:design-architecture",
+      "why": "Resolve actual archive execution, persistence and screenshot runtime boundaries with architect."
+    },
+    {
+      "id": "stage:plan-code",
+      "why": "Map authorised outcomes to owned files and meaningful tests."
+    },
+    {
+      "id": "stage:review-plan",
+      "why": "Critique scope, module handling and isolation checks before implementation."
+    },
+    {
+      "id": "stage:execute-plan",
+      "why": "One implementation owner executes the current reviewed plan."
+    },
+    {
+      "id": "stage:run-tests",
+      "why": "Run focused archive, type and build verification once code stabilises."
+    },
+    {
+      "id": "stage:run-e2e",
+      "why": "Real imported HTML, assets, keyboard selection, captures and reload require browser evidence."
+    },
+    {
+      "id": "stage:review-code",
+      "why": "Independent review of archive IDs, path rewriting, queue races and storage lifecycle."
+    },
+    {
+      "id": "stage:review-security",
+      "why": "Uploaded script execution and resource message bridging create concrete isolation boundaries."
+    },
+    {
+      "id": "stage:review-accessibility",
+      "why": "Keyboard-first tree browsing and focus preservation are explicit user requirements."
+    }
+  ],
+  "specialists": [
+    "specialist:react-frontend",
+    "specialist:editor-schema",
+    "specialist:native-yaml-archives"
+  ],
+  "continuation": {
+    "request": "S2",
+    "planRevision": 3,
+    "decision": "Retain atomic architecture/build/check chain; inspect existing UI, add image/organization migration within editor-schema, design compact requested UI in same plan; no duplicate pipeline."
+  }
+}

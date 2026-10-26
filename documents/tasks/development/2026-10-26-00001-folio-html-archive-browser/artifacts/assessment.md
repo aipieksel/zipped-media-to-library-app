@@ -1,0 +1,6 @@
+# New project assessment
+C1: No existing source/UI in fresh Folio checkout. package.json declares React 19.1.1, Vite 6.3.5, TypeScript 5.8.3, JSZip 3.10.1, idb 8.0.3, html-to-image 1.11.13 and es-module-lexer 1.7.0. Implement canonical owners rather than replacing an existing system.
+C2: .openai/hosting.json declares returned Site identity and static dist directory. No server runtime or browser-rendering service configured. Use browser-local capture, validate with managed cloud browser.
+C3: Exact fixture inventory at /workspace/scratch/d3a22467843d/fixtures/fixture-manifest.json. Four real ZIPs; synthetic nested wrapper retains unchanged original bytes; 12 expected HTML pages. Assets include CSS/JS/SVG/PNG and external CDN dependencies.
+C4: Existing user UI is absent. Reference concept at /workspace/scratch/d3a22467843d/generated_images/exec-f61331ec-5858-44db-acb9-631ec2208666.png inspected with view_image. White sidebar/header, neutral canvas, compact tree and orange accent.
+C5: Current sandbox initially blocked network dependency installation (no files downloaded); terminated that installer and restarted authorized helper with escalation. Native approval accepted; installer ongoing. No credential output or persisted token.

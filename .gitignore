@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.sites-runtime/
+.openai/site-workflow*
+*.log
+.DS_Store
+src/generated/
+*.tsbuildinfo
+
+.qa/

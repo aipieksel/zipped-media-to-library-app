@@ -1,0 +1,509 @@
+{
+  "schema": "project-development-plan/v1",
+  "contractVersion": 2,
+  "workflowPreset": "GA",
+  "title": "Folio HTML archive browser",
+  "projectRoot": "/workspace/scratch/d3a22467843d/folio",
+  "recordPath": "documents/tasks/development/2026-10-26-00001-folio-html-archive-browser",
+  "status": "blocked",
+  "readiness": "blocked",
+  "blockers": [
+    "R15 final HTTPS browser ZIP/SVG delivery check: private Site sign-in did not complete. Source implementation, PNG delivery and resource packaging checks passed; Site is published."
+  ],
+  "planRevision": 3,
+  "critiqueOutcome": "ready",
+  "reviewedPlanRevision": 3,
+  "sourceBaseline": {
+    "description": "Existing React/Vite app inspected in browser: 19 HTML pages, four imports, seven screenshots; original banner resources render, 13 compatibility assertions pass. User rejects spacious branded shell and requests compact HTML/image organization. Git initialized, no HEAD yet. Root owns App/styles/preview; data owner owns IndexedDB/import/tree; image UI owner isolated new components.",
+    "revision": null,
+    "dirtyPaths": [
+      "src/",
+      "tests/",
+      "documents/",
+      "package.json",
+      ".openai/hosting.json"
+    ]
+  },
+  "scope": {
+    "in": [
+      "Publish a working ChatGPT Site with multi-ZIP drag-and-drop and file selection.",
+      "Recursively extract nested ZIPs and preserve each named archive and folder hierarchy.",
+      "Show only HTML pages in the HTML tab tree; keep a collapsible archive hierarchy and label index pages using their containing folder or archive.",
+      "Browse pages quickly using the tree and keyboard Up/Down navigation.",
+      "Render HTML with its linked local CSS, JavaScript, fonts and images.",
+      "Capture the current page or a batch in the background with progress and honest failure states.",
+      "Show capture indicators and a screenshot gallery with direct navigation back to each HTML page.",
+      "Verify the implementation using representative real ZIPs from the banner and CTA collection.",
+      "Retain imported archives and captures across refresh and permit removal of an imported archive.",
+      "Isolate imported HTML from the workspace and reject unsafe or excessive archive input with useful errors.",
+      "Use a compact full-height sidebar without a logo or large drop area; one-line drop hint and one right toolbar, with size/fit/capture options in a settings popover and no reload button.",
+      "Cycle through every file across collapsed folders using navigation buttons and keyboard, for both HTML and images.",
+      "Favorite HTML pages and images, with a favorites view and persistent favorite state.",
+      "Create named workspace folders and move HTML pages or images into them while retaining original linked resources.",
+      "Download the selected image or HTML page and its associated resources.",
+      "Import image ZIPs and individual supported images, and browse them in an Images tab separate from HTML.",
+      "Upgrade existing browser storage without discarding imported resources, existing HTML identifiers or screenshots."
+    ],
+    "out": [
+      "Server-side Playwright or paid screenshot services without a provisioned browser runtime",
+      "Uploading user archive contents to server storage or publishing the test fixtures",
+      "Editing imported source content or executing backend code",
+      "Editing or physically moving original ZIP member paths",
+      "Automatic cloud synchronization or external file uploads",
+      "Video browsing, PDF browsing, unsupported native image codecs, or recursive user-created folder nesting"
+    ]
+  },
+  "requestSources": [
+    {
+      "id": "S1",
+      "role": "user",
+      "origin": "Current user request, current-user-request",
+      "text": "Okay, I need you to build me a site using ChatGPT sites, right? A site where I can drop a zip file that contains a whole bunch of HTML files, right? Or as much zip files as I want, drop into it, and then it needs to extract it and put all the... and then allow me to go through all of the zip files, sorry, through all of the HTML files, one by one, by clicking down on my keyboard, or by going through the tree that has all of them in it. Right? Because I've got a lot of HTML files, and I can't view the content without going in or, like, downloading one, opening it, and then looking. I want to toggle through all of them very quickly and see the contents. And perhaps also what could be great is if it can have an option too, where I can just say go and screenshot each one, and then it will go and show me a screenshot of each one, or, like, take a screenshot using Playwright or whatever in the background and do it. Right? So let's say that I drop eight different zip files in it, then it should obviously have, like, a tree where it uses the name of the zip file as the parent, and then it shows all of its contents beneath it. And I should be able to open and close all of it as well. And then for those that have screenshots generated, it should show in the tree, okay, this one's got a screenshot, and then there should be an option where I can toggle between, okay, show me all of the screenshots, and then if I'm looking at a screenshot, I need to be able to find its HTML file easily. Then also, if I dump a zip file and that zip file has zip files in it, right? Then it should obviously extract the zip files and then show me, or and then obviously add any HTML files inside of the root of that zip file in the sidebar. And if there are more than one HTML file, then that should be the main index file, right? Well then, yeah, then that file becomes also like a tree, where we have a label that is the zip file name, and then all of the HTML files beneath that label, indented beneath it, that I can open and close that as well. Right? That would be really cool. Because I do know some, some have HTML files that has linked CSS and linked JavaScript, etc., etc. Now, here's the thing: if a zip file has multiple folders inside of it\u2014 sorry, wait, wait. If I dump a zip file that has multiple zip files inside of it, and those zip files have folders with their own index and their own resources, etc., and their own assets, then that should be represented as such in the tree view. But it shouldn't show me the assets or the resources. I just want to see the index and click on it and have it work, right? So it must obviously then use the folder name as the HTML file name so that I can distinguish what it is, and then obviously it must link to the resources and everything in the background accordingly, please. Cool. And then what you can do is you can look through my library under my latest folder, I think it's banners and something, that contains all of my CTAs, all of my images, and everything. There is a lot of zip files in them, and those contain HTML files, etc., that you can use for your testing and implementation, please. And then obviously use the AI development workflow and choose the best workflow accordingly, please, for this task. [$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236)"
+    },
+    {
+      "id": "S2",
+      "role": "user",
+      "origin": "Current user steering message, compact-images-revision",
+      "text": "[$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) Okay, I need you to make it very compact and don't waste space. For example, there's a big drop zone here in the left sidebar, obscuring the rest of the files. I should just be able to drop it there, and you can make a small fucking one-line note somewhere there that says Drop it here. You don't have to take up all of that space. And I mean your header. Why do you have, I mean, can you not put the entire left sidebar that takes up the entire page from top to bottom, and then have a...And then the right-hand side for the content, I mean why is there that header, or the top area, right? You can put the responsive buttons in a pop-over and add it at the top before gallery. The same for the fit button. That can all be in a pop-over and you reload. Why is there a reload button there? That doesn't make sense. And why is there a capture button? I mean that can all be in a pop-over in a setting or something, right? And then.And then I want a navigation button where I can navigate through all of it and cycle through all of the folders and everything without having to go and to select a folder or something, right? Then I need a favorite button where I can favorite something and download something and move to a specific folder. So I need to be able to create a folder somewhere as well, or folders, and move them into folders. Then remove the Fileio logo, whatever that is, remove that. Then, now this is HTML pages, right? Now I want to be able to upload images as zips as well. So you see in my left sidebar, what I want is I want a tab where I can go HTML or images, right? If I want images, I drop the image in there. And the same thing, I need to cycle through the images with a navigation button and then favorite or move to a folder or things like that, please. Yeah, use AI development workflow for this, please."
+    }
+  ],
+  "requestHashes": {
+    "S1": "a14a1922a04ba99c819be67827bddc087635dce05493d0e7fd15cdad06a3c7f8",
+    "S2": "e95a52ba9be7f4be7ce6f4cfbd44b82e0de329e53abfb3b0ec6872e7cca85053"
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "Publish a working ChatGPT Site with multi-ZIP drag-and-drop and file selection.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R2",
+      "text": "Recursively extract nested ZIPs and preserve each named archive and folder hierarchy.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R3",
+      "text": "Show only HTML pages in the HTML tab tree; keep a collapsible archive hierarchy and label index pages using their containing folder or archive.",
+      "sources": [
+        "S1",
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R4",
+      "text": "Browse pages quickly using the tree and keyboard Up/Down navigation.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R5",
+      "text": "Render HTML with its linked local CSS, JavaScript, fonts and images.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R6",
+      "text": "Capture the current page or a batch in the background with progress and honest failure states.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R7",
+      "text": "Show capture indicators and a screenshot gallery with direct navigation back to each HTML page.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R8",
+      "text": "Verify the implementation using representative real ZIPs from the banner and CTA collection.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R9",
+      "text": "Retain imported archives and captures across refresh and permit removal of an imported archive.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "necessary",
+      "justification": "Users need to repeatedly browse many imported pages and generated screenshots; IndexedDB retains the actual imported workspace without requiring another upload after a refresh. Archive removal manages those same imports."
+    },
+    {
+      "id": "R10",
+      "text": "Isolate imported HTML from the workspace and reject unsafe or excessive archive input with useful errors.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "necessary",
+      "justification": "Untrusted uploaded archive HTML runs scripts as requested; an opaque sandbox and bounded path/inflation checks are necessary to render it without exposing the workspace or exhausting the browser."
+    },
+    {
+      "id": "R11",
+      "text": "Use a compact full-height sidebar without a logo or large drop area; one-line drop hint and one right toolbar, with size/fit/capture options in a settings popover and no reload button.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R12",
+      "text": "Cycle through every file across collapsed folders using navigation buttons and keyboard, for both HTML and images.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R13",
+      "text": "Favorite HTML pages and images, with a favorites view and persistent favorite state.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R14",
+      "text": "Create named workspace folders and move HTML pages or images into them while retaining original linked resources.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R15",
+      "text": "Download the selected image or HTML page and its associated resources.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R16",
+      "text": "Import image ZIPs and individual supported images, and browse them in an Images tab separate from HTML.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R17",
+      "text": "Upgrade existing browser storage without discarding imported resources, existing HTML identifiers or screenshots.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "necessary",
+      "justification": "The existing browser workspace already holds tested imports and screenshots. Adding image metadata and organization must preserve this authorized work and resource identities; an additive IndexedDB migration is the narrow change."
+    }
+  ],
+  "steps": [
+    {
+      "id": "P1",
+      "requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R9",
+        "R10"
+      ],
+      "paths": [
+        "src/archive.ts",
+        "src/archive.worker.ts",
+        "src/tree.ts",
+        "src/db.ts",
+        "src/types.ts"
+      ],
+      "change": "Implement bounded recursive ZIP import, canonical metadata, safe path resolution and durable browser-local file storage.",
+      "dependsOn": []
+    },
+    {
+      "id": "P2",
+      "requirements": [
+        "R4",
+        "R5",
+        "R6",
+        "R10"
+      ],
+      "paths": [
+        "src/preview.ts",
+        "src/capture-entry.ts",
+        "src/capture.ts",
+        "scripts/build-capture.mjs"
+      ],
+      "change": "Implement opaque sandbox previews with local asset/module/fetch resolution and a serial capture queue using html-to-image inside the isolated frame.",
+      "dependsOn": [
+        "P1"
+      ]
+    },
+    {
+      "id": "P3",
+      "requirements": [
+        "R1",
+        "R3",
+        "R4",
+        "R6",
+        "R7",
+        "R9"
+      ],
+      "paths": [
+        "src/App.tsx",
+        "src/components/",
+        "src/styles.css"
+      ],
+      "change": "Implement coherent React workspace, tree, keyboard navigation, responsive preview, capture controls and gallery with identity-preserving HTML navigation.",
+      "dependsOn": [
+        "P1",
+        "P2"
+      ]
+    },
+    {
+      "id": "P4",
+      "requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7",
+        "R8",
+        "R9",
+        "R10"
+      ],
+      "paths": [
+        "tests/",
+        "README.md",
+        "documents/",
+        ".openai/hosting.json"
+      ],
+      "change": "Verify functional and isolation boundaries using real Library samples plus targeted edge fixtures; review, repair scoped defects, package and publish the private Site.",
+      "dependsOn": [
+        "P3"
+      ]
+    },
+    {
+      "id": "P5",
+      "requirements": [
+        "R2",
+        "R5",
+        "R9",
+        "R10",
+        "R13",
+        "R14",
+        "R16",
+        "R17"
+      ],
+      "paths": [
+        "src/types.ts",
+        "src/archive.ts",
+        "src/archive.worker.ts",
+        "src/db.ts",
+        "src/tree.ts",
+        "tests/"
+      ],
+      "change": "Add image item metadata and direct-image import; additive v2 IDB migration indexes existing image Blobs, adds folders and item organization, preserves canonical paths/IDs, and supports favorite/move transactions.",
+      "dependsOn": [
+        "P1"
+      ]
+    },
+    {
+      "id": "P6",
+      "requirements": [
+        "R3",
+        "R4",
+        "R6",
+        "R7",
+        "R11",
+        "R12",
+        "R13",
+        "R14",
+        "R15",
+        "R16"
+      ],
+      "paths": [
+        "src/App.tsx",
+        "src/styles.css",
+        "src/components/",
+        "src/download.ts"
+      ],
+      "change": "Replace shell with compact full-height sidebar and one toolbar; add kind tabs, shared organized tree and wrap navigation, favorite/move/download, settings popover, native image preview and gallery.",
+      "dependsOn": [
+        "P5",
+        "P2"
+      ]
+    },
+    {
+      "id": "P7",
+      "requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7",
+        "R8",
+        "R9",
+        "R10",
+        "R11",
+        "R12",
+        "R13",
+        "R14",
+        "R15",
+        "R16",
+        "R17"
+      ],
+      "paths": [
+        "tests/",
+        "README.md",
+        "documents/",
+        ".openai/hosting.json"
+      ],
+      "change": "Review and verify revised UI, image/folder/favorite migration, wrap navigation/downloads and original HTML/capture behavior; build and publish same private Site.",
+      "dependsOn": [
+        "P6"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "T1",
+      "requirements": [
+        "R2",
+        "R3",
+        "R8",
+        "R10"
+      ],
+      "method": "Node tests against archive/path/tree code with nested real ZIP wrapper, empty and malformed input, traversal and inflation limits.",
+      "expected": "12 HTML pages reconcile; assets retained but not tree-visible; bad inputs rejected without altering workspace.",
+      "boundary": "Deterministic processing, no browser rendering proof."
+    },
+    {
+      "id": "T2",
+      "requirements": [
+        "R1",
+        "R4",
+        "R5",
+        "R7",
+        "R8"
+      ],
+      "method": "Managed Sites browser upload, click and key navigation; inspect rendered real banner/pattern resources and gallery reveal. Explicitly check CSS @import/url() computed colour and image loading; JS-driven button; local fetch JSON; static module chain and literal dynamic module import.",
+      "expected": "Real pages and linked assets render; selection changes correctly and screenshot points back to identical page ID.",
+      "boundary": "Available cloud Chromium runtime; no backend/server apps supported."
+    },
+    {
+      "id": "T3",
+      "requirements": [
+        "R6",
+        "R7",
+        "R9"
+      ],
+      "method": "Browser current/batch capture, cancel/retry and reload; inspect actual PNG output and preserved imports.",
+      "expected": "Nonblank image captures persist; serial queue succeeds or exposes explicit failures; UI remains navigable.",
+      "boundary": "Browser DOM capture, not pixel-perfect remote Playwright; remote CORS and unsupported media may limit capture."
+    },
+    {
+      "id": "T4",
+      "requirements": [
+        "R4",
+        "R10"
+      ],
+      "method": "Independent source review plus browser keyboard and malicious harmless fixture checks. Check an unrelated source window cannot forge a bridge message.",
+      "expected": "Iframe cannot read parent DOM/storage, bridge is source/channel scoped, input focus preserved, controls labelled.",
+      "boundary": "Bounded review, no formal accessibility or security certification."
+    },
+    {
+      "id": "T5",
+      "requirements": [
+        "R1"
+      ],
+      "method": "Typecheck, production build, source push and native Sites private deploy result.",
+      "expected": "Build succeeds and native deployment returns succeeded with production URL.",
+      "boundary": "Source, packaging and deployment evidence distinct."
+    },
+    {
+      "id": "T6",
+      "requirements": [
+        "R11"
+      ],
+      "method": "Inspect desktop and 390px-wide rendered shell; DOM bounds and screenshot verify full-height left sidebar, one compact toolbar, one-line drop hint, no logo/reload or exposed capture/device row. Open settings and operate fit/width/capture.",
+      "expected": "Content uses available space; essential actions remain labelled and reachable; popover dismisses and restores focus.",
+      "boundary": "Cloud Chromium with authored narrow viewport harness if browser resize unavailable."
+    },
+    {
+      "id": "T7",
+      "requirements": [
+        "R2",
+        "R3",
+        "R5",
+        "R9",
+        "R10",
+        "R16",
+        "R17"
+      ],
+      "method": "Unit ZIP/image classification checks; browser v1-to-v2 upgrade retains 19 existing HTML items, seven captures and existing selected ID; Images tab indexes original bundled images. Import a nested image ZIP plus a direct image and render/download supported PNG/SVG.",
+      "expected": "HTML and Images inventories are separate, resources remain available, image data renders safely via img object URLs, corrupt/unsupported imports report failure.",
+      "boundary": "Browser supported PNG/JPEG/WebP/GIF/AVIF/SVG/BMP/ICO; no native TIFF/HEIC conversion or remote storage."
+    },
+    {
+      "id": "T8",
+      "requirements": [
+        "R13",
+        "R14",
+        "R15",
+        "R17"
+      ],
+      "method": "Create folder, favorite HTML/image, move each into folder, reload; navigate moved HTML with linked assets; download original image and HTML resource ZIP, inspect resulting files/bytes.",
+      "expected": "Identity and resources survive moves and refresh; favorites and folder membership persist; downloads contain original selected bytes and usable associated resource hierarchy.",
+      "boundary": "Folders organize workspace references, not original ZIP paths; one item belongs to at most one user folder."
+    },
+    {
+      "id": "T9",
+      "requirements": [
+        "R4",
+        "R7",
+        "R11",
+        "R12",
+        "R13",
+        "R14",
+        "R16"
+      ],
+      "method": "Collapse all branches, navigate previous/next through current kind and wrap last-to-first; test matching search/favorites/tree/gallery orders, image/gallery opening, keyboard input protection and popover focus.",
+      "expected": "No folder selection needed for browsing; current-kind navigation remains coherent after moving/favoriting/filtering.",
+      "boundary": "Source/keyboard review and available browser observations, no formal conformance claim."
+    }
+  ],
+  "planHashes": {
+    "checklist.md": "43aed345eb78e47121b7076cae2ba2a4fa0b10c0820a81113899c9e82ae5c7a3",
+    "fix-plan.md": "22c89e34ea7e5249b8b38a2cabbea7ff9aa579f5c3110eb5860d9392a509c784",
+    "test-plan.md": "e8bd80542af64c1b69e55d1c456166bf0148fc6a71231cf62d07857f7d927b4e"
+  },
+  "createdAt": "2026-10-26T22:05:11.728372+05:00",
+  "updatedAt": "2026-10-26T18:08:03.678779+00:00",
+  "files": [
+    "checklist.md",
+    "fix-plan.md",
+    "test-plan.md",
+    "critique.md",
+    "results.md"
+  ],
+  "definitionHash": "d2886303bc6c0ccf3ef4f8af00112b6c225b5ba3d08bf35d791a6f33a4d753c8",
+  "critiqueHash": "9fa13f449c63d745dd93fc7daaa5dd4eef705f792bd3db28271331f0c3517937"
+}

@@ -1,0 +1,464 @@
+{
+  "catalogueFingerprint": "438486f892fa59c209076f271c549404e3ed50ace35fd38505d470b4d4004ca3",
+  "intent": "implement",
+  "request": "Continue the existing Folio/Archive development record by pushing the complete already-built compact HTML and Images app, its history and verification records to https://github.com/aipieksel/zipped-media-to-library-app; verify the remote destination without rebuilding features or reopening the previous live ZIP/SVG download check.",
+  "evaluated": [
+    {
+      "id": "command:G0",
+      "disposition": "selected",
+      "reason": "The already-built app only needs a bounded source handoff, existing-checklist continuation, proportional build/test verification and confirmed GitHub push; no application changes are requested."
+    },
+    {
+      "id": "command:GS",
+      "disposition": "not-applicable",
+      "reason": "The app is implemented and previously assessed; a new assess-plan-build cycle would exceed this repository transfer."
+    },
+    {
+      "id": "command:GPL",
+      "disposition": "not-applicable",
+      "reason": "The destination and outcome are explicit; a separate goal-planning phase would not advance the authorised push."
+    },
+    {
+      "id": "command:GCP",
+      "disposition": "not-applicable",
+      "reason": "No application code changes need planning; G0 records the narrow source-transfer steps."
+    },
+    {
+      "id": "command:GA",
+      "disposition": "not-applicable",
+      "reason": "The archive, preview and storage architecture stays unchanged; no architecture/build cycle is needed."
+    },
+    {
+      "id": "command:G1",
+      "disposition": "not-applicable",
+      "reason": "A full implementation pipeline would repeat completed work for an already-built app."
+    },
+    {
+      "id": "command:GB",
+      "disposition": "not-applicable",
+      "reason": "No feature build remains in this request; source publication is handled by the scoped G0 operation."
+    },
+    {
+      "id": "command:GT",
+      "disposition": "not-applicable",
+      "reason": "There is no new behaviour or regression to implement through test-first development."
+    },
+    {
+      "id": "command:G7",
+      "disposition": "not-applicable",
+      "reason": "The approved compact interface is being transferred unchanged, so there is no visual-fidelity implementation task."
+    },
+    {
+      "id": "command:GEA",
+      "disposition": "not-applicable",
+      "reason": "No E2E implementation is requested; root owns only source reconciliation, existing checks and push."
+    },
+    {
+      "id": "command:GCA",
+      "disposition": "not-applicable",
+      "reason": "No application implementation is delegated to a reviewer; the bounded handoff review remains read-only."
+    },
+    {
+      "id": "command:GR",
+      "disposition": "not-applicable",
+      "reason": "No refactoring or feature cleanup is needed to copy the complete existing source and history."
+    },
+    {
+      "id": "command:GH",
+      "disposition": "not-applicable",
+      "reason": "The tracked source is already small and organised; preserve it rather than reorganising the repository during transfer."
+    },
+    {
+      "id": "command:GF",
+      "disposition": "not-applicable",
+      "reason": "This request publishes existing source to GitHub, rather than reopening feature finalisation or the documented live download verification gap."
+    },
+    {
+      "id": "command:GC",
+      "disposition": "not-applicable",
+      "reason": "The source is unchanged and already reviewed; a new build-and-code-review pipeline would duplicate prior implementation work."
+    },
+    {
+      "id": "command:GX",
+      "disposition": "not-applicable",
+      "reason": "No access boundary or security fix is changing; the narrow credential/content inspection belongs to repository handoff."
+    },
+    {
+      "id": "command:GU",
+      "disposition": "not-applicable",
+      "reason": "No interaction, keyboard, focus or responsive layout change is part of the GitHub push."
+    },
+    {
+      "id": "command:GE",
+      "disposition": "not-applicable",
+      "reason": "Existing browser evidence remains applicable to unchanged source; a full build-and-E2E cycle is disproportionate."
+    },
+    {
+      "id": "command:GJ",
+      "disposition": "not-applicable",
+      "reason": "No new customer or admin journey automation suite is requested for this repository handoff."
+    },
+    {
+      "id": "command:GP",
+      "disposition": "not-applicable",
+      "reason": "No runtime or performance behaviour changes, and no benchmark is needed to verify a source push."
+    },
+    {
+      "id": "command:GD",
+      "disposition": "not-applicable",
+      "reason": "The existing README and verification records are being transferred; a full build/documentation pipeline is unnecessary."
+    },
+    {
+      "id": "command:G6",
+      "disposition": "not-applicable",
+      "reason": "Repeating full docs, E2E and code-review pipelines would exceed a bounded GitHub transfer."
+    },
+    {
+      "id": "command:GAS",
+      "disposition": "not-applicable",
+      "reason": "Source identity, status and completeness checks are already part of the migration-release handoff; a standalone codebase assessment duplicates them."
+    },
+    {
+      "id": "command:GRS",
+      "disposition": "not-applicable",
+      "reason": "No unresolved technical research question is introduced by pushing the existing Git history."
+    },
+    {
+      "id": "command:GDA",
+      "disposition": "not-applicable",
+      "reason": "There is no UI modification or requested design audit; preserve the approved compact version."
+    },
+    {
+      "id": "command:GAA",
+      "disposition": "not-applicable",
+      "reason": "No integration boundary or architectural trade-off changes in this source publication."
+    },
+    {
+      "id": "command:GDS",
+      "disposition": "not-applicable",
+      "reason": "No new visual or interaction specification is required for unchanged UI source."
+    },
+    {
+      "id": "command:GPP",
+      "disposition": "not-applicable",
+      "reason": "The implementation plan is already executed; the transfer needs only G0 steps in the same record."
+    },
+    {
+      "id": "command:GPR",
+      "disposition": "not-applicable",
+      "reason": "A new implementation plan is not being introduced; root handles the bounded release checklist and read-only handoff review."
+    },
+    {
+      "id": "command:GTF",
+      "disposition": "not-applicable",
+      "reason": "No failing behaviour or new regression specification justifies adding red tests."
+    },
+    {
+      "id": "command:GEX",
+      "disposition": "not-applicable",
+      "reason": "No application code is being implemented from the earlier plan; G0 handles the separately requested GitHub handoff."
+    },
+    {
+      "id": "command:GTE",
+      "disposition": "not-applicable",
+      "reason": "There are no new red tests or application changes to implement."
+    },
+    {
+      "id": "command:GUT",
+      "disposition": "not-applicable",
+      "reason": "G0 already includes running the existing focused tests once; a separate unit-verification command would duplicate that check."
+    },
+    {
+      "id": "command:GVE",
+      "disposition": "not-applicable",
+      "reason": "The repository transfer does not affect runtime journeys; retain earlier browser evidence and the unresolved live download check without reopening it."
+    },
+    {
+      "id": "command:GVR",
+      "disposition": "not-applicable",
+      "reason": "A bounded independent source-handoff read is sufficient for unchanged code; no separate full implementation review is needed."
+    },
+    {
+      "id": "command:GVS",
+      "disposition": "not-applicable",
+      "reason": "The transfer adds no application security diff; inspect tracked secrets and archive exclusions within the handoff."
+    },
+    {
+      "id": "command:GVA",
+      "disposition": "not-applicable",
+      "reason": "No controls or interactions change, so separate accessibility verification would not test the GitHub delivery outcome."
+    },
+    {
+      "id": "command:GVP",
+      "disposition": "not-applicable",
+      "reason": "Unchanged runtime behaviour does not require performance measurement for a source push."
+    },
+    {
+      "id": "command:GVD",
+      "disposition": "not-applicable",
+      "reason": "Any handoff-status note belongs to G0 in the existing record; there is no separate documentation rewrite."
+    },
+    {
+      "id": "command:GCL",
+      "disposition": "not-applicable",
+      "reason": "No behaviour-preserving code cleanup is necessary or requested."
+    },
+    {
+      "id": "command:GRC",
+      "disposition": "not-applicable",
+      "reason": "The user specified a concrete source destination, not a repository-wide contribution portfolio."
+    },
+    {
+      "id": "stage:research-technical",
+      "disposition": "not-applicable",
+      "reason": "The transfer uses existing Git and GitHub capabilities; no new library or technical approach needs research."
+    },
+    {
+      "id": "stage:discover-contributions",
+      "disposition": "not-applicable",
+      "reason": "No new feature opportunities or contribution roadmap are requested."
+    },
+    {
+      "id": "stage:assess-codebase",
+      "disposition": "not-applicable",
+      "reason": "Migration-release reconciliation covers the exact source, clean status, tracked contents and destination; another assessment stage duplicates it."
+    },
+    {
+      "id": "stage:diagnose-failure",
+      "disposition": "not-applicable",
+      "reason": "No application failure has been introduced by the push request; delivery errors can be handled within G0 if observed."
+    },
+    {
+      "id": "stage:extract-behaviour-spec",
+      "disposition": "not-applicable",
+      "reason": "No system behaviour is being reimplemented; existing source and evidence move intact."
+    },
+    {
+      "id": "stage:plan-goals",
+      "disposition": "not-applicable",
+      "reason": "The single goal is the authorised repository push, already expressed by the G0 checklist."
+    },
+    {
+      "id": "stage:design-architecture",
+      "disposition": "not-applicable",
+      "reason": "Existing archive, sandbox and persistence boundaries remain unchanged."
+    },
+    {
+      "id": "stage:design-ui",
+      "disposition": "not-applicable",
+      "reason": "The compact HTML/Images interface is already built and is not being redesigned."
+    },
+    {
+      "id": "stage:review-ui-spec",
+      "disposition": "not-applicable",
+      "reason": "No new UI specification is introduced by a repository-only handoff."
+    },
+    {
+      "id": "stage:plan-code",
+      "disposition": "not-applicable",
+      "reason": "No application source edits need a file-level implementation plan."
+    },
+    {
+      "id": "stage:plan-tests",
+      "disposition": "not-applicable",
+      "reason": "The existing test and build commands are already known; no new test strategy is required."
+    },
+    {
+      "id": "stage:review-plan",
+      "disposition": "not-applicable",
+      "reason": "No substantive implementation plan is created; the bounded source-handoff review covers the release steps."
+    },
+    {
+      "id": "stage:write-red-tests",
+      "disposition": "not-applicable",
+      "reason": "No changed behaviour calls for new tests or demonstrated red assertions."
+    },
+    {
+      "id": "stage:execute-plan",
+      "disposition": "not-applicable",
+      "reason": "The app implementation is complete; G0 is the selected owner for the release operation and record update."
+    },
+    {
+      "id": "stage:fix-reviewed-defects",
+      "disposition": "not-applicable",
+      "reason": "No authorised source defect fix is part of this request; the previous live-download verification limit remains recorded."
+    },
+    {
+      "id": "stage:run-tests",
+      "disposition": "not-applicable",
+      "reason": "Existing npm tests and production build run within G0 once; no duplicate standalone verification stage."
+    },
+    {
+      "id": "stage:run-e2e",
+      "disposition": "not-applicable",
+      "reason": "No runtime changes need browser retesting; retain the earlier observed results and remaining sign-in-related verification limit."
+    },
+    {
+      "id": "stage:review-code",
+      "disposition": "not-applicable",
+      "reason": "The read-only handoff audit checks identity, tracked completeness and sensitive content; unchanged app source does not need another complete code-review stage."
+    },
+    {
+      "id": "stage:review-ui",
+      "disposition": "not-applicable",
+      "reason": "There is no rendered UI change to compare against the approved compact workspace."
+    },
+    {
+      "id": "stage:review-accessibility",
+      "disposition": "not-applicable",
+      "reason": "The source transfer changes no keyboard, focus, semantic or responsive behaviour."
+    },
+    {
+      "id": "stage:review-security",
+      "disposition": "not-applicable",
+      "reason": "No application security boundary changes; the handoff checks for credential leakage and unintended tracked data."
+    },
+    {
+      "id": "stage:review-dependencies",
+      "disposition": "not-applicable",
+      "reason": "Package versions and lockfile remain unchanged; no new dependency decision needs review."
+    },
+    {
+      "id": "stage:verify-goal",
+      "disposition": "not-applicable",
+      "reason": "G0 explicitly confirms destination branch and commit after push; a separate goal-verification stage duplicates that evidence."
+    },
+    {
+      "id": "stage:update-docs",
+      "disposition": "not-applicable",
+      "reason": "The narrow repository handoff note is part of the same G0 record, with the existing application documentation retained."
+    },
+    {
+      "id": "stage:verify-docs",
+      "disposition": "not-applicable",
+      "reason": "Handoff claims are checked against observed Git and test/build results within G0; no separate documentation verification stage."
+    },
+    {
+      "id": "stage:verify-performance",
+      "disposition": "not-applicable",
+      "reason": "No performance-sensitive changes are included in a GitHub source handoff."
+    },
+    {
+      "id": "pipeline:quick-safe-change",
+      "disposition": "not-applicable",
+      "reason": "Even the atomic quick-change recipe adds a code-plan and execution cycle that is unnecessary for unchanged source; G0 is the smaller proportional workflow."
+    },
+    {
+      "id": "pipeline:standard-verified-build",
+      "disposition": "not-applicable",
+      "reason": "The application is already built; this full build recipe would repeat completed assessment and implementation."
+    },
+    {
+      "id": "pipeline:test-first-feature",
+      "disposition": "not-applicable",
+      "reason": "There is no new feature or regression requiring RED/GREEN/REFACTOR."
+    },
+    {
+      "id": "pipeline:ui-design-fidelity",
+      "disposition": "not-applicable",
+      "reason": "No UI redesign or visual implementation is requested; transfer the approved compact app intact."
+    },
+    {
+      "id": "pipeline:high-assurance-delivery",
+      "disposition": "not-applicable",
+      "reason": "Broad architecture, TDD, browser and audit stages are disproportionate to a bounded unchanged-source push."
+    },
+    {
+      "id": "specialist:react-frontend",
+      "disposition": "not-applicable",
+      "reason": "React source is transferred unchanged; no component, state or frontend rendering work is required."
+    },
+    {
+      "id": "specialist:editor-schema",
+      "disposition": "not-applicable",
+      "reason": "IndexedDB and workspace schemas are not being migrated or edited during the repository transfer."
+    },
+    {
+      "id": "specialist:wordpress-woocommerce",
+      "disposition": "not-applicable",
+      "reason": "The app has no WordPress or WooCommerce runtime, and none is being changed."
+    },
+    {
+      "id": "specialist:whmcs",
+      "disposition": "not-applicable",
+      "reason": "No WHMCS extension, billing hook or client-area integration is involved."
+    },
+    {
+      "id": "specialist:vscode-agents-pro",
+      "disposition": "not-applicable",
+      "reason": "The destination is a standalone browser app, not a VS Code extension or Agents Pro host migration."
+    },
+    {
+      "id": "specialist:plugins-mcp",
+      "disposition": "not-applicable",
+      "reason": "The workflow and GitHub plugins are only used to perform this task; their manifests, commands and tools are unchanged."
+    },
+    {
+      "id": "specialist:browser-extraction",
+      "disposition": "not-applicable",
+      "reason": "No website extraction, UI repair or new browser evidence is needed to verify the source destination."
+    },
+    {
+      "id": "specialist:native-yaml-archives",
+      "disposition": "not-applicable",
+      "reason": "The app handles archives, but its importer and export contracts are unchanged; this task transfers Git source rather than converting or packaging user archives."
+    },
+    {
+      "id": "specialist:content-seo",
+      "disposition": "not-applicable",
+      "reason": "No page content, SEO metadata, canonical routes or structured-data migration is requested."
+    },
+    {
+      "id": "specialist:python-data",
+      "disposition": "not-applicable",
+      "reason": "Any Python used here only prepares handoff evidence; no product data pipeline or ingestion behaviour changes."
+    },
+    {
+      "id": "specialist:database",
+      "disposition": "not-applicable",
+      "reason": "No database schema, query, access policy or browser-storage migration is part of the source push."
+    },
+    {
+      "id": "specialist:infrastructure",
+      "disposition": "not-applicable",
+      "reason": "No CI, server, runtime configuration or deployment change is requested; existing Sites identity is preserved."
+    },
+    {
+      "id": "specialist:migration-release",
+      "disposition": "selected",
+      "reason": "Reconcile the built compact source and prior records with the requested GitHub destination, preserve commit history, and distinguish locally committed, remotely pushed and previously deployed states."
+    },
+    {
+      "id": "specialist:realtime-native",
+      "disposition": "not-applicable",
+      "reason": "The app is browser-based without realtime media or native application lifecycle work in this request."
+    }
+  ],
+  "chain": [
+    {
+      "id": "command:G0",
+      "why": "The already-built app only needs a bounded source handoff, existing-checklist continuation, proportional build/test verification and confirmed GitHub push; no application changes are requested."
+    }
+  ],
+  "specialists": [
+    "specialist:migration-release"
+  ],
+  "existingEvidence": [
+    {
+      "artifact": "repo.snapshot",
+      "record": "39891465452d2839ec7c0ad29cee813d21519437"
+    },
+    {
+      "artifact": "execution.result",
+      "record": "documents/tasks/development/2026-10-26-00001-folio-html-archive-browser/results.md"
+    },
+    {
+      "artifact": "review.findings",
+      "record": "documents/tasks/development/2026-10-26-00001-folio-html-archive-browser/artifacts/revision-3-code-review.md"
+    },
+    {
+      "artifact": "e2e.results",
+      "record": "documents/tasks/development/2026-10-26-00001-folio-html-archive-browser/artifacts/e2e-verification.md"
+    }
+  ]
+}
