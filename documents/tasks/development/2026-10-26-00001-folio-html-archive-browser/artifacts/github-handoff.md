@@ -14,9 +14,9 @@ The app referred to by “that” is preserved verbatim in the existing `../conv
 
 ## Checklist
 
-- [~] R18 Push the complete latest compact app and its existing source history to `aipieksel/zipped-media-to-library-app` on `main`. (source: S3)
+- [x] R18 Push the complete latest compact app and its existing source history to `aipieksel/zipped-media-to-library-app` on `main`. (source: S3)
 - [x] R19 Run the existing tests and production build in the transfer checkout. (agent-added verification necessity)
-- [ ] R20 Verify the destination branch and complete file tree against the intended commit. (agent-added delivery verification necessity)
+- [x] R20 Verify the destination branch and complete file tree against the intended commit. (agent-added delivery verification necessity)
 
 ## Workflow
 
@@ -39,7 +39,10 @@ The Tasks panel tool is unavailable, so the checklist is rendered in chat. Exist
 - Direct Git push could not authenticate (`could not read Username for https://github.com`). Delivery uses the authorised aipieksel GitHub connector instead, which creates Git objects and advances `main` with an expected-head check.
 - The original two-commit history is retained in `source-history.bundle`, created from `main` at `39891465452d2839ec7c0ad29cee813d21519437`. `git bundle verify` passed and confirmed a complete history. The receiving GitHub branch has its own import commits because the connector does not expose arbitrary original commit metadata.
 - The separate handoff catalogue selection passed structural validation (86 entries; G0 and migration-release selected). The prior app-build selection remains unchanged.
-- Upload and remote file-tree verification are in progress.
+- GitHub `main` was verified at source-import commit `708576fb585e01e0ec7ff854c76657830cc46ea7`, with full tree `ddb6451541562cf40e5b7f77db5a334178a263f6`.
+- Fetching the branch from GitHub confirmed that all 62 original tracked files retain their exact Git blob hashes. The destination contains 65 files, including this handoff report, its workflow selection, and the portable original-history bundle.
+- The uploaded tree was identical to the verified local index. This final documentation update records that successful transfer; application source remains unchanged.
+- All three GitHub handoff items are complete. The separately documented prior live ZIP/SVG verification limitation remains unchanged.
 
 To recover the original Sites source history independently:
 
