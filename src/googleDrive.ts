@@ -109,6 +109,7 @@ export async function fetchGoogleDriveFile(
   if(!extension)throw new Error('The Drive file is not a supported ZIP or image.');
   const headerName=filenameFromContentDisposition(response.headers.get('content-disposition'));
   const name=displayName(id,headerName,extension);
-  const blob=new Blob(chunks,{type:contentType.split(';')[0]||undefined});
+  const parts=chunks.map(chunk=>chunk.buffer.slice(chunk.byteOffset,chunk.byteOffset+chunk.byteLength) as ArrayBuffer);
+  const blob=new Blob(parts,{type:contentType.split(';')[0]||undefined});
   return new File([blob],name,{type:blob.type,lastModified:Date.now()});
 }
