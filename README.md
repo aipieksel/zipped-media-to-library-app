@@ -1,5 +1,9 @@
 # HTML and image workspace
 
+**Repository privacy:** this repository is for application source. Keep imported
+ZIPs, HTML, images and captures in private app storage. See [PRIVACY.md](PRIVACY.md)
+for exclusions and the local pre-commit check.
+
 A compact browser workspace for browsing exported HTML pages and images without unpacking each file by hand. Import several ZIPs together, including ZIPs inside ZIPs, drop supported image files directly, or paste a downloadable Google Drive file link. The application keeps imported files in this browser's IndexedDB storage.
 
 ## Using the workspace

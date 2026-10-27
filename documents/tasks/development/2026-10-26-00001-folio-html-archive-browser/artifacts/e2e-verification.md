@@ -103,4 +103,6 @@ Final screenshot artifacts will be attached by root. No screenshot file or final
 
 Production build and private native deployment passed. The live URL is https://folio-html-workspace.byronjacobs.chatgpt.site . Build/source commit `ff98d4fa1972b250f882169ed05367ac5d42b742`; deployment `appgdep_6adf9d205d9081919390677cc4625788` returned succeeded. Opening the live Site reached its ChatGPT sign-in gate. Secure sign-in did not complete, and a subsequent exact-origin visit still displayed Log in to access. R15 HTTPS ZIP/SVG delivery therefore remains unverified; this is not an observed HTTPS application failure.
 
-Final screenshot files exist and were visually inspected: [compact HTML workspace](compact-workspace.jpg) (91753bytes) and [compact image gallery](compact-images.jpg) (210627bytes), both1363×936. Browser bytes were saved once; top-level shared-file synchronization succeeded and exact bytes were copied into this source evidence directory.
+Final screenshots were visually inspected during the original verification.
+The binary evidence has since been removed from the public source tree for
+collection privacy. Do not restore or republish those captures.

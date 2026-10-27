@@ -1,5 +1,9 @@
 # Results
 
+Privacy correction: screenshot evidence referenced in this historical report
+has been removed from the public source tree because it contains collection
+previews. Do not restore or republish it.
+
 Task allocated once. Workflow GA with archive, React and persistent-schema specialists. Library discovery delegated to /root/archive_fixtures. Architecture consultation delegated to /root/architecture. Primary source owner /root. No app implementation begun; bootstrap/package installation running.
 
 Execution attempt 1 /root admitted revision 2 with original plan hashes {'checklist.md': 'ab763ec2e644cc10260dc798bf5efddff043976e28ff4e7be32155c4ebed5b09', 'fix-plan.md': '5a4606f4cc2912ef725c9015390d26a6806b8ba9af9768becdae96eedb1aa797', 'test-plan.md': 'cdee36639ac053bcfc735a5e51c89d9859cd10e20d97f8224b7fb4e00d7578b9'}. No concurrent overlapping writer. P1 data/import/tree/DB delegated to /root/archive_fixtures with exact APIs; root owns preview/capture/UI, all builds, native Sites and browser.

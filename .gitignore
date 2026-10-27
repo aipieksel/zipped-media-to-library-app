@@ -8,3 +8,57 @@ src/generated/
 *.tsbuildinfo
 
 .qa/
+
+# Private workspace data belongs in browser/Site storage, never in source control.
+imports/
+uploads/
+exports/
+fixtures/
+screenshots/
+captures/
+private-data/
+collection-data/
+cloud-data/
+cloud-fast-data/
+source-zips/
+.env
+.env.*
+*.pem
+*.key
+
+# Archives, original pages, images, previews and source-history exports.
+*.[zZ][iI][pP]
+*.[gG][zZ]
+*.[tT][gG][zZ]
+*.[tT][aA][rR]
+*.7[zZ]
+*.[rR][aA][rR]
+*.[bB][uU][nN][dD][lL][eE]
+*.[hH][tT][mM]
+*.[hH][tT][mM][lL]
+*.[pP][nN][gG]
+*.[jJ][pP][gG]
+*.[jJ][pP][eE][gG]
+*.[gG][iI][fF]
+*.[wW][eE][bB][pP]
+*.[aA][vV][iI][fF]
+*.[sS][vV][gG]
+*.[iI][cC][oO]
+*.[bB][mM][pP]
+*.[tT][iI][fF]
+*.[tT][iI][fF][fF]
+*.[hH][eE][iI][cC]
+*.[hH][eE][iI][fF]
+*.[pP][sS][dD]
+*.[pP][dD][fF]
+*.[mM][pP]4
+*.[mM][oO][vV]
+*.[wW][eE][bB][mM]
+*.[wW][oO][fF][fF]
+*.[wW][oO][fF][fF]2
+*.[tT][tT][fF]
+*.[oO][tT][fF]
+
+# App-owned scaffolding only. Do not add exceptions for collection content.
+!/index.html
+!/public/favicon.svg

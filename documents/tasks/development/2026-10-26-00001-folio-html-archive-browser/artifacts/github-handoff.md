@@ -1,5 +1,10 @@
 # GitHub handoff — 26 October 2026
 
+Privacy correction: the development screenshots and portable source-history
+bundle described below were removed from the current tree. They must not be
+reintroduced. This report records the original transfer; it is not a current
+instruction to publish binary evidence or export private collection data.
+
 ## Goal
 
 Push the latest compact HTML and image Archive workspace to the user-selected GitHub repository, preserving its source and verification history.
@@ -44,9 +49,6 @@ The Tasks panel tool is unavailable, so the checklist is rendered in chat. Exist
 - The uploaded tree was identical to the verified local index. This final documentation update records that successful transfer; application source remains unchanged.
 - All three GitHub handoff items are complete. The separately documented prior live ZIP/SVG verification limitation remains unchanged.
 
-To recover the original Sites source history independently:
-
-```sh
-git clone documents/tasks/development/2026-10-26-00001-folio-html-archive-browser/artifacts/source-history.bundle original-sites-source
-```
+For original Sites source history, use the authenticated native Sites source
+repository. Do not publish a Git bundle in this public repository.
 
