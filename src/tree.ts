@@ -59,13 +59,20 @@ export function buildTree(archives: ArchiveMeta[], pages: HtmlPage[]): TreeNode[
       const child = node.children[0];
       const page = pageMap.get(child.pageId!);
       if (page?.isIndex && page.path.split('/').slice(0, -1).join('/') === folderPaths.get(node.id)) {
-        return { ...child, label: node.label };
+        return { ...child, label: node.label, sourceFolderId: node.id };
       }
     }
     return node;
   };
   // Top-level order is import order. Within each import, index-first natural order is stable.
   return roots.map(tidy);
+}
+
+/** Real source/custom folder identity, including compact index-page aliases. */
+export function favoriteFolderId(node:TreeNode):string|undefined {
+  if(node.kind==='page')return node.sourceFolderId;
+  if(node.kind==='archive'||node.kind==='folder')return node.id;
+  return node.kind==='collection'?node.folderId:undefined;
 }
 
 /** One identity-preserving projection for kind tabs, favorites, navigation, and galleries. */
@@ -76,9 +83,11 @@ export function buildOrganizedTree(
   organization: ReadonlyMap<string, ItemOrganization>,
   kind: ItemKind,
   favoritesOnly = false,
+  favoriteFolders:ReadonlySet<string> = new Set(),
 ): TreeNode[] {
   const folderIds = new Set(folders.map(folder => folder.id));
-  const available = items.filter(item => (item.kind ?? 'html') === kind && (!favoritesOnly || organization.get(item.id)?.favorite));
+  // Folder favorites describe live membership after moves, so project all items first.
+  const available = items.filter(item => (item.kind ?? 'html') === kind);
   const assigned = new Map<string, HtmlPage[]>();
   const unassigned: HtmlPage[] = [];
   for (const item of available) {
@@ -102,7 +111,17 @@ export function buildOrganizedTree(
     return children.length ? [{ ...node, children, pageCount: children.reduce((count, child) => count + child.pageCount, 0) }] : [];
   });
   // Empty user folders remain usable; archive groups without items in this view do not consume space.
-  return [...collections, ...prune(buildTree(archives, unassigned))];
+  const full=[...collections, ...prune(buildTree(archives, unassigned))];
+  if(!favoritesOnly)return full;
+  const favorites=(nodes:TreeNode[],inherited=false):TreeNode[]=>nodes.flatMap(node=>{
+    const folderId=favoriteFolderId(node);
+    const starred=inherited||!!folderId&&favoriteFolders.has(folderId);
+    if(node.kind==='page')return starred||!!node.pageId&&!!organization.get(node.pageId)?.favorite?[node]:[];
+    const children=favorites(node.children,starred);
+    // Empty starred custom folders remain actionable; unrelated empty folders disappear.
+    return children.length||(starred&&node.kind==='collection'&&!!node.folderId)?[{...node,children,pageCount:children.reduce((sum,child)=>sum+child.pageCount,0)}]:[];
+  });
+  return favorites(full);
 }
 
 export function getPageOrder(tree: TreeNode[]): string[] {

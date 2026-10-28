@@ -1,4 +1,5 @@
 import { uniqueId } from './identity';
+import { resolveFileBlob } from './cloud';
 import { init, parse } from 'es-module-lexer';
 import bridgeSource from './generated/bridge.js?raw';
 import type { ArchiveFile, HtmlPage } from './types';
@@ -28,7 +29,7 @@ export async function preparePreview(page:HtmlPage,files:Map<string,ArchiveFile>
   const binary=async(path:string):Promise<string>=>{
     const existing=dataCache.get(path);if(existing) return existing;
     const file=files.get(path);if(!file){warnings.add(`Missing resource: ${path}`);return `${ARCHIVE_ORIGIN}/${encodePath(path)}`;}
-    const promise=file.blob.arrayBuffer().then(buffer=>`data:${file.mime};base64,${bytesBase64(new Uint8Array(buffer))}`);dataCache.set(path,promise);return promise;
+    const promise=resolveFileBlob(file).then(blob=>blob.arrayBuffer()).then(buffer=>`data:${file.mime};base64,${bytesBase64(new Uint8Array(buffer))}`);dataCache.set(path,promise);return promise;
   };
   const asset=async(reference:string,owner:string)=>{const local=lookup(reference,owner);return local?(await binary(local.path))+local.hash:reference;};
   const replaceAsync=async(text:string,pattern:RegExp,replacer:(match:RegExpExecArray)=>Promise<string>)=>{
@@ -43,7 +44,7 @@ export async function preparePreview(page:HtmlPage,files:Map<string,ArchiveFile>
     if(cssCache.has(path)) return cssCache.get(path)!;
     const file=files.get(path);if(!file){warnings.add(`Missing stylesheet: ${path}`);return '';}
     const next=new Set([...stack,path]);
-    const promise=(async()=>compileCss(await file.blob.text(),path,next))();
+    const promise=(async()=>compileCss(await (await resolveFileBlob(file)).text(),path,next))();
     cssCache.set(path,promise);return promise;
   };
   const compileCss=async(text:string,owner:string,stack:Set<string>=new Set()):Promise<string>=>{
@@ -53,7 +54,7 @@ export async function preparePreview(page:HtmlPage,files:Map<string,ArchiveFile>
     });
     return cssUrls(text,owner);
   };
-  const doc=new DOMParser().parseFromString(await source.blob.text(),'text/html');
+  const doc=new DOMParser().parseFromString(await (await resolveFileBlob(source)).text(),'text/html');
   const originalBase=doc.querySelector('base[href]')?.getAttribute('href');
   let htmlOwner=page.path;
   if(originalBase){const local=lookup(originalBase,page.path);if(local)htmlOwner=local.path+(originalBase.endsWith('/')?'__base__.html':'');}
@@ -96,7 +97,7 @@ export async function preparePreview(page:HtmlPage,files:Map<string,ArchiveFile>
     if(pendingModules.has(path))return;
     // Mark before traversal, so cyclic imports produce stable IDs rather than recursive data URLs.
     pendingModules.set(path,Promise.resolve());
-    const promise=(async()=>{const file=files.get(path)!;modules.set(path,await transformModule(await file.blob.text(),path));})();pendingModules.set(path,promise);
+    const promise=(async()=>{const file=files.get(path)!;modules.set(path,await transformModule(await (await resolveFileBlob(file)).text(),path));})();pendingModules.set(path,promise);
   };
   const moduleEntries:{element:HTMLScriptElement;path?:string;inline?:string}[]=[];
   for(const element of Array.from(doc.querySelectorAll('script[type="module"]')) as HTMLScriptElement[]){
@@ -140,6 +141,6 @@ export async function preparePreview(page:HtmlPage,files:Map<string,ArchiveFile>
     if(typeof path!=='string'||path.length>4096||path.includes('\0')||path.startsWith('/')||path.split('/').includes('..'))throw new Error('Invalid archive path.');
     const file=files.get(path);if(!file)throw new Error(`File not found: ${path}`);
     if(kind==='style'){const text=await css(path);return {blob:new Blob([text],{type:'text/css'}),url:toData(text,'text/css')};}
-    return {blob:file.blob};
+    return {blob:await resolveFileBlob(file)};
   }};
 }

@@ -1,9 +1,13 @@
-import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ArrowLeft,ArrowRight,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle} from 'lucide-react';
+import {useCallback,useEffect,useMemo,useRef,useState,useSyncExternalStore} from 'react';
+import type {CSSProperties} from 'react';
+import {ArrowLeft,ArrowRight,ArrowDownUp,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle} from 'lucide-react';
 import type {ArchiveMeta,HtmlPage,ImportBundle,ItemKind,ItemOrganization,Snapshot,WorkspaceFolder} from './types';
-import {listWorkspace,saveImport,putSnapshot,deleteRoot,getPreference,setPreference,createFolder,setItemFavorite,moveItemsToFolder} from './db';
+import {listWorkspace,saveImport,putSnapshot,deleteRoot,getPreference,setPreference,createFolder,setItemFavorite,moveItemsToFolder,syncCloudCollection,setFolderFavorite} from './db';
 import {importImages} from './archive';
 import {buildTree,buildOrganizedTree,filterTree,getPageOrder,getAncestorIds} from './tree';
+import {projectTree,normalizeOrder,DEFAULT_ORDER} from './order';
+import type {ViewOrder,SortOrder,GroupMode} from './order';
+import {clampSidebar,sidebarMax,SIDEBAR_DEFAULT,SIDEBAR_MIN} from './sidebar';
 import {capturePage,DEFAULT_CAPTURE} from './capture';
 import type {CaptureOptions} from './capture';
 import {ArchiveTree} from './components/ArchiveTree';
@@ -14,8 +18,16 @@ import {ImageGallery} from './components/ImageGallery';
 import {downloadWorkspaceItem,downloadHtmlSource} from './download';
 import {createDemoZip} from './demo';
 import {fetchGoogleDriveFile} from './googleDrive';
+import {isCloudArchive,imageMetadataVersion,subscribeImageMetadata} from './cloud';
+import {dimensionVersion,subscribeImageDimensions,matchesImageShape,normalizeImageShape} from './image-dimensions';
+import type {ImageShape} from './image-dimensions';
+import {normalizeGrid,DEFAULT_GRID,resetGridPages} from './grid';
+import type {GridLayout} from './grid';
+import {CanvasControls} from './components/CanvasControls';
+import {itemDateInfo,treeDateMetadata,dateDescription} from './metadata';
+import {firstFolderPage,removeArchiveFolderFavorites} from './folder-favorites';
 
-type Preferences={selectedId:string|null;selectedByKind?:Partial<Record<ItemKind,string>>;kind?:ItemKind;expanded:string[];viewport:number;fit:boolean};
+type Preferences={selectedId:string|null;selectedByKind?:Partial<Record<ItemKind,string>>;kind?:ItemKind;expanded:string[];viewport:number;fit:boolean;orders?:Partial<Record<ItemKind,ViewOrder>>;sidebarWidth?:number;grids?:Partial<Record<ItemKind,GridLayout>>;imageShape?:ImageShape};
 type ImportResult={name:string;ok:boolean;message:string};
 type QueueState={running:boolean;total:number;done:number;failed:number;current:string};
 const emptyQueue:QueueState={running:false,total:0,done:0,failed:0,current:''};
@@ -41,7 +53,13 @@ export default function App(){
   const [expanded,setExpanded]=useState<Set<string>>(new Set());
   const [query,setQuery]=useState('');
   const [favoritesOnly,setFavoritesOnly]=useState(false);
+  const [favoriteFolders,setFavoriteFolders]=useState<Set<string>>(new Set());
   const [view,setView]=useState<'preview'|'gallery'>('preview');
+  const [grids,setGrids]=useState<Record<ItemKind,GridLayout>>({html:{...DEFAULT_GRID},image:{...DEFAULT_GRID}});
+  const [canvasPages,setCanvasPages]=useState<Record<ItemKind,number>>({html:0,image:0});
+  const [imageShape,setImageShape]=useState<ImageShape>('all');
+  const dimensionRevision=useSyncExternalStore(subscribeImageDimensions,dimensionVersion,dimensionVersion);
+  const imageMetadataRevision=useSyncExternalStore(subscribeImageMetadata,imageMetadataVersion,imageMetadataVersion);
   const [mode,setMode]=useState<'live'|'snapshot'>('live');
   const [viewport,setViewport]=useState(1440);
   const [fit,setFit]=useState(true);
@@ -56,7 +74,7 @@ export default function App(){
   const [captureDialog,setCaptureDialog]=useState(false);
   const [captureOptions,setCaptureOptions]=useState<CaptureOptions>(DEFAULT_CAPTURE);
   const [recapture,setRecapture]=useState(false);
-  const [popover,setPopover]=useState<'settings'|'move'|null>(null);
+  const [popover,setPopover]=useState<'settings'|'move'|'sort'|null>(null);
   const [helpOpen,setHelpOpen]=useState(false);
   const [importsOpen,setImportsOpen]=useState(false);
   const [removeId,setRemoveId]=useState<string|null>(null);
@@ -67,6 +85,13 @@ export default function App(){
   const [organizing,setOrganizing]=useState(false);
   const [downloading,setDownloading]=useState(false);
   const [sidebarOpen,setSidebarOpen]=useState(false);
+  const [orders,setOrders]=useState<Record<ItemKind,ViewOrder>>({html:{...DEFAULT_ORDER},image:{...DEFAULT_ORDER}});
+  const [sidebarPreferred,setSidebarPreferred]=useState(SIDEBAR_DEFAULT);
+  const [sidebarDraft,setSidebarDraft]=useState<number|null>(null);
+  const [windowWidth,setWindowWidth]=useState(window.innerWidth);
+  const sidebarDrag=useRef<{pointerId:number;startX:number;startWidth:number;target:HTMLDivElement}|null>(null);
+  const sidebarWidth=clampSidebar(sidebarDraft??sidebarPreferred,windowWidth);
+  const removedRoots=useRef(new Set<string>());
   const [narrow,setNarrow]=useState(()=>window.matchMedia('(max-width:650px)').matches);
   const [dragging,setDragging]=useState(false);
   const [toast,setToast]=useState('');
@@ -75,6 +100,10 @@ export default function App(){
   const [driveOpen,setDriveOpen]=useState(false);
   const [driveUrl,setDriveUrl]=useState('');
   const [driveError,setDriveError]=useState('');
+  const [cloudState,setCloudState]=useState<'loading'|'ready'|'error'>('loading');
+  const [cloudError,setCloudError]=useState('');
+  const cloudStarted=useRef(false);
+  const cloudLock=useRef(false);
   const inputRef=useRef<HTMLInputElement>(null);
   const searchRef=useRef<HTMLInputElement>(null);
   const importLock=useRef(false);
@@ -87,16 +116,22 @@ export default function App(){
 
   const itemMap=useMemo(()=>new Map(items.map(item=>[item.id,item])),[items]);
   const archiveMap=useMemo(()=>new Map(archives.map(archive=>[archive.id,archive])),[archives]);
+  const folderMap=useMemo(()=>new Map(folders.map(folder=>[folder.id,folder])),[folders]);
   const kindItems=useMemo(()=>items.filter(item=>itemKind(item)===kind),[items,kind]);
-  const tree=useMemo(()=>buildOrganizedTree(archives,items,folders,organization,kind,favoritesOnly),[archives,items,folders,organization,kind,favoritesOnly]);
-  const filteredItems=useMemo(()=>getPageOrder(filterTree(tree,query,itemMap)).map(id=>itemMap.get(id)).filter((item):item is HtmlPage=>!!item),[tree,query,itemMap]);
+  const order=orders[kind];
+  const displayItems=useMemo(()=>kind==='image'?items.filter(item=>itemKind(item)!=='image'||matchesImageShape(item,imageShape)):items,[items,kind,imageShape,dimensionRevision,imageMetadataRevision]);
+  const organizedTree=useMemo(()=>buildOrganizedTree(archives,displayItems,folders,organization,kind,false,favoriteFolders),[archives,displayItems,folders,organization,kind,favoriteFolders]);
+  const favoritesTree=useMemo(()=>buildOrganizedTree(archives,displayItems,folders,organization,kind,true,favoriteFolders),[archives,displayItems,folders,organization,kind,favoriteFolders]);
+  const tree=useMemo(()=>projectTree(filterTree(favoritesOnly?favoritesTree:organizedTree,query,itemMap),itemMap,order,archiveMap,folderMap),[organizedTree,favoritesTree,favoritesOnly,query,itemMap,order,archiveMap,folderMap]);
+  const nodeDates=useMemo(()=>treeDateMetadata(tree,itemMap,archiveMap,folderMap),[tree,itemMap,archiveMap,folderMap]);
+  const filteredItems=useMemo(()=>getPageOrder(tree).map(id=>itemMap.get(id)).filter((item):item is HtmlPage=>!!item),[tree,itemMap]);
   const selected=selectedId?itemMap.get(selectedId):undefined;
   const selectedArchive=selected?archiveMap.get(selected.archiveId):undefined;
   const position=filteredItems.findIndex(item=>item.id===selectedId);
   const roots=archives.filter(archive=>!archive.parentId);
   const htmlCount=items.filter(item=>itemKind(item)==='html').length;
   const imageCount=items.length-htmlCount;
-  const favoriteCount=kindItems.filter(item=>organization.get(item.id)?.favorite).length;
+  const favoriteCount=useMemo(()=>getPageOrder(favoritesTree).length,[favoritesTree]);
   const selectedFavorite=!!selectedId&&!!organization.get(selectedId)?.favorite;
   const selectedFolder=selectedId?organization.get(selectedId)?.folderId??null:null;
   const anyModal=helpOpen||importsOpen||captureDialog||reportOpen||!!removeId||!!folderDialog||warningsOpen||driveOpen;
@@ -106,24 +141,47 @@ export default function App(){
     mounted.current=true;
     void Promise.all([listWorkspace(),getPreference<Preferences>('workspace')]).then(([workspace,prefs])=>{
       if(!mounted.current)return;
-      setArchives(workspace.archives);setItems(workspace.pages);setFolders(workspace.folders);setOrganization(new Map(workspace.organization.map(item=>[item.id,item])));
+      setArchives(workspace.archives);setItems(workspace.pages);setFolders(workspace.folders);setFavoriteFolders(new Set(workspace.favoriteFolders));setOrganization(new Map(workspace.organization.map(item=>[item.id,item])));
       setSnapshots(new Map(workspace.snapshots.map(item=>[item.pageId,item])));
       const nextKind=prefs?.kind??'html';
       setKind(nextKind);remembered.current=prefs?.selectedByKind??{};
       const preferred=prefs?.selectedId;
       const first=workspace.pages.find(item=>itemKind(item)===nextKind);
       setSelectedId(workspace.pages.some(item=>item.id===preferred&&itemKind(item)===nextKind)?preferred!:first?.id??null);
-      setExpanded(new Set(prefs?.expanded??workspace.archives.map(item=>item.id)));
-      setViewport(prefs?.viewport??1440);setFit(prefs?.fit??true);setLoaded(true);
+      setExpanded(new Set(prefs?.expanded??workspace.archives.filter(item=>!isCloudArchive(item.id)).map(item=>item.id)));
+      setViewport(prefs?.viewport??1440);setFit(prefs?.fit??true);
+      setOrders({html:normalizeOrder(prefs?.orders?.html),image:normalizeOrder(prefs?.orders?.image)});
+      setGrids({html:normalizeGrid(prefs?.grids?.html),image:normalizeGrid(prefs?.grids?.image)});setImageShape(normalizeImageShape(prefs?.imageShape));
+      setSidebarPreferred(clampSidebar(prefs?.sidebarWidth??SIDEBAR_DEFAULT,Number.MAX_SAFE_INTEGER));setLoaded(true);
     }).catch(error=>{setStorageError(error instanceof Error?error.message:'Browser storage is unavailable.');setLoaded(true);});
     return()=>{mounted.current=false;};
   },[]);
+  const refreshCloud=useCallback(async()=>{
+    if(cloudLock.current)return;
+    cloudLock.current=true;setCloudState('loading');setCloudError('');
+    try{
+      await syncCloudCollection();
+      const workspace=await listWorkspace();
+      if(!mounted.current)return;
+      // A local import can finish while the catalogue request or IDB read is pending.
+      // Merge its latest state rather than replacing it with the earlier read snapshot.
+      setArchives(current=>[...workspace.archives,...current.filter(item=>!isCloudArchive(item.id)&&!workspace.archives.some(saved=>saved.id===item.id))].filter(item=>!removedRoots.current.has(item.rootId)));
+      setItems(current=>{const ids=new Set(workspace.pages.map(item=>item.id));return [...workspace.pages,...current.filter(item=>!isCloudArchive(item.archiveId)&&!ids.has(item.id))].filter(item=>!removedRoots.current.has(item.rootId));});
+      setCloudState('ready');
+    }catch(error){
+      if(mounted.current){setCloudState('error');setCloudError(error instanceof Error?error.message:'The saved collection could not be loaded. Try again.');}
+    }finally{cloudLock.current=false;}
+  },[]);
+  useEffect(()=>{
+    if(!loaded||storageError||cloudStarted.current)return;
+    cloudStarted.current=true;void refreshCloud();
+  },[loaded,storageError,refreshCloud]);
   useEffect(()=>{
     if(!loaded||storageError)return;
     if(selectedId)remembered.current[kind]=selectedId;
-    const timer=setTimeout(()=>void setPreference('workspace',{selectedId,selectedByKind:remembered.current,kind,expanded:[...expanded],viewport,fit}).catch(()=>setStorageError('Workspace settings could not be saved. Check available browser storage.')),300);
+    const timer=setTimeout(()=>void setPreference('workspace',{selectedId,selectedByKind:remembered.current,kind,expanded:[...expanded],viewport,fit,orders,sidebarWidth:sidebarPreferred,grids,imageShape}).catch(()=>setStorageError('Workspace settings could not be saved. Check available browser storage.')),300);
     return()=>clearTimeout(timer);
-  },[loaded,selectedId,kind,expanded,viewport,fit,storageError]);
+  },[loaded,selectedId,kind,expanded,viewport,fit,orders,sidebarPreferred,grids,imageShape,storageError]);
   useEffect(()=>{
     if(!loaded)return;
     const current=selectedId?itemMap.get(selectedId):undefined;
@@ -152,6 +210,12 @@ export default function App(){
     const media=window.matchMedia('(max-width:650px)');const change=()=>setNarrow(media.matches);
     media.addEventListener('change',change);return()=>media.removeEventListener('change',change);
   },[]);
+  useEffect(()=>{
+    const resize=()=>setWindowWidth(window.innerWidth);
+    window.addEventListener('resize',resize);
+    return()=>{window.removeEventListener('resize',resize);const drag=sidebarDrag.current;if(drag?.target.hasPointerCapture(drag.pointerId))drag.target.releasePointerCapture(drag.pointerId);};
+  },[]);
+  useEffect(()=>{if(narrow){const drag=sidebarDrag.current;sidebarDrag.current=null;setSidebarDraft(null);if(drag?.target.hasPointerCapture(drag.pointerId))drag.target.releasePointerCapture(drag.pointerId);}},[narrow]);
   useEffect(()=>{
     if(!sidebarOpen||!narrow)return;
     const frame=requestAnimationFrame(()=>searchRef.current?.focus());
@@ -227,7 +291,7 @@ export default function App(){
       if(message.type==='error'){cleanup();reject(new Error(message.message));}
     };
     worker.onerror=()=>{cleanup();reject(new Error('The archive worker could not read this ZIP.'));};
-    void file.arrayBuffer().then(buffer=>worker.postMessage({buffer,name:file.name},[buffer])).catch(error=>{cleanup();reject(error);});
+    void file.arrayBuffer().then(buffer=>worker.postMessage({buffer,name:file.name,modifiedAt:file.lastModified},[buffer])).catch(error=>{cleanup();reject(error);});
   });
   const importFiles=async(files:File[])=>{
     if(importLock.current){notify('An import is already running.');return;}
@@ -237,15 +301,15 @@ export default function App(){
     const images=files.filter(file=>!/\.zip$/i.test(file.name));
     const jobs:{name:string;file?:File;images?:File[]}[]=files.filter(file=>/\.zip$/i.test(file.name)).map(file=>({name:file.name,file}));
     if(images.length)jobs.push({name:images.length===1?images[0].name:images.length+' images',images});
-    const results:ImportResult[]=[];let nextArchives=archives;let nextItems=items;let firstNew:HtmlPage|undefined;
+    const results:ImportResult[]=[];let firstNew:HtmlPage|undefined;
     for(const job of jobs){
       setImportProgress('Opening '+job.name+'…');
       try{
         if(job.file&&job.file.size>256*1024*1024)throw new Error('This ZIP is larger than the 256 MB per-archive limit.');
         const bundle=job.file?await importZip(job.file):await importImages(job.images!,'Image upload'+(job.images!.length>1?' ('+job.images!.length+')':''));
         await saveImport(bundle);
-        nextArchives=[...nextArchives,...bundle.archives];nextItems=[...nextItems,...bundle.pages];
-        setArchives(nextArchives);setItems(nextItems);setExpanded(current=>new Set([...current,...bundle.archives.map(archive=>archive.id)]));
+        setArchives(current=>{const next=new Map(current.map(item=>[item.id,item]));for(const item of bundle.archives)next.set(item.id,item);return [...next.values()];});
+        setItems(current=>{const next=new Map(current.map(item=>[item.id,item]));for(const item of bundle.pages)next.set(item.id,item);return [...next.values()];});setExpanded(current=>new Set([...current,...bundle.archives.map(archive=>archive.id)]));
         if(!firstNew){const order=getPageOrder(buildTree(bundle.archives,bundle.pages));const ordered=order.map(id=>bundle.pages.find(item=>item.id===id)!);firstNew=ordered.find(item=>itemKind(item)===kind)??ordered[0];}
         const html=bundle.pages.filter(item=>itemKind(item)==='html').length;const image=bundle.pages.length-html;
         results.push({name:job.name,ok:true,message:bundle.pages.length?html+' HTML · '+image+' images · '+bundle.files.length+' files retained':'No HTML pages or supported images found.'});
@@ -302,6 +366,18 @@ export default function App(){
     try{updateOrganization([await setItemFavorite(id,!organization.get(id)?.favorite)]);}catch(error){notify(error instanceof Error?error.message:'Could not save favorite.');}
     finally{organizationLock.current=false;setOrganizing(false);}
   };
+  const toggleFolderFavorite=async(id:string)=>{
+    if(organizationLock.current)return;
+    organizationLock.current=true;setOrganizing(true);
+    try{setFavoriteFolders(new Set(await setFolderFavorite(id,!favoriteFolders.has(id))));}
+    catch(error){notify(error instanceof Error?error.message:'Could not save folder favorite.');}
+    finally{organizationLock.current=false;setOrganizing(false);}
+  };
+  const openFolder=(id:string)=>{
+    const first=firstFolderPage(tree,id);
+    if(first)selectItem(first,'live');
+    else{setExpanded(current=>new Set([...current,id]));notify(kind==='image'?'No images in this folder in the current view.':'No HTML pages in this folder in the current view.');}
+  };
   const moveItem=async(folderId:string|null,id=selectedId)=>{
     if(!id||organizationLock.current)return;
     organizationLock.current=true;setOrganizing(true);
@@ -340,8 +416,9 @@ export default function App(){
   const removeArchive=async()=>{
     if(!removeId)return;const rootId=removeId;setRemoveId(null);
     try{
-      await deleteRoot(rootId);const nextItems=items.filter(item=>item.rootId!==rootId);const retained=new Set(nextItems.map(item=>item.id));
-      setArchives(current=>current.filter(archive=>archive.rootId!==rootId));setItems(nextItems);
+      await deleteRoot(rootId);removedRoots.current.add(rootId);const nextItems=items.filter(item=>item.rootId!==rootId);const retained=new Set(nextItems.map(item=>item.id));
+      setFavoriteFolders(current=>new Set(removeArchiveFolderFavorites([...current],archives.filter(archive=>archive.rootId===rootId).map(archive=>archive.id))));
+      setArchives(current=>current.filter(archive=>archive.rootId!==rootId));setItems(current=>current.filter(item=>item.rootId!==rootId));
       setSnapshots(current=>new Map([...current].filter(([id])=>retained.has(id))));
       setOrganization(current=>new Map([...current].filter(([id])=>retained.has(id))));
       setCaptureErrors(current=>new Map([...current].filter(([id])=>retained.has(id))));
@@ -357,7 +434,11 @@ export default function App(){
   const pendingCaptures=filteredItems.filter(item=>itemKind(item)==='html'&&(recapture||!snapshots.has(item.id)));
   const folderTitle=selectedFolder?folders.find(folder=>folder.id===selectedFolder)?.name:'Original archive';
 
-  return <div className="app-shell"
+  const updateOrder=(change:Partial<ViewOrder>)=>{setOrders(current=>({...current,[kind]:{...current[kind],...change}}));setCanvasPages(current=>({...current,[kind]:0}));};
+  const updateGrid=(grid:GridLayout)=>{setGrids(current=>({...current,[kind]:normalizeGrid(grid)}));setCanvasPages(current=>({...current,[kind]:0}));};
+  useEffect(()=>{setCanvasPages(current=>resetGridPages(current,'all'));},[query,favoritesOnly]);
+  useEffect(()=>{setCanvasPages(current=>resetGridPages(current,'image'));},[imageShape]);
+  return <div className="app-shell" style={{'--sidebar-width':sidebarWidth+'px'} as CSSProperties}
     onDragEnter={event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();dragDepth.current++;setDragging(true);}}}
     onDragLeave={event=>{event.preventDefault();dragDepth.current--;if(dragDepth.current<=0){dragDepth.current=0;setDragging(false);}}}
     onDragOver={event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();event.dataTransfer.dropEffect='copy';}}}
@@ -375,15 +456,26 @@ export default function App(){
       </div>
       <div className="search-field"><Search size={14}/><input ref={searchRef} value={query} onChange={event=>setQuery(event.target.value)} placeholder="Find a file…" aria-label="Find a file" onKeyDown={event=>{if(event.key==='Escape'){setQuery('');event.currentTarget.blur();}}}/>{query?<button className="icon-button tiny" aria-label="Clear search" onClick={()=>setQuery('')}><X size={13}/></button>:<kbd>/</kbd>}</div>
       <div className="tree-actions">
-        <button className={'favorites-filter '+(favoritesOnly?'active':'')} aria-pressed={favoritesOnly} onClick={()=>setFavoritesOnly(!favoritesOnly)} title="Show favorites only"><Star size={13} fill={favoritesOnly?'currentColor':'none'}/>Favorites{favoriteCount>0&&<span>{favoriteCount}</span>}</button>
+        <button className={'favorites-filter '+(favoritesOnly?'active':'')} aria-pressed={favoritesOnly} onClick={()=>setFavoritesOnly(!favoritesOnly)} title="Show favorites only"><Star size={13} fill={favoritesOnly?'currentColor':'none'}/><span className="favorites-label">Favorites</span>{favoriteCount>0&&<span>{favoriteCount}</span>}</button>
         <span className="flex-space"/>
+        <div className="popover-root sort-root" data-popover-root="sort">
+          <button className={'sort-button '+(popover==='sort'?'active':'')} aria-label="Sort and group files" title="Sort and group files" aria-haspopup="dialog" aria-expanded={popover==='sort'} onClick={()=>setPopover(popover==='sort'?null:'sort')}><ArrowDownUp size={13}/><span>Sort</span></button>
+          {popover==='sort'&&<div className="toolbar-popover sort-popover" role="dialog" aria-label="Sort and group files" data-popover-panel>
+            <div className="popover-title">{kind==='image'?'Images':'HTML pages'}</div><p className="sort-date-note">File dates first; “Added” is used when source dates are unavailable.</p>
+            <label className="setting-row"><span>Sort by</span><select aria-label="Sort files" value={order.sort} onChange={event=>updateOrder({sort:event.target.value as SortOrder})}><option value="name-asc">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option>{kind==='image'&&<><option value="largest">Largest dimensions</option><option value="smallest">Smallest dimensions</option></>}</select></label>
+            {kind==='image'&&<label className="setting-row"><span>Image shape</span><select aria-label="Sidebar image shape" value={imageShape} onChange={event=>setImageShape(normalizeImageShape(event.target.value))}><option value="all">All images</option><option value="landscape">Landscape</option><option value="portrait">Portrait</option><option value="square">Square</option><option value="unknown">Unknown dimensions</option></select></label>}
+            <label className="setting-row"><span>Group by</span><select aria-label="Group files" value={order.group} onChange={event=>updateOrder({group:event.target.value as GroupMode})}><option value="folders">Folders</option><option value="month">Month</option><option value="all">All files</option></select></label>
+          </div>}
+        </div>
         <button className="icon-button tiny" title="New folder" aria-label="New folder" onClick={()=>openFolderDialog()} disabled={!loaded}><FolderPlus size={15}/></button>
         <button className="icon-button tiny" title="Expand all" aria-label="Expand all folders" onClick={()=>setExpanded(new Set(allGroupIds()))}><ChevronsUpDown size={14}/></button>
         <button className="icon-button tiny" title="Collapse all" aria-label="Collapse all folders" onClick={()=>setExpanded(new Set())}><ChevronsDownUp size={14}/></button>
       </div>
       <div className="sidebar-scroll">
+        {cloudState==='loading'&&loaded&&<div className="tree-placeholder" role="status"><LoaderCircle className="spin" size={12}/>Loading saved collection…</div>}
+        {cloudState==='error'&&<div className="tree-placeholder" role="status" title={cloudError}><button className="text-button" onClick={()=>void refreshCloud()}>Collection unavailable · Retry</button></div>}
         {!loaded?<div className="tree-placeholder"><LoaderCircle className="spin" size={15}/>Opening workspace…</div>:
-          <ArchiveTree nodes={tree} pages={kindItems} selectedId={selectedId} expanded={expanded} snapshots={snapshots} captureErrors={captureErrors} query={query} kind={kind} organization={organization}
+          <ArchiveTree nodes={tree} pages={kindItems} selectedId={selectedId} expanded={expanded} snapshots={snapshots} captureErrors={captureErrors} query={query} preFiltered kind={kind} organization={organization} favoriteFolders={favoriteFolders} onFavoriteFolder={id=>void toggleFolderFavorite(id)} onOpenFolder={openFolder} nodeDates={nodeDates} showDates={order.sort==='newest'||order.sort==='oldest'||order.group==='month'}
             onSelect={id=>selectItem(id)} onToggle={id=>setExpanded(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;})} onRemove={requestRemove}/>}
       </div>
       <div className="sidebar-bottom">
@@ -393,6 +485,13 @@ export default function App(){
         <button className="icon-button tiny" aria-label="Help" title="Help and shortcuts" onClick={()=>setHelpOpen(true)}><HelpCircle size={14}/></button>
       </div>
     </aside>
+    <div className="sidebar-resizer" role="separator" aria-label="Resize file sidebar" aria-orientation="vertical" aria-valuemin={SIDEBAR_MIN} aria-valuemax={sidebarMax(windowWidth)} aria-valuenow={sidebarWidth} aria-valuetext={sidebarWidth+' pixels'} tabIndex={narrow?-1:0}
+      onPointerDown={event=>{if(event.button!==0||narrow)return;event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);sidebarDrag.current={pointerId:event.pointerId,startX:event.clientX,startWidth:sidebarWidth,target:event.currentTarget};}}
+      onPointerMove={event=>{const drag=sidebarDrag.current;if(drag?.pointerId===event.pointerId)setSidebarDraft(clampSidebar(drag.startWidth+event.clientX-drag.startX,window.innerWidth));}}
+      onPointerUp={event=>{const drag=sidebarDrag.current;if(drag?.pointerId!==event.pointerId)return;sidebarDrag.current=null;setSidebarPreferred(clampSidebar(drag.startWidth+event.clientX-drag.startX,window.innerWidth));setSidebarDraft(null);if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);}}
+      onPointerCancel={()=>{sidebarDrag.current=null;setSidebarDraft(null);}} onLostPointerCapture={()=>{sidebarDrag.current=null;setSidebarDraft(null);}}
+      onDoubleClick={()=>{setSidebarPreferred(clampSidebar(SIDEBAR_DEFAULT,window.innerWidth));setSidebarDraft(null);}}
+      onKeyDown={event=>{const width=event.key==='ArrowLeft'?sidebarWidth-10:event.key==='ArrowRight'?sidebarWidth+10:event.key==='Home'?SIDEBAR_MIN:event.key==='End'?sidebarMax(windowWidth):undefined;if(width===undefined)return;event.preventDefault();event.stopPropagation();setSidebarPreferred(clampSidebar(width,windowWidth));}}/>
     <main className="main-workspace" inert={sidebarOpen&&narrow}>
       <header className="workspace-toolbar">
         <button className="icon-button mobile-menu" aria-label="Toggle file sidebar" aria-expanded={sidebarOpen} onClick={()=>setSidebarOpen(!sidebarOpen)}><Menu size={18}/></button>
@@ -401,9 +500,9 @@ export default function App(){
           <span className="file-position" aria-live="polite">{position<0?'—':position+1}<span> / {filteredItems.length}</span></span>
           <button className="icon-button" aria-label="Next file" title="Next file · ↓ · loops through all folders" disabled={!filteredItems.length} onClick={()=>step(1)}><ArrowRight size={16}/></button>
         </div>
-        <div className="current-file" title={selected?(selectedArchive?.name??'')+' / '+selected.path:kind==='html'?'HTML pages':'Images'}>
+        <div className="current-file" title={selected?(selectedArchive?.name??'')+' / '+selected.path+'\n'+dateDescription(itemDateInfo(selected,archiveMap)):kind==='html'?'HTML pages':'Images'}>
           <strong>{selected?.label??(kind==='html'?'HTML pages':'Images')}</strong>
-          {selected&&<span>{selectedFolder?folderTitle:selectedArchive?.name}{kind==='html'&&mode==='snapshot'?' · Screenshot':''}</span>}
+          {selected&&<span>{selectedFolder?folderTitle:selectedArchive?.name} · {dateDescription(itemDateInfo(selected,archiveMap))}{kind==='html'&&mode==='snapshot'?' · Screenshot':''}</span>}
         </div>
         {kind==='html'&&selected&&(warnings.length>0||captureErrors.has(selected.id))&&<button className="icon-button warning-button" title="Page notices" aria-label="Page notices" onClick={()=>setWarningsOpen(true)}><AlertTriangle size={15}/></button>}
         <div className="item-actions">
@@ -438,17 +537,19 @@ export default function App(){
             <button className="menu-row" onClick={()=>{setPopover(null);setHelpOpen(true);}}><HelpCircle size={14}/>Help & shortcuts</button>
           </div>}
         </div>
-        <button className={'gallery-toggle '+(view==='gallery'?'active':'')} aria-pressed={view==='gallery'} onClick={()=>setView(view==='gallery'?'preview':'gallery')} title={kind==='html'?'Screenshot gallery':'Image gallery'}><Images size={15}/><span>{view==='gallery'?'Preview':'Gallery'}</span></button>
+        <button className={'gallery-toggle '+(view==='gallery'?'active':'')} aria-label={view==='gallery'?'Show selected file preview':kind==='image'?'Show image gallery':'Show HTML gallery'} aria-pressed={view==='gallery'} onClick={()=>setView(view==='gallery'?'preview':'gallery')} title={kind==='html'?'HTML gallery':'Image gallery'}><Images size={15}/><span>{view==='gallery'?'Preview':'Gallery'}</span></button>
       </header>
+      {view==='gallery'&&<CanvasControls kind={kind} grid={grids[kind]} shape={imageShape} sort={order.sort} onGridChange={updateGrid} onShapeChange={shape=>setImageShape(normalizeImageShape(shape))} onSortChange={sort=>updateOrder({sort})}/>}
       {storageError&&<div className="error-banner" role="alert"><AlertTriangle size={14}/>{storageError}</div>}
       {queue.running&&<div className="queue-banner" role="status"><LoaderCircle className="spin" size={13}/><span>Capturing {Math.min(queue.done+queue.failed+1,queue.total)} / {queue.total}</span><strong>{queue.current}</strong><span>{queue.done} saved</span><button onClick={()=>captureAbort.current?.abort()}>Cancel</button></div>}
       <div className="content-region">
-        {view==='gallery'?(kind==='image'?<ImageGallery items={filteredItems} archives={archives} organization={organization} onOpen={id=>selectItem(id)} onFavorite={id=>void toggleFavorite(id)}/>:<Gallery pages={filteredItems} archives={archives} snapshots={snapshots} query={query} onOpen={(id,nextMode)=>selectItem(id,nextMode)} onCaptureMissing={()=>setCaptureDialog(true)} busy={queue.running}/>):
-          selected?(kind==='image'?<ImageViewer item={selected} fit={fit}/>:<PreviewPane page={selected} mode={mode} snapshot={snapshots.get(selected.id)} viewport={viewport} fit={fit} reloadKey={0} onStep={step} onNavigate={navigateLocal} onCapture={()=>setCaptureDialog(true)} busy={queue.running} onWarnings={setWarnings}/>):
+        {view==='gallery'?(kind==='image'?<ImageGallery grid={grids.image} page={canvasPages.image} onPageChange={page=>setCanvasPages(current=>({...current,image:page}))} groupByMonth={order.group==='month'} items={filteredItems} archives={archives} organization={organization} onOpen={id=>selectItem(id)} onFavorite={id=>void toggleFavorite(id)}/>:<Gallery grid={grids.html} page={canvasPages.html} onPageChange={page=>setCanvasPages(current=>({...current,html:page}))} groupByMonth={order.group==='month'} pages={filteredItems} archives={archives} snapshots={snapshots} query={query} onOpen={(id,nextMode)=>selectItem(id,nextMode)} onCaptureMissing={()=>setCaptureDialog(true)} busy={queue.running}/>):
+          selected?(kind==='image'?<ImageViewer item={selected} fit={fit} nearbyItems={filteredItems.slice(Math.max(0,position-2),position+3).filter(item=>item.id!==selected.id)}/>:<PreviewPane page={selected} mode={mode} snapshot={snapshots.get(selected.id)} viewport={viewport} fit={fit} reloadKey={0} onStep={step} onNavigate={navigateLocal} onCapture={()=>setCaptureDialog(true)} busy={queue.running} onWarnings={setWarnings}/>):
           <div className="workspace-empty">
             {favoritesOnly?<Star size={24}/>:kind==='image'?<Images size={26}/>:<FileCode2 size={26}/>}
-            <h1>{query?'No matching files':favoritesOnly?'No favorites yet':kind==='image'?'Your images, all in one place':'Drop a ZIP. Browse every page.'}</h1>
-            <p>{query?'Try another filename or folder name.':favoritesOnly?'Star a file to keep it close.':'Drop ZIPs or images anywhere, or use the + button to import.'}</p>
+            <h1>{query?'No matching files':favoritesOnly?(favoriteFolders.size?'No files in these favorite folders':'No favorites yet'):cloudState==='loading'?'Loading your saved collection…':kind==='image'?(imageShape==='all'?'Your images, all in one place':`No ${imageShape==='unknown'?'images with unknown dimensions':imageShape+' images'} in this view`):'Drop a ZIP. Browse every page.'}</h1>
+            <p>{query?'Try another filename or folder name.':favoritesOnly?(favoriteFolders.size?'Add files to a favorite folder, switch tabs, or star an individual file.':'Star a file or folder to keep it close.'):'Drop ZIPs or images anywhere, or use the + button to import.'}</p>
+            {kind==='image'&&imageShape!=='all'&&<button className="button" onClick={()=>setImageShape('all')}>Show all image shapes</button>}
             {!query&&!favoritesOnly&&<div className="empty-actions"><button className="button primary" onClick={()=>inputRef.current?.click()} disabled={!loaded||importing}><Upload size={14}/>Import files</button><button className="button" onClick={()=>{setDriveError('');setDriveOpen(true);}} disabled={!loaded||importing}><CloudDownload size={14}/>Google Drive link</button>{!items.length&&<button className="text-button" disabled={!loaded||importing} onClick={()=>void createDemoZip().then(file=>importFiles([file]))}>Try a sample collection</button>}</div>}
           </div>}
       </div>
@@ -460,14 +561,14 @@ export default function App(){
     {folderDialog&&<Modal title={folderDialog.moveId?'Create folder & move item':'New folder'} onClose={()=>{if(!savingFolder)setFolderDialog(null);}}><form onSubmit={submitFolder}><div className="modal-body"><label className="field-label" htmlFor="folder-name">Folder name</label><input autoFocus id="folder-name" className="text-input" value={folderName} onChange={event=>setFolderName(event.target.value)} maxLength={80} placeholder="e.g. Keepers" required/>{folderError&&<p className="form-error" role="alert">{folderError}</p>}<p className="form-note">HTML and images can share a folder. Linked resources stay attached to their pages.</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>setFolderDialog(null)} disabled={savingFolder}>Cancel</button><button className="button primary" disabled={savingFolder||!folderName.trim()}>{savingFolder?'Saving…':folderDialog.moveId?'Create & move':'Create folder'}</button></div></form></Modal>}
     {captureDialog&&<Modal title="Capture HTML pages" onClose={()=>setCaptureDialog(false)}><div className="modal-body"><p className="modal-intro"><strong>{pendingCaptures.length} pages</strong> to capture{query?' matching “'+query+'”':favoritesOnly?' in favorites':''}. You can keep browsing.</p><div className="form-grid"><label>Viewport width<select value={captureOptions.width} onChange={event=>setCaptureOptions({...captureOptions,width:Number(event.target.value)})}><option value={1440}>Desktop · 1440 px</option><option value={1920}>Wide · 1920 px</option><option value={768}>Tablet · 768 px</option><option value={390}>Mobile · 390 px</option></select></label><label>Wait after loading<select value={captureOptions.delay} onChange={event=>setCaptureOptions({...captureOptions,delay:Number(event.target.value)})}><option value={500}>0.5 seconds</option><option value={1000}>1 second</option><option value={2500}>2.5 seconds</option><option value={5000}>5 seconds</option></select></label></div><label className="check-field"><input type="checkbox" checked={captureOptions.fullPage} onChange={event=>setCaptureOptions({...captureOptions,fullPage:event.target.checked})}/>Capture full page</label><label className="check-field"><input type="checkbox" checked={recapture} onChange={event=>setRecapture(event.target.checked)}/>Replace existing screenshots</label><p className="form-note">Keep this tab open. Browser captures may differ for remote images, embedded video, or some effects.</p></div><div className="modal-footer"><button className="button" onClick={()=>setCaptureDialog(false)}>Cancel</button><button className="button primary" disabled={!pendingCaptures.length||queue.running} onClick={()=>{setCaptureDialog(false);void runCaptures(pendingCaptures);}}><Camera size={14}/>Capture {pendingCaptures.length} pages</button></div></Modal>}
     {reportOpen&&<Modal title="Import details" onClose={()=>setReportOpen(false)}><div className="report-list">{importResults.map((result,index)=><div className="report-item" key={index}>{result.ok?<Check size={16}/>:<AlertTriangle size={16}/>}<div><strong>{result.name}</strong><p>{result.message}</p></div></div>)}</div></Modal>}
-    {importsOpen&&<Modal title="Manage imports" onClose={()=>setImportsOpen(false)}><div className="import-list">{roots.length?roots.map(root=><div className="import-row" key={root.id}><div><strong>{root.name}</strong><span>{items.filter(item=>item.rootId===root.id).length} files · {formatBytes(archives.filter(archive=>archive.rootId===root.id).reduce((sum,archive)=>sum+archive.byteSize,0))}</span></div><button className="icon-button" aria-label={'Remove '+root.name} title="Remove import" disabled={importing||queue.running} onClick={()=>{setImportsOpen(false);requestRemove(root.id);}}><Trash2 size={15}/></button></div>):<p className="form-note">No imports yet.</p>}</div></Modal>}
-    {removeId&&<Modal title="Remove this import?" onClose={()=>setRemoveId(null)}><div className="modal-body"><p><strong>{archiveMap.get(removeId)?.name}</strong></p><p>Its files, favorites, and screenshots will be removed from this browser. Your original files are unaffected. Items moved into your folders are part of this import.</p></div><div className="modal-footer"><button className="button" onClick={()=>setRemoveId(null)}>Cancel</button><button className="button danger" onClick={()=>void removeArchive()}>Remove import</button></div></Modal>}
+    {importsOpen&&<Modal title="Manage imports" onClose={()=>setImportsOpen(false)}><div className="import-list">{roots.length?roots.map(root=><div className="import-row" key={root.id}><div><strong>{root.name}</strong><span>{root.cloud?'Private collection · ':'This browser · '}{items.filter(item=>item.rootId===root.id).length} files · {formatBytes(archives.filter(archive=>archive.rootId===root.id).reduce((sum,archive)=>sum+archive.byteSize,0))}</span></div><button className="icon-button" aria-label={'Remove '+root.name} title="Remove import" disabled={importing||queue.running} onClick={()=>{setImportsOpen(false);requestRemove(root.id);}}><Trash2 size={15}/></button></div>):<p className="form-note">No imports yet.</p>}</div></Modal>}
+    {removeId&&<Modal title={isCloudArchive(removeId)?"Hide this collection import?":"Remove this import?"} onClose={()=>setRemoveId(null)}><div className="modal-body"><p><strong>{archiveMap.get(removeId)?.name}</strong></p><p>{isCloudArchive(removeId)?"This import and its local favorites, folder assignments and screenshots will be hidden from this browser. The private collection files remain saved on the Site.":"Its files, favorites, and screenshots will be removed from this browser. Your original files are unaffected. Items moved into your folders are part of this import."}</p></div><div className="modal-footer"><button className="button" onClick={()=>setRemoveId(null)}>Cancel</button><button className="button danger" onClick={()=>void removeArchive()}>{isCloudArchive(removeId)?"Hide import":"Remove import"}</button></div></Modal>}
     {warningsOpen&&<Modal title="Page notices" onClose={()=>setWarningsOpen(false)}><div className="modal-body">{selected&&captureErrors.has(selected.id)&&<div className="error-card"><strong>Screenshot could not be saved</strong><p>{captureErrors.get(selected.id)}</p><button className="button" disabled={queue.running} onClick={()=>{setWarningsOpen(false);void runCaptures([selected]);}}><Camera size={14}/>Retry capture</button></div>}<ul className="notice-list">{warnings.map((warning,index)=><li key={index}>{warning}</li>)}</ul></div></Modal>}
     {helpOpen&&<Modal title="Workspace help" onClose={()=>setHelpOpen(false)}><div className="modal-body help-content">
-      <section><h3>Import and browse</h3><p>Drop several ZIPs or images anywhere, use the + button, or import one downloadable ZIP/image from a Google Drive share link. Nested ZIPs keep their hierarchy. HTML and Images have separate tabs; HTML resources stay attached behind the scenes. Index pages use their folder names.</p><p><kbd>↑</kbd> <kbd>↓</kbd> or the top arrows cycle through every matching file across folders, including collapsed ones. The last file loops to the first. <kbd>←</kbd> <kbd>→</kbd> control focused tree branches. <kbd>/</kbd> finds a file. Typing fields keep their own arrow keys.</p></section>
-      <section><h3>Keep what matters</h3><p>Star a file, filter Favorites, or use Move to folder. Create folders with the sidebar folder-plus button or directly from the move menu. Folders organize references; original paths and linked resources stay intact.</p><p>Download saves original image bytes. For HTML, it downloads a ZIP containing the page’s owning archive and its assets. Source-only HTML and saved PNGs are available in Settings.</p></section>
+      <section><h3>Import and browse</h3><p>Drop several ZIPs or images anywhere, use the + button, or import one downloadable ZIP/image from a Google Drive share link. Nested ZIPs keep their hierarchy. HTML and Images have separate tabs; HTML resources stay attached behind the scenes. Index pages use their folder names. Click a folder to preview its first matching file; its arrow only expands or collapses. Star a folder to include its current contents in Favorites.</p><p><kbd>↑</kbd> <kbd>↓</kbd> or the top arrows cycle through every matching file across folders, including collapsed ones. The last file loops to the first. <kbd>←</kbd> <kbd>→</kbd> control focused tree branches. <kbd>/</kbd> finds a file. Typing fields keep their own arrow keys.</p></section>
+      <section><h3>Keep what matters</h3><p>Star a file, filter Favorites, or use Move to folder. Create folders with the sidebar folder-plus button or directly from the move menu. Use Sort to order names or dates, group by month, or show all files together. Drag the sidebar divider to resize it; double-click to reset. Folders organize references; original paths and linked resources stay intact.</p><p>Download saves original image bytes. For HTML, it downloads a ZIP containing the page’s owning archive and its assets. Source-only HTML and saved PNGs are available in Settings.</p></section>
       <section><h3>Views and screenshots</h3><p>Settings contains preview width, fit, live/screenshot view, and current or batch captures. Gallery shows saved HTML screenshots or your original images. Captures run in the browser while you browse. These are DOM renderings, not server-side Playwright screenshots; remote resources, video, frames, canvas effects, and some CSS may differ.</p></section>
-      <section><h3>Saved in this browser</h3><p>Imports, favorites, folders, and screenshots survive a normal refresh. They are not uploaded or synced. Keep your originals: clearing site storage clears this workspace. Imported scripts run in an isolated frame and can still request their external resources.</p><p>Supported images: PNG, JPEG, WebP, GIF, AVIF, SVG, BMP, and ICO. Limits: 256 MB per ZIP, 768 MB extracted per import, 128 MB per file, 20,000 entries, eight nested ZIP levels. Available browser storage limits the total collection. Password-protected ZIPs and server applications are unsupported.</p></section>
+      <section><h3>Saved collection and browser imports</h3><p>The Banner Collection is saved privately on this Site. Its file list appears automatically; resource bytes load only when you open a page or image. Files you drop or import from Drive are saved only in this browser. Favorites, folders and screenshots also stay in this browser. Clearing browser storage removes those local settings and imports, while the private collection remains available. Hiding a collection import keeps it hidden after refresh on this browser. Imported scripts run in an isolated frame and can still request their external resources.</p><p>Supported images: PNG, JPEG, WebP, GIF, AVIF, SVG, BMP, and ICO. Limits: 256 MB per ZIP, 768 MB extracted per import, 128 MB per file, 20,000 entries, eight nested ZIP levels. Available browser storage limits the total collection. Password-protected ZIPs and server applications are unsupported.</p></section>
     </div></Modal>}
   </div>;
 }

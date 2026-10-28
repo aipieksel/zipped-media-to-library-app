@@ -100,9 +100,11 @@ export async function importImages(
     paths.add(path);
     const mime = mimeForPath(path);
     const id = `${rootId}/${path}`;
+    const modifiedAt = Number.isFinite(file.lastModified) && file.lastModified > 0 ? file.lastModified : undefined;
     // Blob slicing retains the original bytes while assigning a safe, supported image MIME.
     bundle.files.push({ id, archiveId: rootId, path, blob: file.slice(0, file.size, mime), mime });
-    bundle.pages.push({ id, archiveId: rootId, rootId, path, label: path.split('/').at(-1)!, isIndex: false, size: file.size, kind: 'image' });
+    bundle.pages.push({ id, archiveId: rootId, rootId, path, label: path.split('/').at(-1)!, isIndex: false, size: file.size, kind: 'image', addedAt:archive.createdAt, ...(modifiedAt ? { modifiedAt, dateSource: 'file' as const } : {}) });
+    if (modifiedAt) archive.modifiedAt = Math.max(archive.modifiedAt ?? 0, modifiedAt);
     archive.fileCount++;
     archive.imageCount!++;
   }
@@ -287,6 +289,7 @@ export async function parseArchive(
   name: string,
   onProgress?: (message: string) => void,
   overrides: Partial<ImportLimits> = {},
+  sourceModifiedAt?: number,
 ): Promise<ImportBundle> {
   const limits = { ...DEFAULT_IMPORT_LIMITS, ...overrides };
   for (const [key, value] of Object.entries(limits)) {
@@ -332,6 +335,12 @@ export async function parseArchive(
       onProgress?.(`Extracting ${archiveName} · ${entry.path}`);
       const blob = await extractBounded(file, entry, limits, budget);
       const id = `${archiveId}/${entry.path}`;
+      // Ignore ZIP exporter sentinels; use the source file's modification date instead.
+      const stamp = file.date?.getTime();
+      const fileDate = Number.isFinite(stamp) && stamp !== Date.parse('1985-10-26T08:15:00Z') && file.date.getUTCFullYear() > 1980 && file.date.getUTCFullYear() <= 2100 ? stamp : undefined;
+      const modifiedAt = fileDate ?? (Number.isFinite(sourceModifiedAt) && sourceModifiedAt! > 0 ? sourceModifiedAt : undefined);
+      const dateSource = fileDate ? 'file' as const : 'imported' as const;
+      if (modifiedAt) archive.modifiedAt = Math.max(archive.modifiedAt ?? 0, modifiedAt);
       bundle.files.push({ id, archiveId, path: entry.path, blob, mime: mimeForPath(entry.path) });
       archive.fileCount++;
       archive.byteSize += blob.size;
@@ -342,12 +351,13 @@ export async function parseArchive(
         const page: HtmlPage = {
           id, archiveId, rootId, path: entry.path, isIndex, size: blob.size,
           label: isIndex ? pieces.at(-2) ?? archiveName.replace(/\.zip$/i, '') : filename,
-          kind: 'html',
+          kind: 'html', addedAt:createdAt,
+          ...(modifiedAt ? { modifiedAt, dateSource } : {}),
         };
         bundle.pages.push(page);
         archive.pageCount++;
       } else if (isSupportedImagePath(entry.path)) {
-        bundle.pages.push({ id, archiveId, rootId, path: entry.path, label: entry.path.split('/').at(-1)!, isIndex: false, size: blob.size, kind: 'image' });
+        bundle.pages.push({ id, archiveId, rootId, path: entry.path, label: entry.path.split('/').at(-1)!, isIndex: false, size: blob.size, kind: 'image', addedAt:createdAt, ...(modifiedAt ? { modifiedAt, dateSource } : {}) });
         archive.imageCount!++;
       }
       if (/\.zip$/i.test(entry.path)) {

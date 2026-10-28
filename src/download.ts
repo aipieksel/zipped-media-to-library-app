@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { resolveFileBlob } from './cloud';
 import { getArchiveFiles, getFile } from './db';
 import type { HtmlPage } from './types';
 
@@ -18,7 +19,7 @@ export async function downloadWorkspaceItem(item: HtmlPage): Promise<PreparedDow
   const files = await getArchiveFiles(item.archiveId);
   if (!files.has(item.path)) throw new Error('This HTML page is no longer in the workspace.');
   const zip = new JSZip();
-  for (const file of files.values()) zip.file(file.path, file.blob, { createFolders: true });
+  for (const file of files.values()) zip.file(file.path, await resolveFileBlob(file), { createFolders: true });
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 }, streamFiles: true });
   const base = safeFilename(item.label.replace(/\.html?$/i, ''), 'html-page');
   return { blob, filename: `${base}-resources.zip` };

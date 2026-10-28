@@ -10,6 +10,8 @@ export interface ArchiveMeta {
   imageCount?: number;
   byteSize: number;
   warnings: string[];
+  cloud?: { manifest: string; generation: string };
+  modifiedAt?: number;
 }
 
 export interface HtmlPage {
@@ -22,6 +24,14 @@ export interface HtmlPage {
   size: number;
   /** Missing on original workspaces; those records are HTML pages. */
   kind?: ItemKind;
+  modifiedAt?: number;
+  dateSource?: 'file' | 'library' | 'imported';
+  /** Source creation date, only when supplied by the source. */
+  createdAt?: number;
+  /** Time this file was added to the workspace. */
+  addedAt?: number;
+  imageHash?: string;
+  mime?: string;
 }
 
 export type ItemKind = 'html' | 'image';
@@ -39,12 +49,50 @@ export interface ItemOrganization {
   folderId: string | null;
 }
 
-export interface ArchiveFile {
+interface ArchiveFileBase {
   id: string;
   archiveId: string;
   path: string;
-  blob: Blob;
   mime: string;
+}
+
+export interface LocalArchiveFile extends ArchiveFileBase {
+  blob: Blob;
+  remote?: undefined;
+}
+
+export interface RemoteArchiveFile extends ArchiveFileBase {
+  blob?: undefined;
+  remote: { archiveId: string; path: string; size: number; sha256: string };
+}
+
+export type ArchiveFile = LocalArchiveFile | RemoteArchiveFile;
+
+export interface CloudFileDescriptor {
+  id: string; archiveId: string; path: string; mime: string; size: number; sha256: string;
+  slices: { hash: string; offset: number; length: number }[];
+}
+
+export interface CloudCatalogue {
+  schema: 1;
+  generation: string;
+  archives: ArchiveMeta[];
+  pages: HtmlPage[];
+  manifests: Record<string, string>;
+  images?: Record<string, ImageRendition>;
+  stats?: { packages?: number; html?: number; images?: number; [key: string]: number | undefined };
+}
+
+export interface ImageRendition {
+  width?: number;
+  height?: number;
+  placeholder?: string;
+  thumbnail?: string;
+  preview?: string;
+  thumbnailBytes?: number;
+  previewBytes?: number;
+  animated?: boolean;
+  original: { archiveId: string; path: string; mime: string; size: number };
 }
 
 export interface Snapshot {
@@ -56,10 +104,21 @@ export interface Snapshot {
   warnings: string[];
 }
 
+/** Disposable small gallery previews; full user-requested screenshots remain separate. */
+export interface GalleryThumbnail {
+  key: string;
+  pageId: string;
+  blob: Blob;
+  width: number;
+  height: number;
+  createdAt: number;
+  lastUsedAt: number;
+}
+
 export interface ImportBundle {
   archives: ArchiveMeta[];
   pages: HtmlPage[];
-  files: ArchiveFile[];
+  files: LocalArchiveFile[];
 }
 
 export interface TreeNode {
@@ -69,8 +128,16 @@ export interface TreeNode {
   archiveId: string;
   folderId?: string;
   pageId?: string;
+  /** Canonical folder identity retained when its only index page is collapsed. */
+  sourceFolderId?: string;
   children: TreeNode[];
   pageCount: number;
+}
+
+export interface FileDateInfo {
+  timestamp: number;
+  kind: 'modified' | 'created' | 'source' | 'added';
+  label: string;
 }
 
 export interface ImportLimits {

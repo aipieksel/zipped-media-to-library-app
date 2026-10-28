@@ -212,3 +212,32 @@ test('invalid direct-image batches reject empty, unsupported, duplicate, unsafe 
   await assert.rejects(importImages([image], 'Artwork', { maxExpandedBytes: 2 }), /total-size/);
   await assert.rejects(importImages([image, new File(['x'], 'other.png')], 'Artwork', { maxFiles: 1 }), /file limit/);
 });
+
+test('ZIP file dates survive nested imports and missing dates use the source file date', async () => {
+  const inner = new JSZip();
+  const dated = new Date('2026-05-18T12:34:56Z');
+  inner.file('dated.html', '<h1>Dated</h1>', { date: dated });
+  inner.file('image.png', new Uint8Array([137,80,78,71]), { date: dated });
+  const outer = new JSZip();
+  outer.file('nested.zip', await inner.generateAsync({type:'uint8array'}));
+  outer.file('unknown.html', 'Unknown date', {date:new Date('1980-01-01T00:00:00Z')});
+  outer.file('sentinel.html', 'Exporter date', {date:new Date('1985-10-26T08:15:00Z')});
+  const fallback = Date.parse('2026-07-01T00:00:00Z');
+  const bundle = await parseArchive(await outer.generateAsync({type:'arraybuffer'}), 'Dates.zip', undefined, {}, fallback);
+  for (const item of bundle.pages.filter(item=>!['unknown.html','sentinel.html'].includes(item.path))) {
+    assert.equal(item.modifiedAt, dated.getTime());
+    assert.equal(item.dateSource, 'file');
+  }
+  assert.equal(bundle.pages.find(item=>item.path==='unknown.html')!.modifiedAt, fallback);
+  assert.equal(bundle.pages.find(item=>item.path==='unknown.html')!.dateSource, 'imported');
+  assert.equal(bundle.pages.find(item=>item.path==='sentinel.html')!.modifiedAt, fallback);
+  assert.ok(bundle.archives.every(archive=>archive.modifiedAt!==undefined));
+});
+
+test('direct image imports preserve file modification dates', async () => {
+  const modifiedAt = Date.parse('2026-06-21T10:20:30Z');
+  const bundle = await importImages([new File(['<svg/>'], 'dated.svg', {type:'image/svg+xml', lastModified:modifiedAt})]);
+  assert.equal(bundle.pages[0].modifiedAt, modifiedAt);
+  assert.equal(bundle.pages[0].dateSource, 'file');
+  assert.equal(bundle.archives[0].modifiedAt, modifiedAt);
+});

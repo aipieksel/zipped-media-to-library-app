@@ -1,5 +1,6 @@
 import { getArchiveFiles } from './db';
 import { preparePreview } from './preview';
+import type { PreparedPreview } from './preview';
 import { attachFrameBridge } from './frame';
 import type { HtmlPage, Snapshot } from './types';
 export interface CaptureOptions {width:number;height:number;fullPage:boolean;delay:number;}
@@ -12,6 +13,12 @@ export async function capturePage(page:HtmlPage,options:CaptureOptions,signal:Ab
     signal.addEventListener('abort',abort,{once:true});
     void getArchiveFiles(page.archiveId).then(files=>preparePreview(page,files)).then(resolve,reject).finally(()=>{clearTimeout(timer);signal.removeEventListener('abort',abort);});
   });
+  if(signal.aborted)throw new DOMException('Capture cancelled','AbortError');
+  return capturePreparedPage(page,prepared,options,signal);
+}
+
+/** Capture an already prepared page through the same opaque sandbox and bridge. */
+export async function capturePreparedPage(page:HtmlPage,prepared:PreparedPreview,options:CaptureOptions,signal:AbortSignal):Promise<Snapshot>{
   if(signal.aborted)throw new DOMException('Capture cancelled','AbortError');
   return new Promise<Snapshot>((resolve,reject)=>{
     const frame=document.createElement('iframe');frame.title=`Capturing ${page.label}`;frame.setAttribute('sandbox','allow-scripts');frame.setAttribute('aria-hidden','true');frame.tabIndex=-1;

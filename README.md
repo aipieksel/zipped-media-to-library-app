@@ -4,17 +4,21 @@
 ZIPs, HTML, images and captures in private app storage. See [PRIVACY.md](PRIVACY.md)
 for exclusions and the local pre-commit check.
 
-A compact browser workspace for browsing exported HTML pages and images without unpacking each file by hand. Import several ZIPs together, including ZIPs inside ZIPs, drop supported image files directly, or paste a downloadable Google Drive file link. The application keeps imported files in this browser's IndexedDB storage.
+A compact browser workspace for browsing exported HTML pages and images without unpacking each file by hand. A private Site-owned collection loads its metadata automatically and fetches resources as needed. ZIP, image and Google Drive imports remain in this browser's IndexedDB storage. Collection bytes and operational inventories are not bundled in this repository.
 
 ## Using the workspace
 
 1. Drop ZIPs or images anywhere in the workspace, use the **+** button beside the HTML and Images tabs, or use the Google Drive button to paste a share link for one downloadable ZIP/image. Drive folder links are not supported, and private files must be changed to “Anyone with the link” with downloads allowed. The one-line hint at the bottom of the sidebar is also an import button.
 2. Select **HTML** or **Images**. Archive names and folders form the tree; HTML's supporting assets remain available without appearing in the HTML tree. An `index.html` or `index.htm` page uses its containing folder or archive name.
 3. Use **Previous / Next** or **↑ / ↓** to cycle through all matching files in the current tab, including files beneath collapsed branches. Navigation wraps at either end. Search and Favorites narrow the same order used by the tree and gallery.
-4. Star the current item, create a folder in the sidebar, or use **Move to folder**. HTML and images can belong to the same user folder. Choose **Original archive** in the move picker to return an item to its original tree position.
+4. Star a file or an entire folder. Click a folder's name to open its first matching file; use the separate arrow to expand or collapse it. Create folders or use **Move to folder** to organize HTML and images together. Choose **Original archive** in the move picker to return an item to its original tree position.
 5. Open **Settings**, immediately before Gallery, for preview width, fit, screenshot mode and capture controls. The main workspace keeps one compact toolbar, with no branded header or large permanent drop area.
 
-The sidebar occupies the full desktop height. On a narrow screen, the file-sidebar button opens it as a drawer.
+The sidebar occupies the full desktop height. Drag its separator to resize it, or focus the separator and use arrow keys, Home or End. Double-click resets its width. On a narrow screen, the file-sidebar button opens it as a drawer.
+
+Sort alphabetically, newest/oldest, or by original image pixel area. Group by folders or month. Dates use available file metadata with labeled source/archive/import fallbacks. Image filters include landscape, portrait, square and unknown dimensions.
+
+Both HTML and Images have canvas galleries. Choose Auto or 1–8 columns and rows, then page through the matching results. Image cards use small renditions when available. HTML cards show a saved capture first, or prepare an automatic thumbnail as that gallery page is browsed. Automatic thumbnails use a bounded, disposable browser cache.
 
 ### Keyboard shortcuts
 
@@ -23,7 +27,7 @@ The sidebar occupies the full desktop height. On a narrow screen, the file-sideb
 | ↑ / ↓ | Previous / next matching HTML page or image, with wrap-around |
 | Home / End | First / last matching file |
 | ← / → in the tree | Collapse or expand a branch; move focus to a parent or first child |
-| Enter / Space in the tree | Open the focused file or toggle the branch |
+| Enter / Space in the tree | Open the focused file or the folder's first matching descendant |
 | `/` | Focus file search |
 | Escape | Dismiss a dialog or popover; return focus from an HTML preview to the tree |
 
@@ -41,9 +45,9 @@ Captures use an in-browser DOM renderer, not a remote Playwright service. Keep t
 
 ## Storage and import limits
 
-Imports, screenshots, favorites, folders, and view preferences survive a normal refresh in the same browser profile and site. They are not cloud-synchronized. Clearing this site's browser data removes the workspace, so keep the original ZIPs and images. **Settings → Manage imports** lists all imports, including ones whose items have been moved into folders, and allows removal of one import and its associated captures and organization.
+Local imports, screenshots, favorites, folders, and view preferences survive a normal refresh in the same browser profile and site. They are not cloud-synchronized. Clearing this site's browser data removes those local items; keep your original ZIPs and images. The private Site-owned collection remains available. **Settings → Manage imports** removes a local import or hides a saved collection category on that browser; hiding does not delete server originals.
 
-An additive IndexedDB v2 upgrade preserves existing HTML identifiers, screenshots and resource Blobs while indexing previously imported image files. User folders contain organization metadata; original archive paths and linked assets never move.
+Additive IndexedDB upgrades preserve existing HTML identifiers, screenshots and resource Blobs. Version 2 indexes imported images; version 3 adds a separate automatic-thumbnail cache. User folders contain organization metadata; original archive paths and linked assets never move.
 
 | Boundary | Limit |
 | --- | --- |
@@ -70,11 +74,22 @@ npm test
 npm run build
 ```
 
-`dev` and `build` first bundle the in-frame capture bridge. Production output is `dist/`; ChatGPT Sites packaging and publication use the project configuration in `.openai/hosting.json` and the Sites workflow helper.
+`dev` and `build` first bundle the in-frame capture bridge. The build then embeds Vite's app assets in the Worker at `dist/server/index.js`; generated frontend assets are kept in ignored `.sites-runtime/`. The Worker uses the private R2 binding declared in `.openai/hosting.json`. Runtime secrets stay in Sites environment configuration. Builds and tests first run the repository privacy check; enable the local pre-commit hook as described in [PRIVACY.md](PRIVACY.md).
 
 The focused tests cover archive structure, bounds, canonical identity, image classification, direct-image bytes, tree filtering, and organization projections. See [unit verification](documents/tasks/development/2026-10-26-00001-folio-html-archive-browser/artifacts/unit-verification.md). Browser migration, rendered resources, screenshot pixels, keyboard interaction, download delivery and publication require their separate checks; passing Node tests does not establish those outcomes.
 
 
 ## Published Site
 
-https://folio-html-workspace.byronjacobs.chatgpt.site — private to its owner. Production build and deployment passed. The final live ZIP/SVG download check remains unverified because the QA browser did not complete ChatGPT sign-in; original PNG delivery and source ZIP byte/path checks passed. See the task results and browser report for the exact verification boundary.
+https://folio-html-workspace.byronjacobs.chatgpt.site — private to its owner. The current source includes cloud-backed resources, fast image renditions, sorting, resizable navigation, folder favorites and canvas grids. Node tests and production builds do not establish browser visual fidelity, drag geometry, download completion or an actual browser database-migration journey; those checks remain separate.
+
+## Source synchronization
+
+The code is mirrored from native Sites source checkpoint
+`05766c8d5511bcd7cf4b88f6cbf0a9a355c597db`, including published runtime source
+`bd76663eca8e0d1539c7ea7b662c4b374cc56d42` (Site version 8).
+GitHub retains its repository privacy safeguards. Private collection data,
+screenshots, binary history exports and additional operational verification
+reports are excluded from the transfer. Historical development documents in
+this repository describe earlier revisions and are not a current publication
+or access-policy record.
