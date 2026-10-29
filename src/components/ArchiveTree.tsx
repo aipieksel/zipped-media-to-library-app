@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactElement } from 'react';
-import { Camera, ChevronDown, ChevronRight, FileCode2, Image, Folder, FolderOpen, Star, TriangleAlert, X } from 'lucide-react';
+import { Camera, ChevronDown, ChevronRight, FileCode2, Image, Folder, FolderOpen, ScanLine, Star, TriangleAlert, X } from 'lucide-react';
 import type { FileDateInfo, HtmlPage, ItemKind, ItemOrganization, Snapshot, TreeNode } from '../types';
 import { filterTree, favoriteFolderId } from '../tree';
 import {flattenVisibleTree,treeWindow,treeRowScroll,TREE_ROW_HEIGHT,TREE_WINDOW_THRESHOLD} from '../tree-window';
@@ -26,12 +26,16 @@ export interface ArchiveTreeProps {
   onOpenFolder?:(id:string)=>void;
   nodeDates?:ReadonlyMap<string,FileDateInfo>;
   showDates?:boolean;
+  collectionLabel?:string;
+  itemNoun?:string;
+  removableFolderIds?:ReadonlySet<string>;
 }
 
 export function ArchiveTree({
   nodes, pages, selectedId, expanded, snapshots, captureErrors, query,
-  onSelect, onToggle, onRemove, kind='html', organization, preFiltered=false, favoriteFolders, onFavoriteFolder, onOpenFolder, nodeDates, showDates=false,
+  onSelect, onToggle, onRemove, kind='html', organization, preFiltered=false, favoriteFolders, onFavoriteFolder, onOpenFolder, nodeDates, showDates=false, collectionLabel, itemNoun, removableFolderIds,
 }: ArchiveTreeProps) {
+  const noun=itemNoun??(kind==='image'?'images':'pages');
   const pageMap = useMemo(() => new Map(pages.map((page) => [page.id, page])), [pages]);
   const search = query.trim().toLocaleLowerCase();
   const visible = useMemo(() => preFiltered ? nodes : filterTree(nodes, search, pageMap), [nodes, pageMap, search, preFiltered]);
@@ -128,7 +132,7 @@ export function ArchiveTree({
         }
       }
     };
-    const Icon = isPage ? (page?.kind==='image' ? Image : FileCode2) : isOpen ? FolderOpen : Folder;
+    const Icon = isPage ? (itemNoun==='icons'?ScanLine:page?.kind==='image' ? Image : FileCode2) : isOpen ? FolderOpen : Folder;
 
     return (
       <li
@@ -141,7 +145,7 @@ export function ArchiveTree({
         aria-setsize={flat?.setSize}
         aria-selected={isPage ? selected : undefined}
         aria-expanded={!isPage ? isOpen : undefined}
-        aria-label={isPage ? `${node.label}${favorite ? ', favorite' : ''}${snapshot ? ', screenshot available' : ''}${captureError ? ', capture failed' : ''}` : `${node.label}${folderFavorite?', favorite folder':''}, ${node.pageCount} ${kind==='image'?(node.pageCount===1?'image':'images'):(node.pageCount===1?'page':'pages')}`}
+        aria-label={isPage ? `${node.label}${favorite ? ', favorite' : ''}${snapshot ? ', screenshot available' : ''}${captureError ? ', capture failed' : ''}` : `${node.label}${folderFavorite?', favorite folder':''}, ${node.pageCount} ${node.pageCount===1?noun.replace(/s$/,''):noun}`}
         tabIndex={selected || (!hasTabStop && isFirst) ? 0 : -1}
         data-page-id={node.pageId}
         data-tree-node={node.id}
@@ -165,7 +169,7 @@ export function ArchiveTree({
           {snapshot && <Camera className="folio-tree-camera" size={14} aria-label="Screenshot available" />}
           {!snapshot && captureError && <TriangleAlert className="folio-tree-warning" size={14} aria-label={`Capture failed: ${captureError}`} />}
           {!isPage && <span className="folio-tree-count" aria-hidden="true">{node.pageCount}</span>}
-          {level === 1 && node.kind === 'archive' && (
+          {((level === 1 && node.kind === 'archive') || (folderId&&removableFolderIds?.has(folderId))) && (
             <button
               type="button"
               className="folio-tree-remove"
@@ -187,9 +191,9 @@ export function ArchiveTree({
     );
   };
 
-  if (!nodes.length) return <div className="folio-tree-empty">{kind==='image'?'No images here yet.':'No HTML pages here yet.'}<span>Import files or change the filter.</span></div>;
-  if (!visible.length) return <div className="folio-tree-empty" role="status">No pages match “{query.trim()}”.<span>Try a filename or folder name.</span></div>;
+  if (!nodes.length) return <div className="folio-tree-empty">{itemNoun?`No ${itemNoun} here yet.`:kind==='image'?'No images here yet.':'No HTML pages here yet.'}<span>Import files or change the filter.</span></div>;
+  if (!visible.length) return <div className="folio-tree-empty" role="status">No {noun} match “{query.trim()}”.<span>Try a filename or folder name.</span></div>;
 
-  if(virtual)return <ul ref={treeRef} className="folio-tree folio-tree-virtual" style={{height:windowed.height}} role="tree" aria-label={kind==='image'?'Images':'HTML pages'} onFocusCapture={event=>setFocusedRowId((event.target as HTMLElement).closest<HTMLElement>('[data-tree-node]')?.dataset.treeNode??null)} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node|null))setFocusedRowId(null);}}>{mountedRows.map(({row,index},position)=>renderNode(row.node,row.level,position===0,row,index))}</ul>;
-  return <ul ref={treeRef} className="folio-tree" role="tree" aria-label={kind==='image'?'Images':'HTML pages'}>{visible.map((node, index) => renderNode(node, 1, index === 0))}</ul>;
+  if(virtual)return <ul ref={treeRef} className="folio-tree folio-tree-virtual" style={{height:windowed.height}} role="tree" aria-label={collectionLabel??(kind==='image'?'Images':'HTML pages')} onFocusCapture={event=>setFocusedRowId((event.target as HTMLElement).closest<HTMLElement>('[data-tree-node]')?.dataset.treeNode??null)} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node|null))setFocusedRowId(null);}}>{mountedRows.map(({row,index},position)=>renderNode(row.node,row.level,position===0,row,index))}</ul>;
+  return <ul ref={treeRef} className="folio-tree" role="tree" aria-label={collectionLabel??(kind==='image'?'Images':'HTML pages')}>{visible.map((node, index) => renderNode(node, 1, index === 0))}</ul>;
 }

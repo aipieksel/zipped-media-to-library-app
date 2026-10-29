@@ -21,6 +21,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
   const [snapshot, setSnapshot] = useState<IconCollectionSnapshot>(emptyIconSnapshot);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
+  const [preferencesError, setPreferencesError] = useState('');
   const [notice, setNotice] = useState('');
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState<Map<string, IconJobProgress>>(new Map());
@@ -123,7 +124,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
     let poll: ReturnType<typeof setInterval> | undefined;
     const onFocus = () => {void refresh();};
     const onVisibility = () => {if (document.visibilityState === 'visible') void refresh();};
-    setLoaded(false); setError('');
+    setLoaded(false); setError(''); setPreferencesError('');
     void openIconCollection(databaseName).then(async opened => {
       if (!mounted.current || generation !== lifecycle.current) {opened.close(); return;}
       store = opened; storeRef.current = opened;
@@ -165,7 +166,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
     const store = requireStore();
     const report = await store.importEntries(batch, snapshotRef.current.preferences.defaultMode);
     if (!mounted.current || storeRef.current !== store) return report;
-    setError('');
+    setError(''); setPreferencesError('');
     const summary = `${report.added.length} PNG${report.added.length === 1 ? '' : 's'} saved locally${report.folders.length ? ` · ${report.folders.length} folder${report.folders.length === 1 ? '' : 's'} added` : ''}${report.skipped ? ` · ${report.skipped} skipped` : ''}.`;
     setNotice([summary, ...report.notices.slice(0, 3)].join(' '));
     await refresh(); void processQueue();
@@ -213,7 +214,17 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
     catch (failure) {if (mounted.current) setError(messageOf(failure, 'The local Icons change could not be saved.'));}
   }, [refresh, requireStore]);
 
-  const setPreferences = useCallback((patch: Partial<IconPreferences> & {mode?: ConversionMode}) => mutate(store => store.setPreferences(patch)), [mutate]);
+  const setPreferences = useCallback(async (patch: Partial<IconPreferences> & {mode?: ConversionMode}) => {
+    // Selection/expansion saves also run automatically. Their success cannot
+    // dismiss an unrelated failed import; their failure must not replace it.
+    try {
+      await requireStore().setPreferences(patch);
+      if (mounted.current) setPreferencesError('');
+      await refresh();
+    } catch (failure) {
+      if (mounted.current) setPreferencesError(messageOf(failure, 'The Icons view settings could not be saved.'));
+    }
+  }, [refresh, requireStore]);
   const abortItem = useCallback((id: string) => {if (activeJob.current?.claim.id === id) activeJob.current.controller.abort();}, []);
   const retry = useCallback((id: string, mode?: ConversionMode) => {abortItem(id); return mutate(store => store.retry(id, mode));}, [abortItem, mutate]);
   const cancel = useCallback((id: string) => {abortItem(id); return mutate(store => store.cancel(id));}, [abortItem, mutate]);
@@ -235,7 +246,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
 
   return {
     snapshot, items: snapshot.items, folders: snapshot.folders, preferences: snapshot.preferences,
-    loaded, error, storageError: error, importing, busy: importing || snapshot.items.some(item => item.status === 'processing'), notice, progress,
+    loaded, error: error || preferencesError, storageError: error || preferencesError, importing, busy: importing || snapshot.items.some(item => item.status === 'processing'), notice, progress,
     refresh, importEntries, importFiles, importDrop, importCapturedDrop, setPreferences,
     createFolder, moveItem, toggleFavorite, toggleFolderFavorite, retry, cancel, cancelAll, removeItem, removeFolder,
     getSource, getOutput, dismissNotice,

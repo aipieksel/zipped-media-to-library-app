@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useMemo,useRef,useState,useSyncExternalStore} from 'react';
 import type {CSSProperties} from 'react';
-import {ArrowLeft,ArrowRight,ArrowDownUp,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle,Library,ScanLine,ShieldCheck} from 'lucide-react';
+import {ArrowLeft,ArrowRight,ArrowDownUp,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle,ScanLine,ShieldCheck} from 'lucide-react';
 import type {ArchiveMeta,HtmlPage,ImportBundle,ItemKind,ItemOrganization,Snapshot,WorkspaceFolder} from './types';
 import {listWorkspace,saveImport,putSnapshot,deleteRoot,getPreference,setPreference,createFolder,setItemFavorite,moveItemsToFolder,syncCloudCollection,setFolderFavorite} from './db';
 import {importImages} from './archive';
@@ -27,6 +27,11 @@ import {CanvasControls} from './components/CanvasControls';
 import {itemDateInfo,treeDateMetadata,dateDescription} from './metadata';
 import {firstFolderPage,removeArchiveFolderFavorites} from './folder-favorites';
 import {PngSvgWorkspace} from './components/PngSvgWorkspace';
+import {useIconCollection} from './useIconCollection';
+import {projectIconCollection,UNCATEGORIZED_ICON_FOLDER_ID} from './icon-collection';
+
+type WorkspaceTab = ItemKind | 'icons';
+const hashTab = (): WorkspaceTab | null => window.location.hash === '#icons' || window.location.hash === '#png-to-svg' ? 'icons' : window.location.hash === '#images' ? 'image' : window.location.hash === '#html' ? 'html' : null;
 
 type Preferences={selectedId:string|null;selectedByKind?:Partial<Record<ItemKind,string>>;kind?:ItemKind;expanded:string[];viewport:number;fit:boolean;orders?:Partial<Record<ItemKind,ViewOrder>>;sidebarWidth?:number;grids?:Partial<Record<ItemKind,GridLayout>>;imageShape?:ImageShape};
 type ImportResult={name:string;ok:boolean;message:string};
@@ -37,25 +42,36 @@ const formatBytes=(bytes:number)=>bytes>1024*1024?(bytes/1024/1024).toFixed(1)+'
 
 function Modal({title,children,onClose}:{title:string;children:React.ReactNode;onClose:()=>void}){
   const ref=useRef<HTMLDialogElement>(null);
-  useEffect(()=>{const previous=document.activeElement as HTMLElement;const element=ref.current;element?.showModal();const frame=requestAnimationFrame(()=>element?.querySelector<HTMLElement>('input,select')?.focus());return()=>{cancelAnimationFrame(frame);element?.close();if(previous?.isConnected&&previous!==document.body)previous.focus();else document.querySelector<HTMLElement>('.settings-button')?.focus();};},[]);
+  useEffect(()=>{const previous=document.activeElement as HTMLElement;const element=ref.current;element?.showModal();const frame=requestAnimationFrame(()=>element?.querySelector<HTMLElement>('input,select')?.focus());return()=>{cancelAnimationFrame(frame);element?.close();if(previous?.isConnected&&previous!==document.body&&!previous.matches(':disabled'))previous.focus();else document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();};},[]);
   return <dialog ref={ref} className="modal" aria-labelledby="modal-title" onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>{if(event.target===ref.current)onClose();}}>
     <div className="modal-header"><h2 id="modal-title">{title}</h2><button className="icon-button" onClick={onClose} aria-label="Close dialog"><X size={16}/></button></div>{children}
   </dialog>;
 }
 
 export default function App(){
-  const [workspace,setWorkspace]=useState<'library'|'converter'>(()=>window.location.hash==='#png-to-svg'?'converter':'library');
-  const [archives,setArchives]=useState<ArchiveMeta[]>([]);
-  const [items,setItems]=useState<HtmlPage[]>([]);
+  const [tab,setTab]=useState<WorkspaceTab>(()=>hashTab()??'html');
+  const navigationRevision=useRef(0);
+  const currentTab=useRef(tab);currentTab.current=tab;
+  const isIcons=tab==='icons';
+  const icons=useIconCollection();
+  const [iconSelectedId,setIconSelectedId]=useState<string|null>(null);
+  const [iconExpanded,setIconExpanded]=useState<Set<string>>(new Set());
+  const [iconOrder,setIconOrder]=useState<ViewOrder>({...DEFAULT_ORDER});
+  const iconPreferencesLoaded=useRef(false);
+  const iconFolderInput=useRef<HTMLInputElement>(null);
+  const [iconRemove,setIconRemove]=useState<{id:string;folder:boolean;name:string}|null>(null);
+  const [removingIcon,setRemovingIcon]=useState(false);
+  const [libraryArchives,setArchives]=useState<ArchiveMeta[]>([]);
+  const [libraryItems,setItems]=useState<HtmlPage[]>([]);
   const [snapshots,setSnapshots]=useState<Map<string,Snapshot>>(new Map());
-  const [folders,setFolders]=useState<WorkspaceFolder[]>([]);
-  const [organization,setOrganization]=useState<Map<string,ItemOrganization>>(new Map());
+  const [libraryFolders,setFolders]=useState<WorkspaceFolder[]>([]);
+  const [libraryOrganization,setOrganization]=useState<Map<string,ItemOrganization>>(new Map());
   const [kind,setKind]=useState<ItemKind>('html');
-  const [selectedId,setSelectedId]=useState<string|null>(null);
-  const [expanded,setExpanded]=useState<Set<string>>(new Set());
+  const [librarySelectedId,setLibrarySelectedId]=useState<string|null>(null);
+  const [libraryExpanded,setLibraryExpanded]=useState<Set<string>>(new Set());
   const [query,setQuery]=useState('');
   const [favoritesOnly,setFavoritesOnly]=useState(false);
-  const [favoriteFolders,setFavoriteFolders]=useState<Set<string>>(new Set());
+  const [libraryFavoriteFolders,setFavoriteFolders]=useState<Set<string>>(new Set());
   const [view,setView]=useState<'preview'|'gallery'>('preview');
   const [grids,setGrids]=useState<Record<ItemKind,GridLayout>>({html:{...DEFAULT_GRID},image:{...DEFAULT_GRID}});
   const [canvasPages,setCanvasPages]=useState<Record<ItemKind,number>>({html:0,image:0});
@@ -116,23 +132,42 @@ export default function App(){
   const remembered=useRef<Partial<Record<ItemKind,string>>>({});
   const organizationLock=useRef(false);
 
+  const iconProjection=useMemo(()=>projectIconCollection({items:icons.items,folders:icons.folders,preferences:icons.preferences}),[icons.items,icons.folders,icons.preferences]);
+  const iconFavorites=useMemo(()=>projectIconCollection({items:icons.items,folders:icons.folders,preferences:icons.preferences},true),[icons.items,icons.folders,icons.preferences]);
+  const items=isIcons?iconProjection.pages:libraryItems;
+  const archives=isIcons?iconProjection.archives:libraryArchives;
+  const folders=isIcons?iconProjection.folders:libraryFolders;
+  const organization=isIcons?iconProjection.organization:libraryOrganization;
+  const favoriteFolders=isIcons?iconProjection.favoriteFolders:libraryFavoriteFolders;
+  const selectedId=isIcons?iconSelectedId:librarySelectedId;
+  const setSelectedId=isIcons?setIconSelectedId:setLibrarySelectedId;
+  const expanded=isIcons?iconExpanded:libraryExpanded;
+  const setExpanded=isIcons?setIconExpanded:setLibraryExpanded;
+  const displayKind:ItemKind=isIcons?'image':kind;
+  const navigationLoaded=isIcons?icons.loaded:loaded;
+  const navigationBusy=isIcons?icons.importing:importing;
   useEffect(()=>{
-    const change=()=>{setWorkspace(window.location.hash==='#png-to-svg'?'converter':'library');setPopover(null);setSidebarOpen(false);setDragging(false);dragDepth.current=0;};
+    const change=()=>{const next=hashTab()??kind;navigationRevision.current++;currentTab.current=next;setTab(next);if(next!=='icons')setKind(next);setQuery('');setFavoritesOnly(false);setPopover(null);setSidebarOpen(false);setDragging(false);dragDepth.current=0;};
     window.addEventListener('hashchange',change);return()=>window.removeEventListener('hashchange',change);
-  },[]);
-  const switchWorkspace=(next:'library'|'converter')=>{
-    setWorkspace(next);setPopover(null);setSidebarOpen(false);setDragging(false);dragDepth.current=0;
-    window.location.hash=next==='converter'?'png-to-svg':'library';
-  };
+  },[kind]);
+  useEffect(()=>{
+    if(!icons.loaded||iconPreferencesLoaded.current)return;
+    iconPreferencesLoaded.current=true;setIconSelectedId(icons.preferences.selectedId);setIconExpanded(new Set(icons.preferences.expanded));setIconOrder(normalizeOrder(icons.preferences.order));
+  },[icons.loaded,icons.preferences]);
+  useEffect(()=>{
+    if(!icons.loaded||!iconPreferencesLoaded.current)return;
+    const timer=setTimeout(()=>void icons.setPreferences({selectedId:iconSelectedId,expanded:[...iconExpanded],order:iconOrder}),300);
+    return()=>clearTimeout(timer);
+  },[icons.loaded,iconSelectedId,iconExpanded,iconOrder,icons.setPreferences]);
 
   const itemMap=useMemo(()=>new Map(items.map(item=>[item.id,item])),[items]);
   const archiveMap=useMemo(()=>new Map(archives.map(archive=>[archive.id,archive])),[archives]);
   const folderMap=useMemo(()=>new Map(folders.map(folder=>[folder.id,folder])),[folders]);
-  const kindItems=useMemo(()=>items.filter(item=>itemKind(item)===kind),[items,kind]);
-  const order=orders[kind];
-  const displayItems=useMemo(()=>kind==='image'?items.filter(item=>itemKind(item)!=='image'||matchesImageShape(item,imageShape)):items,[items,kind,imageShape,dimensionRevision,imageMetadataRevision]);
-  const organizedTree=useMemo(()=>buildOrganizedTree(archives,displayItems,folders,organization,kind,false,favoriteFolders),[archives,displayItems,folders,organization,kind,favoriteFolders]);
-  const favoritesTree=useMemo(()=>buildOrganizedTree(archives,displayItems,folders,organization,kind,true,favoriteFolders),[archives,displayItems,folders,organization,kind,favoriteFolders]);
+  const kindItems=useMemo(()=>items.filter(item=>itemKind(item)===displayKind),[items,displayKind]);
+  const order=isIcons?iconOrder:orders[kind];
+  const displayItems=useMemo(()=>!isIcons&&kind==='image'?items.filter(item=>itemKind(item)!=='image'||matchesImageShape(item,imageShape)):items,[items,kind,isIcons,imageShape,dimensionRevision,imageMetadataRevision]);
+  const organizedTree=useMemo(()=>isIcons?iconProjection.tree:buildOrganizedTree(archives,displayItems,folders,organization,kind,false,favoriteFolders),[isIcons,iconProjection.tree,archives,displayItems,folders,organization,kind,favoriteFolders]);
+  const favoritesTree=useMemo(()=>isIcons?iconFavorites.tree:buildOrganizedTree(archives,displayItems,folders,organization,kind,true,favoriteFolders),[isIcons,iconFavorites.tree,archives,displayItems,folders,organization,kind,favoriteFolders]);
   const tree=useMemo(()=>projectTree(filterTree(favoritesOnly?favoritesTree:organizedTree,query,itemMap),itemMap,order,archiveMap,folderMap),[organizedTree,favoritesTree,favoritesOnly,query,itemMap,order,archiveMap,folderMap]);
   const nodeDates=useMemo(()=>treeDateMetadata(tree,itemMap,archiveMap,folderMap),[tree,itemMap,archiveMap,folderMap]);
   const filteredItems=useMemo(()=>getPageOrder(tree).map(id=>itemMap.get(id)).filter((item):item is HtmlPage=>!!item),[tree,itemMap]);
@@ -140,12 +175,12 @@ export default function App(){
   const selectedArchive=selected?archiveMap.get(selected.archiveId):undefined;
   const position=filteredItems.findIndex(item=>item.id===selectedId);
   const roots=archives.filter(archive=>!archive.parentId);
-  const htmlCount=items.filter(item=>itemKind(item)==='html').length;
-  const imageCount=items.length-htmlCount;
+  const htmlCount=libraryItems.filter(item=>itemKind(item)==='html').length;
+  const imageCount=libraryItems.length-htmlCount;
   const favoriteCount=useMemo(()=>getPageOrder(favoritesTree).length,[favoritesTree]);
   const selectedFavorite=!!selectedId&&!!organization.get(selectedId)?.favorite;
   const selectedFolder=selectedId?organization.get(selectedId)?.folderId??null:null;
-  const anyModal=helpOpen||importsOpen||captureDialog||reportOpen||!!removeId||!!folderDialog||warningsOpen||driveOpen;
+  const anyModal=helpOpen||importsOpen||captureDialog||reportOpen||!!removeId||!!folderDialog||warningsOpen||driveOpen||!!iconRemove;
   const notify=useCallback((message:string)=>{setToast(message);clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setToast(''),6000);},[]);
 
   useEffect(()=>{
@@ -154,12 +189,12 @@ export default function App(){
       if(!mounted.current)return;
       setArchives(workspace.archives);setItems(workspace.pages);setFolders(workspace.folders);setFavoriteFolders(new Set(workspace.favoriteFolders));setOrganization(new Map(workspace.organization.map(item=>[item.id,item])));
       setSnapshots(new Map(workspace.snapshots.map(item=>[item.pageId,item])));
-      const nextKind=prefs?.kind??'html';
-      setKind(nextKind);remembered.current=prefs?.selectedByKind??{};
+      const initialTab=hashTab();const nextKind=initialTab&&initialTab!=='icons'?initialTab:prefs?.kind??'html';
+      setKind(nextKind);if(!initialTab)setTab(nextKind);remembered.current=prefs?.selectedByKind??{};
       const preferred=prefs?.selectedId;
       const first=workspace.pages.find(item=>itemKind(item)===nextKind);
-      setSelectedId(workspace.pages.some(item=>item.id===preferred&&itemKind(item)===nextKind)?preferred!:first?.id??null);
-      setExpanded(new Set(prefs?.expanded??workspace.archives.filter(item=>!isCloudArchive(item.id)).map(item=>item.id)));
+      setLibrarySelectedId(workspace.pages.some(item=>item.id===preferred&&itemKind(item)===nextKind)?preferred!:first?.id??null);
+      setLibraryExpanded(new Set(prefs?.expanded??workspace.archives.filter(item=>!isCloudArchive(item.id)).map(item=>item.id)));
       setViewport(prefs?.viewport??1440);setFit(prefs?.fit??true);
       setOrders({html:normalizeOrder(prefs?.orders?.html),image:normalizeOrder(prefs?.orders?.image)});
       setGrids({html:normalizeGrid(prefs?.grids?.html),image:normalizeGrid(prefs?.grids?.image)});setImageShape(normalizeImageShape(prefs?.imageShape));
@@ -189,18 +224,18 @@ export default function App(){
   },[loaded,storageError,refreshCloud]);
   useEffect(()=>{
     if(!loaded||storageError)return;
-    if(selectedId)remembered.current[kind]=selectedId;
-    const timer=setTimeout(()=>void setPreference('workspace',{selectedId,selectedByKind:remembered.current,kind,expanded:[...expanded],viewport,fit,orders,sidebarWidth:sidebarPreferred,grids,imageShape}).catch(()=>setStorageError('Workspace settings could not be saved. Check available browser storage.')),300);
+    if(librarySelectedId)remembered.current[kind]=librarySelectedId;
+    const timer=setTimeout(()=>void setPreference('workspace',{selectedId:librarySelectedId,selectedByKind:remembered.current,kind,expanded:[...libraryExpanded],viewport,fit,orders,sidebarWidth:sidebarPreferred,grids,imageShape}).catch(()=>setStorageError('Workspace settings could not be saved. Check available browser storage.')),300);
     return()=>clearTimeout(timer);
-  },[loaded,selectedId,kind,expanded,viewport,fit,orders,sidebarPreferred,grids,imageShape,storageError]);
+  },[loaded,librarySelectedId,kind,libraryExpanded,viewport,fit,orders,sidebarPreferred,grids,imageShape,storageError]);
   useEffect(()=>{
-    if(!loaded)return;
+    if(!navigationLoaded)return;
     const current=selectedId?itemMap.get(selectedId):undefined;
-    if(current&&itemKind(current)===kind&&filteredItems.some(item=>item.id===current.id))return;
-    const preferred=remembered.current[kind];
+    if(current&&itemKind(current)===displayKind&&filteredItems.some(item=>item.id===current.id))return;
+    const preferred=isIcons?icons.preferences.selectedId:remembered.current[kind];
     const next=filteredItems.find(item=>item.id===preferred)??filteredItems[0];
     setSelectedId(next?.id??null);
-  },[loaded,kind,filteredItems,itemMap,selectedId]);
+  },[navigationLoaded,kind,displayKind,isIcons,filteredItems,itemMap,selectedId,icons.preferences.selectedId]);
   useEffect(()=>{
     if(!selectedId)return;
     setExpanded(current=>{
@@ -264,11 +299,11 @@ export default function App(){
 
   const selectItem=useCallback((id:string,nextMode?:'live'|'snapshot')=>{
     const item=itemMap.get(id);if(!item)return;
-    remembered.current[itemKind(item)]=id;
-    setSelectedId(id);setKind(itemKind(item));setView('preview');if(nextMode)setMode(nextMode);
+    if(!isIcons)remembered.current[itemKind(item)]=id;
+    setSelectedId(id);if(!isIcons)setKind(itemKind(item));setView('preview');if(nextMode)setMode(nextMode);
     setExpanded(current=>new Set([...current,...getAncestorIds(tree,id)]));setSidebarOpen(false);setPopover(null);
     if(document.activeElement?.closest('[role=tree]'))requestAnimationFrame(()=>document.querySelector<HTMLElement>('[data-page-id="'+CSS.escape(id)+'"]')?.focus({preventScroll:true}));
-  },[tree,itemMap]);
+  },[tree,itemMap,isIcons]);
   const step=useCallback((direction:number)=>{
     if(!filteredItems.length)return;
     const next=position<0?(direction>0?0:filteredItems.length-1):(position+direction+filteredItems.length)%filteredItems.length;
@@ -276,7 +311,7 @@ export default function App(){
   },[filteredItems,position,selectItem]);
   useEffect(()=>{
     const keydown=(event:KeyboardEvent)=>{
-      if(workspace!=='library'||anyModal||popover||event.defaultPrevented||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+      if(anyModal||popover||event.defaultPrevented||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
       const target=event.target as Element;
       if(target?.closest?.('input,textarea,select,[contenteditable="true"],[role="textbox"]'))return;
       if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();step(event.key==='ArrowDown'?1:-1);}
@@ -285,10 +320,30 @@ export default function App(){
       if(event.key==='/'){event.preventDefault();setSidebarOpen(true);requestAnimationFrame(()=>searchRef.current?.focus());}
     };
     window.addEventListener('keydown',keydown);return()=>window.removeEventListener('keydown',keydown);
-  },[step,filteredItems,selectItem,anyModal,popover,workspace]);
-  const switchKind=(nextKind:ItemKind)=>{
-    if(selectedId)remembered.current[kind]=selectedId;
-    setKind(nextKind);setQuery('');setSelectedId(remembered.current[nextKind]??null);setPopover(null);setWarnings([]);
+  },[step,filteredItems,selectItem,anyModal,popover]);
+  const switchTab=(nextTab:WorkspaceTab)=>{
+    if(!isIcons&&selectedId)remembered.current[kind]=selectedId;
+    navigationRevision.current++;currentTab.current=nextTab;
+    setTab(nextTab);if(nextTab!=='icons'){setKind(nextTab);setLibrarySelectedId(remembered.current[nextTab]??null);}
+    setQuery('');setFavoritesOnly(false);setPopover(null);setWarnings([]);setSidebarOpen(false);setDragging(false);dragDepth.current=0;
+    window.location.hash=nextTab==='image'?'images':nextTab;
+  };
+  const importIcons=async(files:File[])=>{
+    setQuery('');setFavoritesOnly(false);
+    const report=await icons.importFiles(files);
+    if(report?.added.length)setIconSelectedId(report.added[0].id);
+    if(report)setIconExpanded(current=>new Set([...current,...report.folders.map(folder=>folder.id)]));
+  };
+  const confirmIconRemoval=async()=>{
+    if(!iconRemove||removingIcon)return;
+    const target=iconRemove,revision=navigationRevision.current;setRemovingIcon(true);
+    await (target.folder?icons.removeFolder(target.id):icons.removeItem(target.id));
+    setRemovingIcon(false);setIconRemove(null);
+    requestAnimationFrame(()=>{
+      const active=document.activeElement;
+      if(revision===navigationRevision.current&&currentTab.current==='icons'&&(!active||active===document.body||!active.isConnected||active.matches(':disabled')))
+        document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
+    });
   };
 
   const importZip=(file:File)=>new Promise<ImportBundle>((resolve,reject)=>{
@@ -308,6 +363,7 @@ export default function App(){
     if(importLock.current){notify('An import is already running.');return;}
     if(!loaded||storageError){notify('Enable browser storage and reload before importing files.');return;}
     if(!files.length)return;
+    const importNavigation=navigationRevision.current;
     importLock.current=true;setImporting(true);setDragging(false);
     const images=files.filter(file=>!/\.zip$/i.test(file.name));
     const jobs:{name:string;file?:File;images?:File[]}[]=files.filter(file=>/\.zip$/i.test(file.name)).map(file=>({name:file.name,file}));
@@ -320,7 +376,7 @@ export default function App(){
         const bundle=job.file?await importZip(job.file):await importImages(job.images!,'Image upload'+(job.images!.length>1?' ('+job.images!.length+')':''));
         await saveImport(bundle);
         setArchives(current=>{const next=new Map(current.map(item=>[item.id,item]));for(const item of bundle.archives)next.set(item.id,item);return [...next.values()];});
-        setItems(current=>{const next=new Map(current.map(item=>[item.id,item]));for(const item of bundle.pages)next.set(item.id,item);return [...next.values()];});setExpanded(current=>new Set([...current,...bundle.archives.map(archive=>archive.id)]));
+        setItems(current=>{const next=new Map(current.map(item=>[item.id,item]));for(const item of bundle.pages)next.set(item.id,item);return [...next.values()];});setLibraryExpanded(current=>new Set([...current,...bundle.archives.map(archive=>archive.id)]));
         if(!firstNew){const order=getPageOrder(buildTree(bundle.archives,bundle.pages));const ordered=order.map(id=>bundle.pages.find(item=>item.id===id)!);firstNew=ordered.find(item=>itemKind(item)===kind)??ordered[0];}
         const html=bundle.pages.filter(item=>itemKind(item)==='html').length;const image=bundle.pages.length-html;
         results.push({name:job.name,ok:true,message:bundle.pages.length?html+' HTML · '+image+' images · '+bundle.files.length+' files retained':'No HTML pages or supported images found.'});
@@ -328,7 +384,11 @@ export default function App(){
       setImportResults([...results]);
     }
     importLock.current=false;setImporting(false);setImportProgress('');
-    if(firstNew){remembered.current[itemKind(firstNew)]=firstNew.id;setKind(itemKind(firstNew));setSelectedId(firstNew.id);setMode('live');setView('preview');setQuery('');setFavoritesOnly(false);}
+    if(firstNew&&importNavigation===navigationRevision.current&&currentTab.current!=='icons'){
+      const next=itemKind(firstNew);remembered.current[next]=firstNew.id;currentTab.current=next;
+      setTab(next);setKind(next);setLibrarySelectedId(firstNew.id);setMode('live');setView('preview');setQuery('');setFavoritesOnly(false);
+      window.location.hash=next==='image'?'images':next;
+    }
     const success=results.filter(result=>result.ok).length;const failed=results.length-success;
     notify(success+' import'+(success===1?'':'s')+' saved'+(failed?' · '+failed+' could not be opened':'')+'.');
     if(failed||results.some(result=>result.message.startsWith('No HTML')))setReportOpen(true);
@@ -372,12 +432,14 @@ export default function App(){
   };
   const updateOrganization=(values:ItemOrganization[])=>setOrganization(current=>{const next=new Map(current);for(const item of values)next.set(item.id,item);return next;});
   const toggleFavorite=async(id:string)=>{
+    if(isIcons){await icons.toggleFavorite(id);return;}
     if(organizationLock.current)return;
     organizationLock.current=true;setOrganizing(true);
     try{updateOrganization([await setItemFavorite(id,!organization.get(id)?.favorite)]);}catch(error){notify(error instanceof Error?error.message:'Could not save favorite.');}
     finally{organizationLock.current=false;setOrganizing(false);}
   };
   const toggleFolderFavorite=async(id:string)=>{
+    if(isIcons){await icons.toggleFolderFavorite(id);return;}
     if(organizationLock.current)return;
     organizationLock.current=true;setOrganizing(true);
     try{setFavoriteFolders(new Set(await setFolderFavorite(id,!favoriteFolders.has(id))));}
@@ -387,10 +449,11 @@ export default function App(){
   const openFolder=(id:string)=>{
     const first=firstFolderPage(tree,id);
     if(first)selectItem(first,'live');
-    else{setExpanded(current=>new Set([...current,id]));notify(kind==='image'?'No images in this folder in the current view.':'No HTML pages in this folder in the current view.');}
+    else{setExpanded(current=>new Set([...current,id]));notify(isIcons?'No icons in this folder in the current view.':kind==='image'?'No images in this folder in the current view.':'No HTML pages in this folder in the current view.');}
   };
   const moveItem=async(folderId:string|null,id=selectedId)=>{
     if(!id||organizationLock.current)return;
+    if(isIcons){await icons.moveItem(id,folderId??UNCATEGORIZED_ICON_FOLDER_ID);setPopover(null);setQuery('');if(folderId)setIconExpanded(current=>new Set([...current,folderId]));return;}
     organizationLock.current=true;setOrganizing(true);
     try{
       updateOrganization(await moveItemsToFolder([id],folderId));setPopover(null);setQuery('');
@@ -403,6 +466,7 @@ export default function App(){
   const submitFolder=async(event:React.FormEvent)=>{
     event.preventDefault();if(savingFolder)return;setSavingFolder(true);setFolderError('');
     try{
+      if(isIcons){const folder=await icons.createFolder(folderName);if(folderDialog?.moveId)await icons.moveItem(folderDialog.moveId,folder.id);setIconExpanded(current=>new Set([...current,folder.id]));setQuery('');setFolderDialog(null);return;}
       const folder=await createFolder(folderName);setFolders(current=>[...current,folder]);setExpanded(current=>new Set([...current,folder.id]));setQuery('');
       if(folderDialog?.moveId)updateOrganization(await moveItemsToFolder([folderDialog.moveId],folder.id));
       setFolderDialog(null);notify('Folder created'+(folderDialog?.moveId?' and item moved.':'.'));
@@ -412,7 +476,10 @@ export default function App(){
   const downloadSelected=async(sourceOnly=false)=>{
     if(!selected||downloading)return;setDownloading(true);setPopover(null);
     try{
-      const file=await(sourceOnly?downloadHtmlSource(selected):downloadWorkspaceItem(selected));
+      const icon=isIcons?icons.items.find(item=>item.id===selected.id):undefined;
+      const output=icon?await icons.getOutput(icon.id,icon.revision):undefined;
+      if(isIcons&&!output)throw new Error('Finish converting this icon before downloading.');
+      const file=output&&icon?{blob:output,filename:icon.filename}:await(sourceOnly?downloadHtmlSource(selected):downloadWorkspaceItem(selected));
       const url=URL.createObjectURL(file.blob);
       const link=document.createElement('a');link.href=url;link.download=file.filename;link.click();
       window.setTimeout(()=>URL.revokeObjectURL(url),30_000);
@@ -436,7 +503,7 @@ export default function App(){
       notify('Import removed from this browser.');
     }catch(error){notify(error instanceof Error?error.message:'Could not remove this import.');}
   };
-  const requestRemove=(id:string)=>{if(importing||queue.running)notify('Finish or cancel the current job before removing an import.');else setRemoveId(id);};
+  const requestRemove=(id:string)=>{if(isIcons){const folder=icons.folders.find(item=>item.id===id);if(folder)setIconRemove({id,folder:true,name:folder.name});return;}if(importing||queue.running)notify('Finish or cancel the current job before removing an import.');else setRemoveId(id);};
   const allGroupIds=()=>{const ids:string[]=[];const visit=(nodes:typeof tree)=>{for(const node of nodes){if(node.kind!=='page'){ids.push(node.id);visit(node.children);}}};visit(tree);return ids;};
   const navigateLocal=(path:string)=>{
     const target=items.find(item=>itemKind(item)==='html'&&item.archiveId===selected?.archiveId&&(item.path===path||item.path===path.replace(/\/$/,'')+'/index.html'));
@@ -445,31 +512,36 @@ export default function App(){
   const pendingCaptures=filteredItems.filter(item=>itemKind(item)==='html'&&(recapture||!snapshots.has(item.id)));
   const folderTitle=selectedFolder?folders.find(folder=>folder.id===selectedFolder)?.name:'Original archive';
 
-  const updateOrder=(change:Partial<ViewOrder>)=>{setOrders(current=>({...current,[kind]:{...current[kind],...change}}));setCanvasPages(current=>({...current,[kind]:0}));};
+  const updateOrder=(change:Partial<ViewOrder>)=>{if(isIcons){setIconOrder(current=>({...current,...change}));return;}setOrders(current=>({...current,[kind]:{...current[kind],...change}}));setCanvasPages(current=>({...current,[kind]:0}));};
   const updateGrid=(grid:GridLayout)=>{setGrids(current=>({...current,[kind]:normalizeGrid(grid)}));setCanvasPages(current=>({...current,[kind]:0}));};
   useEffect(()=>{setCanvasPages(current=>resetGridPages(current,'all'));},[query,favoritesOnly]);
   useEffect(()=>{setCanvasPages(current=>resetGridPages(current,'image'));},[imageShape]);
   return <div className="folio-app">
     <nav className="workspace-navigation" aria-label="Workspace">
-      <button aria-pressed={workspace==='library'} onClick={()=>switchWorkspace('library')}><Library size={14}/>Library</button>
-      <button aria-pressed={workspace==='converter'} onClick={()=>switchWorkspace('converter')}><ScanLine size={14}/>PNG to SVG</button>
-      {workspace==='converter'&&<span className="workspace-navigation-note"><ShieldCheck size={12}/>On-device conversion</span>}
+      <div className="workspace-tabs" role="tablist" aria-label="File type" onKeyDown={event=>{
+        const values:WorkspaceTab[]=['html','image','icons'];const index=values.indexOf(tab);
+        const next=event.key==='ArrowRight'?(index+1)%3:event.key==='ArrowLeft'?(index+2)%3:event.key==='Home'?0:event.key==='End'?2:null;
+        if(next===null)return;event.preventDefault();event.stopPropagation();switchTab(values[next]);event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+      }}>
+        <button role="tab" tabIndex={tab==='html'?0:-1} aria-selected={tab==='html'} onClick={()=>switchTab('html')}><FileCode2 size={14}/>HTML<span>{htmlCount}</span></button>
+        <button role="tab" tabIndex={tab==='image'?0:-1} aria-selected={tab==='image'} onClick={()=>switchTab('image')}><Images size={14}/>Images<span>{imageCount}</span></button>
+        <button role="tab" tabIndex={isIcons?0:-1} aria-selected={isIcons} onClick={()=>switchTab('icons')}><ScanLine size={14}/>Icons<span>{icons.items.length}</span></button>
+      </div>
+      {isIcons&&<span className="workspace-navigation-note"><ShieldCheck size={12}/>Saved on this device</span>}
     </nav>
-    {workspace==='library'&&<div className="app-shell" style={{'--sidebar-width':sidebarWidth+'px'} as CSSProperties}
+    <div className="app-shell" style={{'--sidebar-width':sidebarWidth+'px'} as CSSProperties}
     onDragEnter={event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();dragDepth.current++;setDragging(true);}}}
     onDragLeave={event=>{event.preventDefault();dragDepth.current--;if(dragDepth.current<=0){dragDepth.current=0;setDragging(false);}}}
     onDragOver={event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();event.dataTransfer.dropEffect='copy';}}}
-    onDrop={event=>{event.preventDefault();dragDepth.current=0;setDragging(false);void importFiles(Array.from(event.dataTransfer.files));}}>
-    <input ref={inputRef} type="file" accept=".zip,.png,.jpg,.jpeg,.webp,.gif,.svg,.avif,.bmp,.ico" multiple hidden aria-label="Import ZIPs or images" onChange={event=>{void importFiles(Array.from(event.target.files??[]));event.target.value='';}}/>
+    onDrop={event=>{event.preventDefault();dragDepth.current=0;setDragging(false);if(isIcons){void icons.importDrop(event.dataTransfer).then(report=>{if(report?.added.length)setIconSelectedId(report.added[0].id);if(report)setIconExpanded(current=>new Set([...current,...report.folders.map(folder=>folder.id)]));});setQuery('');setFavoritesOnly(false);}else void importFiles(Array.from(event.dataTransfer.files));}}>
+    <input ref={inputRef} type="file" accept={isIcons?".png":".zip,.png,.jpg,.jpeg,.webp,.gif,.svg,.avif,.bmp,.ico"} multiple hidden aria-label={isIcons?"Import PNG icons":"Import ZIPs or images"} onChange={event=>{void (isIcons?importIcons(Array.from(event.target.files??[])):importFiles(Array.from(event.target.files??[])));event.target.value='';}}/>
+    <input ref={iconFolderInput} type="file" multiple hidden aria-label="Import PNG folder" {...{webkitdirectory:""}} onChange={event=>{void importIcons(Array.from(event.target.files??[]));event.target.value='';}}/>
     {sidebarOpen&&<button className="sidebar-scrim" aria-label="Close file sidebar" onClick={()=>setSidebarOpen(false)}/>}
     <aside className={'sidebar '+(sidebarOpen?'is-open':'')} aria-label="File navigation">
       <div className="sidebar-top">
-        <div className="kind-tabs" role="tablist" aria-label="File type">
-          <button role="tab" aria-selected={kind==='html'} className={kind==='html'?'active':''} onClick={()=>switchKind('html')}><FileCode2 size={14}/>HTML<span>{htmlCount}</span></button>
-          <button role="tab" aria-selected={kind==='image'} className={kind==='image'?'active':''} onClick={()=>switchKind('image')}><Images size={14}/>Images<span>{imageCount}</span></button>
-        </div>
-        <button className="icon-button" aria-label="Import files" title="Import ZIPs or images" disabled={!loaded||importing} onClick={()=>inputRef.current?.click()}><Plus size={17}/></button>
-        <button className="icon-button" aria-label="Import from Google Drive" title="Import from Google Drive" disabled={!loaded||importing} onClick={()=>{setDriveError('');setDriveOpen(true);}}><CloudDownload size={16}/></button>
+        <span className="sidebar-section-title">{isIcons?'Icons':kind==='html'?'HTML':'Images'}<span>{kindItems.length}</span></span>
+        <button className="icon-button" aria-label="Import files" title={isIcons?'Import PNG icons':'Import ZIPs or images'} disabled={!navigationLoaded||navigationBusy} onClick={()=>inputRef.current?.click()}><Plus size={17}/></button>
+        {isIcons?<button className="icon-button" aria-label="Import folder" title="Import a folder of PNG icons" disabled={!icons.loaded||icons.importing} onClick={()=>iconFolderInput.current?.click()}><FolderInput size={16}/></button>:<button className="icon-button" aria-label="Import from Google Drive" title="Import from Google Drive" disabled={!loaded||importing} onClick={()=>{setDriveError('');setDriveOpen(true);}}><CloudDownload size={16}/></button>}
       </div>
       <div className="search-field"><Search size={14}/><input ref={searchRef} value={query} onChange={event=>setQuery(event.target.value)} placeholder="Find a file…" aria-label="Find a file" onKeyDown={event=>{if(event.key==='Escape'){setQuery('');event.currentTarget.blur();}}}/>{query?<button className="icon-button tiny" aria-label="Clear search" onClick={()=>setQuery('')}><X size={13}/></button>:<kbd>/</kbd>}</div>
       <div className="tree-actions">
@@ -478,26 +550,26 @@ export default function App(){
         <div className="popover-root sort-root" data-popover-root="sort">
           <button className={'sort-button '+(popover==='sort'?'active':'')} aria-label="Sort and group files" title="Sort and group files" aria-haspopup="dialog" aria-expanded={popover==='sort'} onClick={()=>setPopover(popover==='sort'?null:'sort')}><ArrowDownUp size={13}/><span>Sort</span></button>
           {popover==='sort'&&<div className="toolbar-popover sort-popover" role="dialog" aria-label="Sort and group files" data-popover-panel>
-            <div className="popover-title">{kind==='image'?'Images':'HTML pages'}</div><p className="sort-date-note">File dates first; “Added” is used when source dates are unavailable.</p>
-            <label className="setting-row"><span>Sort by</span><select aria-label="Sort files" value={order.sort} onChange={event=>updateOrder({sort:event.target.value as SortOrder})}><option value="name-asc">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option>{kind==='image'&&<><option value="largest">Largest dimensions</option><option value="smallest">Smallest dimensions</option></>}</select></label>
-            {kind==='image'&&<label className="setting-row"><span>Image shape</span><select aria-label="Sidebar image shape" value={imageShape} onChange={event=>setImageShape(normalizeImageShape(event.target.value))}><option value="all">All images</option><option value="landscape">Landscape</option><option value="portrait">Portrait</option><option value="square">Square</option><option value="unknown">Unknown dimensions</option></select></label>}
+            <div className="popover-title">{isIcons?'Icons':kind==='image'?'Images':'HTML pages'}</div><p className="sort-date-note">File dates first; “Added” is used when source dates are unavailable.</p>
+            <label className="setting-row"><span>Sort by</span><select aria-label="Sort files" value={order.sort} onChange={event=>updateOrder({sort:event.target.value as SortOrder})}><option value="name-asc">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option>{!isIcons&&kind==='image'&&<><option value="largest">Largest dimensions</option><option value="smallest">Smallest dimensions</option></>}</select></label>
+            {!isIcons&&kind==='image'&&<label className="setting-row"><span>Image shape</span><select aria-label="Sidebar image shape" value={imageShape} onChange={event=>setImageShape(normalizeImageShape(event.target.value))}><option value="all">All images</option><option value="landscape">Landscape</option><option value="portrait">Portrait</option><option value="square">Square</option><option value="unknown">Unknown dimensions</option></select></label>}
             <label className="setting-row"><span>Group by</span><select aria-label="Group files" value={order.group} onChange={event=>updateOrder({group:event.target.value as GroupMode})}><option value="folders">Folders</option><option value="month">Month</option><option value="all">All files</option></select></label>
           </div>}
         </div>
-        <button className="icon-button tiny" title="New folder" aria-label="New folder" onClick={()=>openFolderDialog()} disabled={!loaded}><FolderPlus size={15}/></button>
+        <button className="icon-button tiny" title="New folder" aria-label="New folder" onClick={()=>openFolderDialog()} disabled={!navigationLoaded}><FolderPlus size={15}/></button>
         <button className="icon-button tiny" title="Expand all" aria-label="Expand all folders" onClick={()=>setExpanded(new Set(allGroupIds()))}><ChevronsUpDown size={14}/></button>
         <button className="icon-button tiny" title="Collapse all" aria-label="Collapse all folders" onClick={()=>setExpanded(new Set())}><ChevronsDownUp size={14}/></button>
       </div>
       <div className="sidebar-scroll">
-        {cloudState==='loading'&&loaded&&<div className="tree-placeholder" role="status"><LoaderCircle className="spin" size={12}/>Loading saved collection…</div>}
-        {cloudState==='error'&&<div className="tree-placeholder" role="status" title={cloudError}><button className="text-button" onClick={()=>void refreshCloud()}>Collection unavailable · Retry</button></div>}
-        {!loaded?<div className="tree-placeholder"><LoaderCircle className="spin" size={15}/>Opening workspace…</div>:
-          <ArchiveTree nodes={tree} pages={kindItems} selectedId={selectedId} expanded={expanded} snapshots={snapshots} captureErrors={captureErrors} query={query} preFiltered kind={kind} organization={organization} favoriteFolders={favoriteFolders} onFavoriteFolder={id=>void toggleFolderFavorite(id)} onOpenFolder={openFolder} nodeDates={nodeDates} showDates={order.sort==='newest'||order.sort==='oldest'||order.group==='month'}
+        {!isIcons&&cloudState==='loading'&&loaded&&<div className="tree-placeholder" role="status"><LoaderCircle className="spin" size={12}/>Loading saved collection…</div>}
+        {!isIcons&&cloudState==='error'&&<div className="tree-placeholder" role="status" title={cloudError}><button className="text-button" onClick={()=>void refreshCloud()}>Collection unavailable · Retry</button></div>}
+        {!navigationLoaded?<div className="tree-placeholder"><LoaderCircle className="spin" size={15}/>Opening workspace…</div>:
+          <ArchiveTree nodes={tree} pages={kindItems} selectedId={selectedId} expanded={expanded} snapshots={snapshots} captureErrors={captureErrors} query={query} preFiltered kind={displayKind} collectionLabel={isIcons?'Icons':undefined} itemNoun={isIcons?'icons':undefined} removableFolderIds={isIcons?new Set(icons.folders.filter(folder=>folder.id!==UNCATEGORIZED_ICON_FOLDER_ID).map(folder=>folder.id)):undefined} organization={organization} favoriteFolders={favoriteFolders} onFavoriteFolder={id=>void toggleFolderFavorite(id)} onOpenFolder={openFolder} nodeDates={nodeDates} showDates={order.sort==='newest'||order.sort==='oldest'||order.group==='month'}
             onSelect={id=>selectItem(id)} onToggle={id=>setExpanded(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;})} onRemove={requestRemove}/>}
       </div>
       <div className="sidebar-bottom">
-        <button className="drop-note" onClick={()=>inputRef.current?.click()} disabled={importing} title={importing?importProgress:'Drop ZIPs or images anywhere in this workspace'}>
-          {importing?<LoaderCircle size={12} className="spin"/>:<Upload size={12}/>}<span>{importing?importProgress:'Drop ZIPs or images here'}</span>
+        <button className="drop-note" onClick={()=>inputRef.current?.click()} disabled={navigationBusy} title={isIcons?'Drop PNGs or folders anywhere in this workspace':importing?importProgress:'Drop ZIPs or images anywhere in this workspace'}>
+          {navigationBusy?<LoaderCircle size={12} className="spin"/>:<Upload size={12}/>}<span>{isIcons?(icons.importing?'Saving icons…':'Drop PNGs or folders here'):importing?importProgress:'Drop ZIPs or images here'}</span>
         </button>
         <button className="icon-button tiny" aria-label="Help" title="Help and shortcuts" onClick={()=>setHelpOpen(true)}><HelpCircle size={14}/></button>
       </div>
@@ -517,25 +589,25 @@ export default function App(){
           <span className="file-position" aria-live="polite">{position<0?'—':position+1}<span> / {filteredItems.length}</span></span>
           <button className="icon-button" aria-label="Next file" title="Next file · ↓ · loops through all folders" disabled={!filteredItems.length} onClick={()=>step(1)}><ArrowRight size={16}/></button>
         </div>
-        <div className="current-file" title={selected?(selectedArchive?.name??'')+' / '+selected.path+'\n'+dateDescription(itemDateInfo(selected,archiveMap)):kind==='html'?'HTML pages':'Images'}>
-          <strong>{selected?.label??(kind==='html'?'HTML pages':'Images')}</strong>
-          {selected&&<span>{selectedFolder?folderTitle:selectedArchive?.name} · {dateDescription(itemDateInfo(selected,archiveMap))}{kind==='html'&&mode==='snapshot'?' · Screenshot':''}</span>}
+        <div className="current-file" title={selected?(selectedArchive?.name??'')+' / '+selected.path+'\n'+dateDescription(itemDateInfo(selected,archiveMap)):isIcons?'Icons':kind==='html'?'HTML pages':'Images'}>
+          <strong>{selected?.label??(isIcons?'Icons':kind==='html'?'HTML pages':'Images')}</strong>
+          {selected&&<span>{selectedFolder?folderTitle:selectedArchive?.name} · {dateDescription(itemDateInfo(selected,archiveMap))}{!isIcons&&kind==='html'&&mode==='snapshot'?' · Screenshot':''}</span>}
         </div>
-        {kind==='html'&&selected&&(warnings.length>0||captureErrors.has(selected.id))&&<button className="icon-button warning-button" title="Page notices" aria-label="Page notices" onClick={()=>setWarningsOpen(true)}><AlertTriangle size={15}/></button>}
+        {!isIcons&&kind==='html'&&selected&&(warnings.length>0||captureErrors.has(selected.id))&&<button className="icon-button warning-button" title="Page notices" aria-label="Page notices" onClick={()=>setWarningsOpen(true)}><AlertTriangle size={15}/></button>}
         <div className="item-actions">
           <button className={'icon-button '+(selectedFavorite?'is-favorite':'')} aria-label={selectedFavorite?'Remove favorite':'Add favorite'} title={selectedFavorite?'Remove favorite':'Add favorite'} aria-pressed={selectedFavorite} disabled={!selected||organizing} onClick={()=>selected&&void toggleFavorite(selected.id)}><Star size={16} fill={selectedFavorite?'currentColor':'none'}/></button>
           <div className="popover-root" data-popover-root="move">
             <button className="icon-button" aria-label="Move to folder" title="Move to folder" aria-haspopup="dialog" aria-expanded={popover==='move'} disabled={!selected||organizing} onClick={()=>setPopover(popover==='move'?null:'move')}><FolderInput size={16}/></button>
             {popover==='move'&&<div className="toolbar-popover move-popover" role="dialog" aria-label="Move to folder" data-popover-panel>
               <div className="popover-title">Move to folder</div>
-              <button className="menu-row" onClick={()=>void moveItem(null)}><FileCode2 size={14}/>Original archive{!selectedFolder&&<Check size={14} className="menu-check"/>}</button>
-              <div className="folder-options">{folders.map(folder=><button className="menu-row" key={folder.id} onClick={()=>void moveItem(folder.id)}><Folder size={14}/><span>{folder.name}</span>{selectedFolder===folder.id&&<Check size={14} className="menu-check"/>}</button>)}</div>
+              <button className="menu-row" onClick={()=>void moveItem(null)}><FileCode2 size={14}/>{isIcons?'Uncategorized':'Original archive'}{(!selectedFolder||selectedFolder===UNCATEGORIZED_ICON_FOLDER_ID)&&<Check size={14} className="menu-check"/>}</button>
+              <div className="folder-options">{folders.filter(folder=>!isIcons||folder.id!==UNCATEGORIZED_ICON_FOLDER_ID).map(folder=><button className="menu-row" key={folder.id} onClick={()=>void moveItem(folder.id)}><Folder size={14}/><span>{folder.name}</span>{selectedFolder===folder.id&&<Check size={14} className="menu-check"/>}</button>)}</div>
               <div className="menu-divider"/><button className="menu-row accent-text" onClick={()=>openFolderDialog(selectedId)}><FolderPlus size={14}/>New folder…</button>
             </div>}
           </div>
-          <button className="icon-button" aria-label={kind==='image'?'Download image':'Download HTML with assets'} title={kind==='image'?'Download original image':'Download HTML with its assets as ZIP'} disabled={!selected||downloading} onClick={()=>void downloadSelected()}>{downloading?<LoaderCircle size={16} className="spin"/>:<Download size={16}/>}</button>
+          <button className="icon-button" aria-label={isIcons?'Download SVG':kind==='image'?'Download image':'Download HTML with assets'} title={isIcons?'Download converted SVG':kind==='image'?'Download original image':'Download HTML with its assets as ZIP'} disabled={!selected||downloading||(isIcons&&!icons.items.find(item=>item.id===selected.id)?.result)} onClick={()=>void downloadSelected()}>{downloading?<LoaderCircle size={16} className="spin"/>:<Download size={16}/>}</button>
         </div>
-        <div className="popover-root" data-popover-root="settings">
+        {!isIcons&&<div className="popover-root" data-popover-root="settings">
           <button className={'icon-button settings-button '+(popover==='settings'?'active':'')} aria-label="View and capture settings" title="View and capture settings" aria-haspopup="dialog" aria-expanded={popover==='settings'} onClick={()=>setPopover(popover==='settings'?null:'settings')}><Settings2 size={17}/></button>
           {popover==='settings'&&<div className="toolbar-popover" role="dialog" aria-label="View and capture settings" data-popover-panel>
             <div className="popover-title">View</div>
@@ -553,13 +625,14 @@ export default function App(){
             {importResults.length>0&&<button className="menu-row" onClick={()=>{setPopover(null);setReportOpen(true);}}><FileCode2 size={14}/>Last import details</button>}
             <button className="menu-row" onClick={()=>{setPopover(null);setHelpOpen(true);}}><HelpCircle size={14}/>Help & shortcuts</button>
           </div>}
-        </div>
-        <button className={'gallery-toggle '+(view==='gallery'?'active':'')} aria-label={view==='gallery'?'Show selected file preview':kind==='image'?'Show image gallery':'Show HTML gallery'} aria-pressed={view==='gallery'} onClick={()=>setView(view==='gallery'?'preview':'gallery')} title={kind==='html'?'HTML gallery':'Image gallery'}><Images size={15}/><span>{view==='gallery'?'Preview':'Gallery'}</span></button>
+        </div>}
+        {!isIcons&&<button className={'gallery-toggle '+(view==='gallery'?'active':'')} aria-label={view==='gallery'?'Show selected file preview':kind==='image'?'Show image gallery':'Show HTML gallery'} aria-pressed={view==='gallery'} onClick={()=>setView(view==='gallery'?'preview':'gallery')} title={kind==='html'?'HTML gallery':'Image gallery'}><Images size={15}/><span>{view==='gallery'?'Preview':'Gallery'}</span></button>}
+        {isIcons&&<button className="icon-button" aria-label="Remove selected icon" title="Remove selected icon" disabled={!selected} onClick={()=>selected&&setIconRemove({id:selected.id,folder:false,name:selected.label})}><Trash2 size={16}/></button>}
       </header>
-      {view==='gallery'&&<CanvasControls kind={kind} grid={grids[kind]} shape={imageShape} sort={order.sort} onGridChange={updateGrid} onShapeChange={shape=>setImageShape(normalizeImageShape(shape))} onSortChange={sort=>updateOrder({sort})}/>}
-      {storageError&&<div className="error-banner" role="alert"><AlertTriangle size={14}/>{storageError}</div>}
+      {!isIcons&&view==='gallery'&&<CanvasControls kind={kind} grid={grids[kind]} shape={imageShape} sort={order.sort} onGridChange={updateGrid} onShapeChange={shape=>setImageShape(normalizeImageShape(shape))} onSortChange={sort=>updateOrder({sort})}/>}
+      {(isIcons?icons.storageError:storageError)&&<div className="error-banner" role="alert"><AlertTriangle size={14}/>{isIcons?icons.storageError:storageError}</div>}
       {queue.running&&<div className="queue-banner" role="status"><LoaderCircle className="spin" size={13}/><span>Capturing {Math.min(queue.done+queue.failed+1,queue.total)} / {queue.total}</span><strong>{queue.current}</strong><span>{queue.done} saved</span><button onClick={()=>captureAbort.current?.abort()}>Cancel</button></div>}
-      <div className="content-region">
+      {isIcons?<PngSvgWorkspace collection={icons} selectedId={selectedId} filteredIds={filteredItems.map(item=>item.id)} onImport={()=>inputRef.current?.click()} onImportFolder={()=>iconFolderInput.current?.click()}/>:<div className="content-region">
         {view==='gallery'?(kind==='image'?<ImageGallery grid={grids.image} page={canvasPages.image} onPageChange={page=>setCanvasPages(current=>({...current,image:page}))} groupByMonth={order.group==='month'} items={filteredItems} archives={archives} organization={organization} onOpen={id=>selectItem(id)} onFavorite={id=>void toggleFavorite(id)}/>:<Gallery grid={grids.html} page={canvasPages.html} onPageChange={page=>setCanvasPages(current=>({...current,html:page}))} groupByMonth={order.group==='month'} pages={filteredItems} archives={archives} snapshots={snapshots} query={query} onOpen={(id,nextMode)=>selectItem(id,nextMode)} onCaptureMissing={()=>setCaptureDialog(true)} busy={queue.running}/>):
           selected?(kind==='image'?<ImageViewer item={selected} fit={fit} nearbyItems={filteredItems.slice(Math.max(0,position-2),position+3).filter(item=>item.id!==selected.id)}/>:<PreviewPane page={selected} mode={mode} snapshot={snapshots.get(selected.id)} viewport={viewport} fit={fit} reloadKey={0} onStep={step} onNavigate={navigateLocal} onCapture={()=>setCaptureDialog(true)} busy={queue.running} onWarnings={setWarnings}/>):
           <div className="workspace-empty">
@@ -569,13 +642,14 @@ export default function App(){
             {kind==='image'&&imageShape!=='all'&&<button className="button" onClick={()=>setImageShape('all')}>Show all image shapes</button>}
             {!query&&!favoritesOnly&&<div className="empty-actions"><button className="button primary" onClick={()=>inputRef.current?.click()} disabled={!loaded||importing}><Upload size={14}/>Import files</button><button className="button" onClick={()=>{setDriveError('');setDriveOpen(true);}} disabled={!loaded||importing}><CloudDownload size={14}/>Google Drive link</button>{!items.length&&<button className="text-button" disabled={!loaded||importing} onClick={()=>void createDemoZip().then(file=>importFiles([file]))}>Try a sample collection</button>}</div>}
           </div>}
-      </div>
+      </div>}
     </main>
-    {dragging&&<div className="drop-overlay"><span><Upload size={18}/>Drop ZIPs or images</span></div>}
+    {dragging&&<div className="drop-overlay"><span><Upload size={18}/>{isIcons?'Drop PNGs or folders':'Drop ZIPs or images'}</span></div>}
     {toast&&<div className="toast" role="status"><span>{toast}</span><button className="icon-button tiny" aria-label="Dismiss notification" onClick={()=>setToast('')}><X size={13}/></button></div>}
 
+    {iconRemove&&<Modal title={iconRemove.folder?'Remove icon folder?':'Remove icon?'} onClose={()=>{if(!removingIcon)setIconRemove(null);}}><div className="modal-body"><p><strong>{iconRemove.name}</strong></p><p>The saved original and converted SVG{iconRemove.folder?'s in this folder and its subfolders':''} will be removed from this browser. Your original files on disk are unaffected.</p></div><div className="modal-footer"><button className="button" disabled={removingIcon} onClick={()=>setIconRemove(null)}>Cancel</button><button className="button danger" disabled={removingIcon} onClick={()=>void confirmIconRemoval()}>{removingIcon?'Removing…':'Remove'}</button></div></Modal>}
     {driveOpen&&<Modal title="Import from Google Drive" onClose={()=>{if(!importing){setDriveOpen(false);setDriveError('');}}}><form onSubmit={event=>{event.preventDefault();void importFromDrive();}}><div className="modal-body"><p className="modal-intro">Paste a Google Drive share link for a ZIP or supported image. The file must be downloadable by anyone with the link.</p><label className="field-label" htmlFor="drive-url">Google Drive file link</label><input autoFocus id="drive-url" className="text-input" type="url" value={driveUrl} onChange={event=>{setDriveUrl(event.target.value);setDriveError('');}} placeholder="https://drive.google.com/file/d/…" required disabled={importing}/>{driveError&&<p className="form-error" role="alert">{driveError}</p>}{importing&&<p className="form-note"><LoaderCircle size={12} className="spin"/> {importProgress||'Downloading…'}</p>}<p className="form-note">Single-file Drive links are supported. Folder links and private files that require sign-in are not.</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>{setDriveOpen(false);setDriveError('');}} disabled={importing}>Cancel</button><button className="button primary" disabled={importing||!driveUrl.trim()}>{importing?<><LoaderCircle size={14} className="spin"/>Importing…</>:<><CloudDownload size={14}/>Import from Drive</>}</button></div></form></Modal>}
-    {folderDialog&&<Modal title={folderDialog.moveId?'Create folder & move item':'New folder'} onClose={()=>{if(!savingFolder)setFolderDialog(null);}}><form onSubmit={submitFolder}><div className="modal-body"><label className="field-label" htmlFor="folder-name">Folder name</label><input autoFocus id="folder-name" className="text-input" value={folderName} onChange={event=>setFolderName(event.target.value)} maxLength={80} placeholder="e.g. Keepers" required/>{folderError&&<p className="form-error" role="alert">{folderError}</p>}<p className="form-note">HTML and images can share a folder. Linked resources stay attached to their pages.</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>setFolderDialog(null)} disabled={savingFolder}>Cancel</button><button className="button primary" disabled={savingFolder||!folderName.trim()}>{savingFolder?'Saving…':folderDialog.moveId?'Create & move':'Create folder'}</button></div></form></Modal>}
+    {folderDialog&&<Modal title={folderDialog.moveId?'Create folder & move item':'New folder'} onClose={()=>{if(!savingFolder)setFolderDialog(null);}}><form onSubmit={submitFolder}><div className="modal-body"><label className="field-label" htmlFor="folder-name">Folder name</label><input autoFocus id="folder-name" className="text-input" value={folderName} onChange={event=>setFolderName(event.target.value)} maxLength={80} placeholder="e.g. Keepers" required/>{folderError&&<p className="form-error" role="alert">{folderError}</p>}<p className="form-note">{isIcons?'Icon folders are saved on this device.':'HTML and images can share a folder. Linked resources stay attached to their pages.'}</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>setFolderDialog(null)} disabled={savingFolder}>Cancel</button><button className="button primary" disabled={savingFolder||!folderName.trim()}>{savingFolder?'Saving…':folderDialog.moveId?'Create & move':'Create folder'}</button></div></form></Modal>}
     {captureDialog&&<Modal title="Capture HTML pages" onClose={()=>setCaptureDialog(false)}><div className="modal-body"><p className="modal-intro"><strong>{pendingCaptures.length} pages</strong> to capture{query?' matching “'+query+'”':favoritesOnly?' in favorites':''}. You can keep browsing.</p><div className="form-grid"><label>Viewport width<select value={captureOptions.width} onChange={event=>setCaptureOptions({...captureOptions,width:Number(event.target.value)})}><option value={1440}>Desktop · 1440 px</option><option value={1920}>Wide · 1920 px</option><option value={768}>Tablet · 768 px</option><option value={390}>Mobile · 390 px</option></select></label><label>Wait after loading<select value={captureOptions.delay} onChange={event=>setCaptureOptions({...captureOptions,delay:Number(event.target.value)})}><option value={500}>0.5 seconds</option><option value={1000}>1 second</option><option value={2500}>2.5 seconds</option><option value={5000}>5 seconds</option></select></label></div><label className="check-field"><input type="checkbox" checked={captureOptions.fullPage} onChange={event=>setCaptureOptions({...captureOptions,fullPage:event.target.checked})}/>Capture full page</label><label className="check-field"><input type="checkbox" checked={recapture} onChange={event=>setRecapture(event.target.checked)}/>Replace existing screenshots</label><p className="form-note">Keep this tab open. Browser captures may differ for remote images, embedded video, or some effects.</p></div><div className="modal-footer"><button className="button" onClick={()=>setCaptureDialog(false)}>Cancel</button><button className="button primary" disabled={!pendingCaptures.length||queue.running} onClick={()=>{setCaptureDialog(false);void runCaptures(pendingCaptures);}}><Camera size={14}/>Capture {pendingCaptures.length} pages</button></div></Modal>}
     {reportOpen&&<Modal title="Import details" onClose={()=>setReportOpen(false)}><div className="report-list">{importResults.map((result,index)=><div className="report-item" key={index}>{result.ok?<Check size={16}/>:<AlertTriangle size={16}/>}<div><strong>{result.name}</strong><p>{result.message}</p></div></div>)}</div></Modal>}
     {importsOpen&&<Modal title="Manage imports" onClose={()=>setImportsOpen(false)}><div className="import-list">{roots.length?roots.map(root=><div className="import-row" key={root.id}><div><strong>{root.name}</strong><span>{root.cloud?'Private collection · ':'This browser · '}{items.filter(item=>item.rootId===root.id).length} files · {formatBytes(archives.filter(archive=>archive.rootId===root.id).reduce((sum,archive)=>sum+archive.byteSize,0))}</span></div><button className="icon-button" aria-label={'Remove '+root.name} title="Remove import" disabled={importing||queue.running} onClick={()=>{setImportsOpen(false);requestRemove(root.id);}}><Trash2 size={15}/></button></div>):<p className="form-note">No imports yet.</p>}</div></Modal>}
@@ -584,12 +658,11 @@ export default function App(){
     {helpOpen&&<Modal title="Workspace help" onClose={()=>setHelpOpen(false)}><div className="modal-body help-content">
       <section><h3>Import and browse</h3><p>Drop several ZIPs or images anywhere, use the + button, or import one downloadable ZIP/image from a Google Drive share link. Nested ZIPs keep their hierarchy. HTML and Images have separate tabs; HTML resources stay attached behind the scenes. Index pages use their folder names. Click a folder to preview its first matching file; its arrow only expands or collapses. Star a folder to include its current contents in Favorites.</p><p><kbd>↑</kbd> <kbd>↓</kbd> or the top arrows cycle through every matching file across folders, including collapsed ones. The last file loops to the first. <kbd>←</kbd> <kbd>→</kbd> control focused tree branches. <kbd>/</kbd> finds a file. Typing fields keep their own arrow keys.</p></section>
       <section><h3>Keep what matters</h3><p>Star a file, filter Favorites, or use Move to folder. Create folders with the sidebar folder-plus button or directly from the move menu. Use Sort to order names or dates, group by month, or show all files together. Drag the sidebar divider to resize it; double-click to reset. Folders organize references; original paths and linked resources stay intact.</p><p>Download saves original image bytes. For HTML, it downloads a ZIP containing the page’s owning archive and its assets. Source-only HTML and saved PNGs are available in Settings.</p></section>
-      <section><h3>PNG to SVG</h3><p>Use the workspace switch to open the local converter. Drop PNGs, compare the original and generated SVG, and download individual files or a ZIP. Pixel vectors preserve the pixel grid as editable fills; Embedded PNG puts the original bitmap inside an SVG. Every result receives a native-size rendered pixel check. Converter files stay in this tab’s memory and are not added to the library. Download them before closing or reloading.</p></section>
+      <section><h3>Icons and PNG to SVG</h3><p>Open Icons in the top navigation. Drop PNGs or folders into the canvas or sidebar; loose files enter Uncategorized and folders retain their hierarchy. Originals and converted results are saved in this browser and conversion starts automatically. Clearing site data removes this local collection.</p><p>Choose Pixel vectors for native pixel-grid geometry, Smooth curves for measured approximate contours, or Embedded PNG for a bitmap inside an SVG. The canvas toolbar controls mode, zoom and background. Every result records a native-size pixel check; only zero visible differences is verified. Smooth curves can differ from the source and pixel geometry remains pixelated when enlarged. Results are checked using the recorded browser and sRGB8 reference, without a cross-browser guarantee.</p></section>
       <section><h3>Views and screenshots</h3><p>Settings contains preview width, fit, live/screenshot view, and current or batch captures. Gallery shows saved HTML screenshots or your original images. Captures run in the browser while you browse. These are DOM renderings, not server-side Playwright screenshots; remote resources, video, frames, canvas effects, and some CSS may differ.</p></section>
       <section><h3>Saved collection and browser imports</h3><p>The Banner Collection is saved privately on this Site. Its file list appears automatically; resource bytes load only when you open a page or image. Files you drop or import from Drive are saved only in this browser. Favorites, folders and screenshots also stay in this browser. Clearing browser storage removes those local settings and imports, while the private collection remains available. Hiding a collection import keeps it hidden after refresh on this browser. Imported scripts run in an isolated frame and can still request their external resources.</p><p>Supported images: PNG, JPEG, WebP, GIF, AVIF, SVG, BMP, and ICO. Limits: 256 MB per ZIP, 768 MB extracted per import, 128 MB per file, 20,000 entries, eight nested ZIP levels. Available browser storage limits the total collection. Password-protected ZIPs and server applications are unsupported.</p></section>
     </div></Modal>}
-    </div>}
-    <PngSvgWorkspace active={workspace==='converter'}/>
+    </div>
   </div>;
 }
 
