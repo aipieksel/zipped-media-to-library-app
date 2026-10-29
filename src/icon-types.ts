@@ -1,3 +1,4 @@
+import type {RasterMime} from './raster-input';
 import type {ConversionMode} from './png-svg';
 import type {PngSvgProgress, PngSvgResult} from './png-svg-browser';
 import type {ViewOrder} from './order';
@@ -12,12 +13,14 @@ export interface IconLease {
   expiresAt: number;
 }
 
-/** Metadata only: neither the original PNG nor the generated SVG is hydrated here. */
+/** Metadata only: neither the original image nor the generated SVG is hydrated here. */
 export interface IconRecord {
   id: string;
   folderId: string;
   name: string;
   sourceName: string;
+  /** Absent in older PNG records; source bytes are validated again during conversion. */
+  sourceMime?: RasterMime;
   sourcePath: string;
   filename: string;
   size: number;

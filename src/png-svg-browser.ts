@@ -1,8 +1,10 @@
-import { compareVisiblePixels, createEmbeddedPngSvg, inspectPng, PNG_SVG_LIMITS, PngSvgError } from './png-svg';
+import { compareVisiblePixels, inspectPng, PNG_SVG_LIMITS, PngSvgError } from './png-svg';
 import type { ConversionMode, PixelSvgOutput, PngMetadata, PngSvgErrorCode } from './png-svg';
 import { analyzeSilhouette, isFullyOpaque, normalizeTracedSvg, PNG_SVG_TRACE_LIMITS, silhouetteRejectionMessage, TRACE_ENGINES, validateTraceInput } from './png-svg-trace';
 import type { PngSvgEngine, TraceColor } from './png-svg-trace';
 import type { VTracer, VTracerPixelsOptions } from 'vtracer-browser';
+import {createEmbeddedRasterSvg, inspectRaster} from './raster-input';
+import type {RasterFormat, RasterMetadata} from './raster-input';
 
 export type { ConversionMode } from './png-svg';
 export type { PngSvgEngine } from './png-svg-trace';
@@ -34,6 +36,7 @@ export interface PngSvgResult {
     colorSpace: 'srgb';
     pixelFormat: 'rgba8';
   };
+  sourceFormat?: RasterFormat;
   sourceBytes: number;
   outputBytes: number;
   fidelity: PngSvgFidelity;
@@ -47,10 +50,12 @@ export interface ConvertPngOptions {
 }
 
 export interface DecodedPng {
-  metadata: PngMetadata;
+  metadata: PngMetadata & {format: 'png'; mime: 'image/png'};
   bytes: Uint8Array;
   pixels: Uint8ClampedArray;
 }
+
+export interface DecodedRaster {metadata: RasterMetadata; bytes: Uint8Array; pixels: Uint8ClampedArray}
 
 const IMAGE_TIMEOUT_MS = 30_000;
 const WORKER_TIMEOUT_MS = 60_000;
@@ -66,7 +71,7 @@ function checkAbort(signal?: AbortSignal): void {
 function readFileBytes(file: File, signal?: AbortSignal): Promise<Uint8Array> {
   checkAbort(signal);
   if (file.size > PNG_SVG_LIMITS.maxInputBytes) {
-    return Promise.reject(new PngSvgError('This PNG exceeds the 20 MiB per-file limit.', 'image-limit'));
+    return Promise.reject(new PngSvgError('This image exceeds the 20 MiB per-file limit.', 'image-limit'));
   }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -86,14 +91,14 @@ function readFileBytes(file: File, signal?: AbortSignal): Promise<Uint8Array> {
       reject(error);
     };
     const onAbort = () => fail(abortError());
-    const timeout = window.setTimeout(() => fail(new Error('Reading this PNG took too long. Try importing it again.')), IMAGE_TIMEOUT_MS);
+    const timeout = window.setTimeout(() => fail(new Error('Reading this image took too long. Try importing it again.')), IMAGE_TIMEOUT_MS);
     signal?.addEventListener('abort', onAbort, { once: true });
-    reader.onerror = () => fail(new Error('This PNG could not be read from your device. Try importing it again.'));
+    reader.onerror = () => fail(new Error('This image could not be read from your device. Try importing it again.'));
     reader.onabort = onAbort;
     reader.onload = () => {
       if (settled) return;
       if (signal?.aborted) { onAbort(); return; }
-      if (!(reader.result instanceof ArrayBuffer)) { fail(new Error('This PNG did not produce readable image bytes.')); return; }
+      if (!(reader.result instanceof ArrayBuffer)) { fail(new Error('This image did not produce readable image bytes.')); return; }
       settled = true;
       cleanup();
       resolve(new Uint8Array(reader.result));
@@ -101,7 +106,7 @@ function readFileBytes(file: File, signal?: AbortSignal): Promise<Uint8Array> {
     try {
       reader.readAsArrayBuffer(file);
     } catch (error) {
-      fail(error instanceof Error ? error : new Error('The PNG could not be read.'));
+      fail(error instanceof Error ? error : new Error('The image could not be read.'));
     }
   });
 }
@@ -134,7 +139,7 @@ async function withImage<T>(blob: Blob, signal: AbortSignal | undefined, draw: (
       const timeout = window.setTimeout(() => finish(new Error('This browser took too long to render the image.')), IMAGE_TIMEOUT_MS);
       signal?.addEventListener('abort', onAbort, { once: true });
       image.onload = () => finish();
-      image.onerror = () => finish(new Error('This browser could not decode or render the image. The PNG may be damaged or unsupported.'));
+      image.onerror = () => finish(new Error('This browser could not decode or render the image. The image may be damaged or unsupported.'));
       image.src = url;
     });
     checkAbort(signal);
@@ -149,7 +154,7 @@ async function withImage<T>(blob: Blob, signal: AbortSignal | undefined, draw: (
 
 function readNativePixels(image: HTMLImageElement, width: number, height: number): Uint8ClampedArray {
   if (image.naturalWidth !== width || image.naturalHeight !== height) {
-    throw new Error('The browser decoded different dimensions from the PNG header. No resizing or orientation correction has been applied.');
+    throw new Error('The browser decoded different dimensions from the image header. Orientation metadata or unsupported content may be responsible; this converter has not resized the source.');
   }
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -176,11 +181,22 @@ function readNativePixels(image: HTMLImageElement, width: number, height: number
 export async function decodePngPixels(file: File, signal?: AbortSignal): Promise<DecodedPng> {
   const bytes = await readFileBytes(file, signal);
   checkAbort(signal);
-  const metadata = inspectPng(bytes);
+  const metadata = {...inspectPng(bytes), format: 'png' as const, mime: 'image/png' as const};
   const pixels = await withImage(file.slice(0, file.size, 'image/png'), signal,
     image => readNativePixels(image, metadata.width, metadata.height));
   checkAbort(signal);
   return { metadata, bytes, pixels };
+}
+
+/** Shared PNG/WebP entry point; validation precedes allocation and MIME is byte-derived. */
+export async function decodeRasterPixels(file: File, signal?: AbortSignal): Promise<DecodedRaster> {
+  const bytes = await readFileBytes(file, signal);
+  checkAbort(signal);
+  const metadata = inspectRaster(bytes);
+  const pixels = await withImage(file.slice(0, file.size, metadata.mime), signal,
+    image => readNativePixels(image, metadata.width, metadata.height));
+  checkAbort(signal);
+  return {metadata, bytes, pixels};
 }
 
 function generatePixelSvg(pixels: Uint8ClampedArray, width: number, height: number, options: ConvertPngOptions): Promise<PixelSvgOutput> {
@@ -190,7 +206,7 @@ function generatePixelSvg(pixels: Uint8ClampedArray, width: number, height: numb
     try {
       worker = new Worker(new URL('./png-svg.worker.ts', import.meta.url), { type: 'module' });
     } catch {
-      reject(new Error('This browser could not start the local pixel converter. Try Embedded PNG mode.'));
+      reject(new Error('This browser could not start the local pixel converter. Try Embedded bitmap mode.'));
       return;
     }
     let settled = false;
@@ -209,9 +225,9 @@ function generatePixelSvg(pixels: Uint8ClampedArray, width: number, height: numb
       reject(error);
     };
     const onAbort = () => fail(abortError());
-    const timeout = window.setTimeout(() => fail(new Error('Pixel conversion took too long. Try Embedded PNG mode for this image.')), WORKER_TIMEOUT_MS);
+    const timeout = window.setTimeout(() => fail(new Error('Pixel conversion took too long. Try Embedded bitmap mode for this image.')), WORKER_TIMEOUT_MS);
     options.signal?.addEventListener('abort', onAbort, { once: true });
-    worker.onerror = () => fail(new Error('The local pixel converter stopped unexpectedly. Try this file again or use Embedded PNG mode.'));
+    worker.onerror = () => fail(new Error('The local pixel converter stopped unexpectedly. Try this file again or use Embedded bitmap mode.'));
     worker.onmessageerror = () => fail(new Error('The local pixel converter returned an unreadable result.'));
     worker.onmessage = (event: MessageEvent) => {
       if (settled) return;
@@ -297,7 +313,7 @@ function traceWithImageTracer(pixels: Uint8ClampedArray, width: number, height: 
   return new Promise((resolve, reject) => {
     let worker: Worker;
     try { worker = new Worker(new URL('./png-svg-trace.worker.ts', import.meta.url), { type: 'module' }); }
-    catch { reject(new Error('This browser could not start the local smooth converter. Try Pixel vectors or Embedded PNG.')); return; }
+    catch { reject(new Error('This browser could not start the local smooth converter. Try Pixel vectors or Embedded bitmap.')); return; }
     let settled = false;
     const cleanup = () => {
       window.clearTimeout(timeout);
@@ -314,7 +330,7 @@ function traceWithImageTracer(pixels: Uint8ClampedArray, width: number, height: 
       reject(error);
     };
     const onAbort = () => fail(abortError());
-    const timeout = window.setTimeout(() => fail(new Error('Smooth tracing exceeded its 45-second limit. Try Pixel vectors or Embedded PNG.')), PNG_SVG_TRACE_LIMITS.timeoutMs);
+    const timeout = window.setTimeout(() => fail(new Error('Smooth tracing exceeded its 45-second limit. Try Pixel vectors or Embedded bitmap.')), PNG_SVG_TRACE_LIMITS.timeoutMs);
     options.signal?.addEventListener('abort', onAbort, { once: true });
     worker.onerror = () => fail(new Error('The local smooth tracing worker stopped unexpectedly.'));
     worker.onmessageerror = () => fail(new Error('The smooth tracing worker returned an unreadable result.'));
@@ -355,7 +371,7 @@ async function generateSmoothSvg(pixels: Uint8ClampedArray, width: number, heigh
   } else if (!opaque && analysis.reason !== null) {
     warnings.push(`RGBA tracing selected: ${silhouetteRejectionMessage(analysis.reason)}`);
   }
-  // The measured silhouette profile uses ImageTracer; RGB-only VTracer handles opaque sources.
+  // Native-alpha cubic contours handle eligible silhouettes; RGB-only VTracer handles opaque sources.
   if (!silhouette && opaque) {
     try {
       const raw = await traceWithVTracer(pixels, width, height, options);
@@ -388,30 +404,32 @@ export async function verifySvgPixels(svg: string, source: Uint8ClampedArray, wi
   }
 }
 
-/** Convert one local PNG. The caller owns serial batching and retained preview/download URLs. */
-export async function convertPng(file: File, options: ConvertPngOptions): Promise<PngSvgResult> {
-  if (options.mode !== 'pixels' && options.mode !== 'embedded' && options.mode !== 'smooth') throw new Error('Choose Pixel vectors, Smooth curves or Embedded PNG conversion.');
+/** Shared conversion core; the caller owns batching and retained preview/download URLs. */
+async function convertDecodedRaster(file: File, options: ConvertPngOptions, decode: (file: File, signal?: AbortSignal) => Promise<DecodedRaster>): Promise<PngSvgResult> {
+  if (options.mode !== 'pixels' && options.mode !== 'embedded' && options.mode !== 'smooth') throw new Error('Choose Pixel vectors, Smooth curves or Embedded bitmap conversion.');
   checkAbort(options.signal);
-  options.onProgress?.({ stage: 'decoding', message: 'Decoding the original PNG…' });
-  const { metadata, bytes, pixels } = await decodePngPixels(file, options.signal);
+  options.onProgress?.({ stage: 'decoding', message: 'Decoding the original image…' });
+  const { metadata, bytes, pixels } = await decode(file, options.signal);
   checkAbort(options.signal);
   const { width, height } = metadata;
-  options.onProgress?.({ stage: 'converting', message: options.mode === 'pixels' ? 'Merging identical pixels…' : options.mode === 'smooth' ? 'Preparing local smooth tracing…' : 'Embedding the original PNG bytes…' });
+  options.onProgress?.({ stage: 'converting', message: options.mode === 'pixels' ? 'Merging identical pixels…' : options.mode === 'smooth' ? 'Preparing local smooth tracing…' : 'Embedding the original image bytes…' });
   let generated: { svg: string; rectangleCount: number | null; pathCount: number | null; engine: PngSvgEngine; warnings: string[] };
   if (options.mode === 'pixels') {
     generated = { ...await generatePixelSvg(pixels, width, height, options), pathCount: null, engine: { id: 'pixel-rectangles', name: 'Exact pixel rectangles', version: '1' }, warnings: [] };
   } else if (options.mode === 'smooth') {
     generated = { ...await generateSmoothSvg(pixels, width, height, options), rectangleCount: null };
   } else {
-    generated = { svg: createEmbeddedPngSvg(bytes, width, height), rectangleCount: null, pathCount: null, engine: { id: 'original-png', name: 'Original PNG bytes', version: '1' }, warnings: [] };
+    generated = { svg: createEmbeddedRasterSvg(bytes, width, height), rectangleCount: null, pathCount: null, engine: { id: metadata.format === 'webp' ? 'original-webp' : 'original-png', name: metadata.format === 'webp' ? 'Original WebP bytes' : 'Original PNG bytes', version: '1' }, warnings: [] };
   }
   checkAbort(options.signal);
   options.onProgress?.({ stage: 'verifying', message: 'Comparing the SVG at native dimensions…' });
   const fidelity = await verifySvgPixels(generated.svg, pixels, width, height, options.signal);
   checkAbort(options.signal);
   const warnings = generated.warnings;
-  if (metadata.hasColorProfile) warnings.push('PNG color metadata was decoded into sRGB by this browser. Other browsers or color profiles may render differently.');
-  if (metadata.bitDepth === 16) warnings.push('The pixel check uses the browser’s 8-bit RGBA sRGB reference. Embedded PNG mode retains the original 16-bit file bytes.');
+  if (metadata.hasColorProfile) warnings.push(`${metadata.format === 'webp' ? 'WebP' : 'PNG'} color metadata was decoded into sRGB by this browser. Other browsers or color profiles may render differently.`);
+  if (metadata.format === 'png' && metadata.bitDepth === 16) warnings.push('The pixel check uses the browser’s 8-bit RGBA sRGB reference. Embedded bitmap mode retains the original 16-bit file bytes.');
+  if (metadata.format === 'webp' && !metadata.lossless) warnings.push('The pixel reference is this browser’s decoded lossy WebP. Conversion cannot restore pixels lost before this file was saved.');
+  if (metadata.format === 'webp' && metadata.hasExif) warnings.push('WebP EXIF metadata is retained in embedded mode. The pixel reference follows this browser’s native image orientation.');
   return {
     svg: generated.svg,
     mode: options.mode,
@@ -421,9 +439,20 @@ export async function convertPng(file: File, options: ConvertPngOptions): Promis
     pathCount: generated.pathCount,
     engine: generated.engine,
     verification: { checkedAt: new Date().toISOString(), browser: navigator.userAgent, colorSpace: 'srgb', pixelFormat: 'rgba8' },
+    sourceFormat: metadata.format,
     sourceBytes: file.size,
     outputBytes: new TextEncoder().encode(generated.svg).length,
     fidelity,
     warnings,
   };
+}
+
+/** Convert either supported source format through the same local worker and strict check. */
+export function convertRaster(file: File, options: ConvertPngOptions): Promise<PngSvgResult> {
+  return convertDecodedRaster(file, options, decodeRasterPixels);
+}
+
+/** Compatibility entry point for established PNG-only callers and regression checks. */
+export function convertPng(file: File, options: ConvertPngOptions): Promise<PngSvgResult> {
+  return convertDecodedRaster(file, options, decodePngPixels);
 }

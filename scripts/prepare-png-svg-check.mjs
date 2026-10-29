@@ -59,8 +59,10 @@ function html(view) {
 
 await writeFile(join(output, 'png-svg-check.html'), html('checks'));
 await writeFile(join(output, 'png-svg-responsive.html'), html('responsive'));
+await writeFile(join(output, 'webp-check.html'), html('webp').replace('/tests/png-svg-browser-check.ts', '/tests/webp-browser-check.ts'));
 console.log(`Prepared ${fixtures.length} synthetic PNG fixtures in .qa/png/ (ignored).`);
 console.log('Start the app with npm run dev, then open these paths on its local origin:');
 console.log('  /.qa/png-svg-check.html');
 console.log('  /.qa/png-svg-responsive.html');
+console.log('  /.qa/webp-check.html (first run python3 scripts/prepare-webp-fixtures.py)');
 console.log('Use Run browser checks to execute the native renderer assertions and download their JSON report.');

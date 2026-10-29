@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {uniqueId} from './identity';
-import {convertPng} from './png-svg-browser';
+import {convertRaster} from './png-svg-browser';
 import type {ConversionMode} from './png-svg';
 import {emptyIconSnapshot, ICON_DB_NAME, ICON_HEARTBEAT_MS, isCurrentIconClaim, openIconCollection} from './icon-collection';
 import type {IconCollectionStore} from './icon-collection';
@@ -64,7 +64,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
         if (!mounted.current || storeRef.current !== store) {await store.release(claim); break;}
         const job: ActiveJob = {claim, controller: new AbortController(), store};
         activeJob.current = job;
-        setProgress(current => new Map(current).set(claim.id, {revision: claim.revision, stage: 'decoding', message: 'Reading saved PNG…', sourceValidated: false}));
+        setProgress(current => new Map(current).set(claim.id, {revision: claim.revision, stage: 'decoding', message: 'Reading saved image…', sourceValidated: false}));
         let renewing = false;
         const timer = setInterval(() => {
           if (renewing || job.controller.signal.aborted) return;
@@ -76,10 +76,10 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
         }, ICON_HEARTBEAT_MS);
         try {
           const source = await store.getSource(claim.id);
-          if (!source) throw new Error('The saved original PNG is unavailable. Remove this entry and import the original again.');
+          if (!source) throw new Error('The saved original image is unavailable. Remove this entry and import the original again.');
           if (job.controller.signal.aborted) {await store.release(claim); continue;}
-          const file = new File([source], claim.item.sourceName, {type: 'image/png', lastModified: claim.item.lastModified});
-          const result = await convertPng(file, {
+          const file = new File([source], claim.item.sourceName, {type: source.type || claim.item.sourceMime || 'image/png', lastModified: claim.item.lastModified});
+          const result = await convertRaster(file, {
             mode: claim.item.mode,
             signal: job.controller.signal,
             onProgress(update) {
@@ -95,7 +95,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
         } catch (failure) {
           if (job.controller.signal.aborted || !mounted.current) await store.release(claim).catch(() => undefined);
           else {
-            const message = messageOf(failure, 'This PNG could not be converted.');
+            const message = messageOf(failure, 'This image could not be converted.');
             try {await store.fail(claim, message);} catch (saveFailure) {
               if (mounted.current && storeRef.current === store) setError(`The conversion result could not be saved: ${messageOf(saveFailure, message)}. The original remains in local storage.`);
               break;
@@ -167,7 +167,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
     const report = await store.importEntries(batch, snapshotRef.current.preferences.defaultMode);
     if (!mounted.current || storeRef.current !== store) return report;
     setError(''); setPreferencesError('');
-    const summary = `${report.added.length} PNG${report.added.length === 1 ? '' : 's'} saved locally${report.folders.length ? ` · ${report.folders.length} folder${report.folders.length === 1 ? '' : 's'} added` : ''}${report.skipped ? ` · ${report.skipped} skipped` : ''}.`;
+    const summary = `${report.added.length} icon${report.added.length === 1 ? '' : 's'} saved locally${report.folders.length ? ` · ${report.folders.length} folder${report.folders.length === 1 ? '' : 's'} added` : ''}${report.skipped ? ` · ${report.skipped} skipped` : ''}.`;
     setNotice([summary, ...report.notices.slice(0, 3)].join(' '));
     await refresh(); void processQueue();
     return report;

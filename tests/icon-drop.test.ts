@@ -83,7 +83,7 @@ test('unreadable members are reported without losing readable siblings', async (
 
 test('the discovered-entry budget counts non-PNG files instead of traversing an unbounded directory', async () => {
   const root = directory('Huge', [Array.from({length: 5000}, (_, index) => fileEntry(`${index}.txt`))]);
-  await assert.rejects(readIconDrop({entries: [{entry: root, rootKey: 'root'}], files: [], notices: []}), /including folders and non-PNG/);
+  await assert.rejects(readIconDrop({entries: [{entry: root, rootKey: 'root'}], files: [], notices: []}), /including folders and unsupported/);
 });
 
 test('aborting a pending directory read terminates traversal and repeated entry cycles cannot recurse indefinitely', async () => {

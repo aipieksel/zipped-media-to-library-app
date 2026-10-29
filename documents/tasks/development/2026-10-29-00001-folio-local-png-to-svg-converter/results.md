@@ -122,3 +122,7 @@ Independent GPR approved the combined contour/WebP amendment after F8 correction
 ### Continuous contour implementation checkpoint
 
 Exact fit-curve0.2.0 installed (one dependency), full MIT notice appended without normalizing the existing21CR bytes. The independent contour suite passed33/33; root actual Chrome155 native browser suite passed31/31 with frozen references. Original/resampled enlarged alpha MAE improved76.2070%/85.4928% versus pixel geometry. Four roundness guards report100%curved coverage and0degreeflat; actual400%visual inspected. Smooth native errors remain397/9216 and1289/9216, disclosed honestly. See artifacts/revision-7-verification.md. WebP/runtimeproduction/release remain pending.
+
+### WebP implementation and renderer checkpoint
+
+SameIcons pipeline now accepts staticWebP, inspectsactualRIFFbytes beforedecode, preservesnativeRGBA andoriginalMIME/bytes, carriesformatmetadata throughsavedresults and keepsoldPNGrecordscompatible. Source-reviewedappintegration passedfullNode/privacy and21actualWebPbrowserchecks aftertwoQAcontrolcorrections; see revision-7-verification.md. No usermedia was used. Mixed-formatproductionUI/persistence/export andpublication remain pending.

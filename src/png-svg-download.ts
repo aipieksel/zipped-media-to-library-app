@@ -16,7 +16,7 @@ export async function buildSvgZip(entries: SvgDownloadEntry[]): Promise<Blob> {
     if (!name || /[<>:"/\\|?*\u0000-\u001f\u007f-\u009f]/.test(name) || /[. ]$/.test(name) ||
       /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name) ||
       !/\.svg$/i.test(name) || names.has(key)) {
-      throw new Error('SVG download names must be unique, safe filenames. Re-import the affected PNGs.');
+      throw new Error('SVG download names must be unique, safe filenames. Re-import the affected icons.');
     }
     names.add(key);
     zip.file(name, entry.svg, { createFolders: false });

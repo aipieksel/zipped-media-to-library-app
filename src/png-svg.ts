@@ -9,7 +9,7 @@ export const PNG_SVG_LIMITS = Object.freeze({
   maxSvgBytes: 24 * 1024 * 1024,
 });
 
-export type PngSvgErrorCode = 'invalid-png' | 'animated-png' | 'image-limit' | 'vector-limit' | 'svg-limit' | 'trace-limit' | 'invalid-svg';
+export type PngSvgErrorCode = 'invalid-png' | 'animated-png' | 'invalid-webp' | 'animated-webp' | 'invalid-image' | 'image-limit' | 'vector-limit' | 'svg-limit' | 'trace-limit' | 'invalid-svg';
 
 export class PngSvgError extends Error {
   constructor(message: string, public readonly code: PngSvgErrorCode) {
@@ -176,7 +176,7 @@ export function mergePixelRectangles(rgba: RgbaBytes, width: number, height: num
         current.set(span, existing);
       } else {
         if (rectangles.length >= maxRectangles) {
-          throw new PngSvgError('This PNG needs too many pixel shapes for a practical SVG. Choose Embedded PNG to keep its original bitmap inside an SVG.', 'vector-limit');
+          throw new PngSvgError('This image needs too many pixel shapes for a practical SVG. Choose Embedded bitmap to keep its original bytes inside an SVG.', 'vector-limit');
         }
         current.set(span, rectangles.length);
         rectangles.push({ x: start, y, width: runWidth, height: 1, r: rgba[offset], g: rgba[offset + 1], b: rgba[offset + 2], a: rgba[offset + 3] });
@@ -204,7 +204,7 @@ export function createPixelSvg(rgba: RgbaBytes, width: number, height: number, o
     const opacity = rect.a === 255 ? '' : ` fill-opacity="${rect.a / 255}"`;
     const shape = `<rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" fill="#${HEX[rect.r]}${HEX[rect.g]}${HEX[rect.b]}"${opacity}/>`;
     outputBytes += shape.length;
-    if (outputBytes > maxBytes) throw new PngSvgError('The pixel SVG exceeds the local output limit. Choose Embedded PNG for this image.', 'svg-limit');
+    if (outputBytes > maxBytes) throw new PngSvgError('The pixel SVG exceeds the local output limit. Choose Embedded bitmap for this image.', 'svg-limit');
     parts.push(shape);
   }
   if (outputBytes > maxBytes) throw new PngSvgError('The SVG exceeds the local output limit.', 'svg-limit');
@@ -256,7 +256,7 @@ function filenameKey(name: string): string {
 /** Keep the source basename where safe and reserve names case-insensitively across a batch. */
 export function allocateSvgFilename(sourceName: string, usedNames: Set<string>): string {
   const sourceBase = sourceName.replace(/\\/g, '/').split('/').at(-1) ?? '';
-  let stem = sourceBase.replace(/\.png$/i, '').normalize('NFC')
+  let stem = sourceBase.replace(/\.(?:png|webp)$/i, '').normalize('NFC')
     .replace(/[<>:"/\\|?*\u0000-\u001f\u007f-\u009f]/g, '_')
     .replace(/[. ]+$/g, '').trim();
   if (!stem || /^\.+$/.test(stem)) stem = 'image';

@@ -1,10 +1,11 @@
+import {rasterMimeHint} from './raster-input';
 import {openDB} from 'idb';
 import type {DBSchema, IDBPDatabase, IDBPTransaction} from 'idb';
 import {uniqueId} from './identity';
 import {allocateSvgFilename, PNG_SVG_LIMITS} from './png-svg';
 import type {ConversionMode} from './png-svg';
 import type {PngSvgResult} from './png-svg-browser';
-import {ICON_IMPORT_LIMITS, isPngInput, normalizeIconPath} from './icon-drop';
+import {ICON_IMPORT_LIMITS, isIconRasterInput, normalizeIconPath} from './icon-drop';
 import type {IconClaim, IconCollectionSnapshot, IconFolder, IconImportBatch, IconImportFile, IconImportReport, IconJob, IconPreferences, IconRecord, IconTreeProjection} from './icon-types';
 import type {HtmlPage, TreeNode} from './types';
 
@@ -97,9 +98,9 @@ export function prepareIconImport(batch: IconImportBatch): PreparedImport {
       if (!relativePath.includes('/')) throw new Error('A directory file must retain its root folder path.');
     } else if (relativePath.includes('/')) throw new Error('A nested file is missing its directory root identity.');
     let reason = '';
-    if (!isPngInput(file)) reason = 'Only PNG files are added to Icons.';
-    else if (file.size > PNG_SVG_LIMITS.maxInputBytes) reason = 'The PNG exceeds the 20 MiB per-file limit.';
-    else if (files.length >= ICON_IMPORT_LIMITS.maxFiles || sourceBytes + file.size > ICON_IMPORT_LIMITS.maxSourceBytes) reason = 'Each import accepts up to 100 PNGs and 100 MiB of original bytes.';
+    if (!isIconRasterInput(file)) reason = 'Only PNG and WebP files are added to Icons.';
+    else if (file.size > PNG_SVG_LIMITS.maxInputBytes) reason = 'The image exceeds the 20 MiB per-file limit.';
+    else if (files.length >= ICON_IMPORT_LIMITS.maxFiles || sourceBytes + file.size > ICON_IMPORT_LIMITS.maxSourceBytes) reason = 'Each import accepts up to 100 PNG or WebP files and 100 MiB of original bytes.';
     if (reason) {
       skipped++;
       if (notices.length < 30) notices.push(`${file.name}: ${reason}`);
@@ -232,12 +233,12 @@ export class IconCollectionStore {
         if (!folders.has(folderId)) throw new Error('The default icon folder is unavailable. Reload and retry.');
         const id = `icon-${uniqueId()}`;
         const item: IconRecord = {
-          id, folderId, name: allocateIconName(parts.at(-1)!, namesAt(folderId), true), sourceName: entry.file.name,
+          id, folderId, name: allocateIconName(parts.at(-1)!, namesAt(folderId), true), sourceName: entry.file.name, sourceMime: rasterMimeHint(entry.file),
           sourcePath: entry.relativePath, filename: allocateSvgFilename(entry.file.name, outputNames), size: entry.file.size,
           lastModified: validTime(entry.file.lastModified) ? entry.file.lastModified : 0, createdAt: now, updatedAt: now,
           mode, revision: 1, status: 'queued', message: 'Saved locally · waiting to convert…', favorite: false,
         };
-        added.push(item); sources.push({id, blob: entry.file.slice(0, entry.file.size, 'image/png')});
+        added.push(item); sources.push({id, blob: entry.file.slice(0, entry.file.size, rasterMimeHint(entry.file))});
       }
       // The write order is deliberate: aborting any later write rolls back folders and sources.
       for (const folder of createdFolders) await tx.objectStore('folders').add(folder);
@@ -261,7 +262,7 @@ export class IconCollectionStore {
       const previous = eligible[0];
       if (!previous) return undefined;
       const claim = {owner, token: uniqueId(), expiresAt: now + leaseMs};
-      const item: IconRecord = {...previous, status: 'processing', message: 'Reading saved PNG…', updatedAt: now, claim};
+      const item: IconRecord = {...previous, status: 'processing', message: 'Reading saved image…', updatedAt: now, claim};
       await tx.objectStore('icons').put(item); changed = true;
       return {id: item.id, revision: item.revision, ...claim, item};
     }, false);
@@ -287,7 +288,7 @@ export class IconCollectionStore {
       if (result.mode !== item!.mode || result.sourceBytes !== item!.size) throw new Error('The converter result no longer matches this saved source or mode.');
       const {svg: _svg, ...metadata} = result;
       await tx.objectStore('outputs').put({id: item!.id, revision: item!.revision, blob});
-      await tx.objectStore('icons').put({...item!, status: 'ready', message: 'SVG saved locally.', updatedAt: now, result: metadata, claim: undefined});
+      await tx.objectStore('icons').put({...item!, status: 'ready', message: 'SVG saved locally.', updatedAt: now, sourceMime: result.sourceFormat === 'webp' ? 'image/webp' : 'image/png', result: metadata, claim: undefined});
       return true;
     });
   }
@@ -296,7 +297,7 @@ export class IconCollectionStore {
     return this.write(['icons'], async tx => {
       const item = await tx.objectStore('icons').get(claim.id);
       if (!isCurrentIconClaim(item, claim, now)) return false;
-      await tx.objectStore('icons').put({...item!, status: 'error', message: String(message).slice(0, 2000) || 'This PNG could not be converted.', claim: undefined, result: undefined, updatedAt: now});
+      await tx.objectStore('icons').put({...item!, status: 'error', message: String(message).slice(0, 2000) || 'This image could not be converted.', claim: undefined, result: undefined, updatedAt: now});
       return true;
     });
   }
@@ -328,7 +329,7 @@ export class IconCollectionStore {
       const item = await tx.objectStore('icons').get(id);
       if (!item || !['queued', 'processing'].includes(item.status)) return;
       await tx.objectStore('outputs').delete(id);
-      await tx.objectStore('icons').put({...item, revision: item.revision + 1, status: 'cancelled', claim: undefined, result: undefined, message: 'Conversion stopped. The original PNG is saved; retry whenever you are ready.', updatedAt: Date.now()});
+      await tx.objectStore('icons').put({...item, revision: item.revision + 1, status: 'cancelled', claim: undefined, result: undefined, message: 'Conversion stopped. The original image is saved; retry whenever you are ready.', updatedAt: Date.now()});
     });
   }
 
@@ -336,7 +337,7 @@ export class IconCollectionStore {
     await this.write(['icons', 'outputs'], async tx => {
       for (const item of await tx.objectStore('icons').getAll()) if (item.status === 'queued' || item.status === 'processing') {
         await tx.objectStore('outputs').delete(item.id);
-        await tx.objectStore('icons').put({...item, revision: item.revision + 1, status: 'cancelled', claim: undefined, result: undefined, message: 'Conversion stopped. The original PNG is saved; retry whenever you are ready.', updatedAt: Date.now()});
+        await tx.objectStore('icons').put({...item, revision: item.revision + 1, status: 'cancelled', claim: undefined, result: undefined, message: 'Conversion stopped. The original image is saved; retry whenever you are ready.', updatedAt: Date.now()});
       }
     });
   }
@@ -350,7 +351,7 @@ export class IconCollectionStore {
   }
 
   async removeFolder(id: string): Promise<void> {
-    if (id === UNCATEGORIZED_ICON_FOLDER_ID) throw new Error('Uncategorized is the permanent destination for loose PNGs. Remove its icons individually.');
+    if (id === UNCATEGORIZED_ICON_FOLDER_ID) throw new Error('Uncategorized is the permanent destination for loose icons. Remove its icons individually.');
     await this.write(['icons', 'folders', 'sources', 'outputs', 'prefs'], async tx => {
       const folders = await tx.objectStore('folders').getAll();
       const removed = new Set<string>([id]);
@@ -486,7 +487,7 @@ export function projectIconCollection(snapshot: IconCollectionSnapshot, favorite
     const parent = nodes.get(item.folderId);
     if (!parent) continue;
     const rootId = rootOf(item.folderId);
-    pages.push({id: item.id, archiveId: rootId, rootId, path: [...folderPath(item.folderId), item.name].join('/'), label: item.name, isIndex: false, kind: 'image', size: item.size, mime: 'image/png', addedAt: item.createdAt, ...(item.lastModified > 0 ? {modifiedAt: item.lastModified, dateSource: 'file' as const} : {})});
+    pages.push({id: item.id, archiveId: rootId, rootId, path: [...folderPath(item.folderId), item.name].join('/'), label: item.name, isIndex: false, kind: 'image', size: item.size, mime: item.sourceMime ?? 'image/png', addedAt: item.createdAt, ...(item.lastModified > 0 ? {modifiedAt: item.lastModified, dateSource: 'file' as const} : {})});
     parent.children.push({id: item.id, pageId: item.id, archiveId: rootId, label: item.name, kind: 'page', children: [], pageCount: 1});
   }
   const directFavorites = new Set(snapshot.items.filter(item => item.favorite).map(item => item.id));

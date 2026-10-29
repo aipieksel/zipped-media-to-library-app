@@ -40,6 +40,8 @@ export function normalizeIconPath(input: string): string {
   return parts.join('/');
 }
 
+export const isIconRasterInput = (file: Pick<File, 'name' | 'type'>): boolean => /\.(?:png|webp)$/i.test(file.name) || file.type === 'image/png' || file.type === 'image/webp';
+
 export const isPngInput = (file: Pick<File, 'name' | 'type'>): boolean => /\.png$/i.test(file.name) || file.type === 'image/png';
 
 /** Must run during the drop event, before DataTransfer's protected data disappears. */
@@ -126,7 +128,7 @@ export async function readIconDrop(captured: CapturedIconDrop, signal?: AbortSig
   const notice = (message: string) => {if (notices.length < 30) notices.push(message);};
   const visit = async (entry: IconDropEntry, parent: string, rootKey: string): Promise<void> => {
     if (signal?.aborted) throw abortError();
-    if (++discovered > ICON_IMPORT_LIMITS.maxEntries) throw new IconDropLimitError(`An import can inspect at most ${ICON_IMPORT_LIMITS.maxEntries.toLocaleString()} entries, including folders and non-PNG files. Choose a smaller folder.`);
+    if (++discovered > ICON_IMPORT_LIMITS.maxEntries) throw new IconDropLimitError(`An import can inspect at most ${ICON_IMPORT_LIMITS.maxEntries.toLocaleString()} entries, including folders and unsupported files. Choose a smaller folder.`);
     if (visited.has(entry)) {skipped++; notice('A repeated directory entry was skipped.'); return;}
     visited.add(entry);
     try {
@@ -151,6 +153,6 @@ export async function readIconDrop(captured: CapturedIconDrop, signal?: AbortSig
     }
   };
   for (const {entry, rootKey} of captured.entries) await visit(entry, '', rootKey);
-  if (!files.length && !directories.length && !notices.length) notices.push('No files were exposed by this browser. Choose PNG files or a folder.');
+  if (!files.length && !directories.length && !notices.length) notices.push('No files were exposed by this browser. Choose PNG or WebP files, or a folder.');
   return {files, directories, notices, skipped};
 }

@@ -350,6 +350,8 @@ function setupInteractive(content: HTMLElement): void {
       <button id="drop-pending">Drop cancellation batch</button>
       <button id="drop-silhouette">Drop 96px analytic silhouette</button>
       <button id="drop-resampled">Drop 96px resampled line icon</button>
+      <button id="drop-webp-mixed">Drop mixed PNG/WebP folder</button>
+      <button id="drop-webp-loose">Drop loose WebPs</button>
     </div>
     <div class="controls">
       <button id="drop-library">Drop opaque PNG in current Library tab</button>
@@ -572,6 +574,27 @@ function setupInteractive(content: HTMLElement): void {
     const fixture = createResampledLineIconFixture();
     await drop([new File([fixture.bytes], `qa-${fixture.name}`, {type: 'image/png', lastModified: 1_700_000_000_000})]);
     observe({action: 'frozen resampled line fixture', dimensions: [fixture.width, fixture.height], referenceScale: fixture.referenceScale, boundary: 'Procedural source only. The real production app owns conversion and saved verification.'});
+  }));
+  const webpFile = async (fixture: string, name: string): Promise<File> => {
+    const response = await fetch(`/.qa/webp/${fixture}.webp`);
+    assert(response.ok, 'Prepare the procedural WebP fixtures before running this control.');
+    return new File([await response.arrayBuffer()], name, {type: 'image/webp', lastModified: 1_700_000_000_000});
+  };
+  content.querySelector('#drop-webp-mixed')!.addEventListener('click', () => void run(async () => {
+    const [lossless, alpha, smooth] = await Promise.all([
+      webpFile('opaque-lossless', 'mark.webp'), webpFile('alpha-lossless', 'alpha.webp'), webpFile('monochrome-96', 'curve.webp'),
+    ]);
+    await drop([], [directoryEntry('QA Mixed Formats', [
+      fileEntry(pngFile(fixtures[0], 'mark.png')), fileEntry(lossless),
+      directoryEntry('Nested', [fileEntry(alpha), fileEntry(smooth)]), directoryEntry('Empty', []),
+    ], '', directoryObservation)]);
+    observe({action: 'mixed PNG/WebP folder', expected: '4 queued sources, nested and empty folders; mark.png and mark.webp get distinct SVG names', boundary: 'Real app owns import, automatic conversion and durable results.'});
+  }));
+  content.querySelector('#drop-webp-loose')!.addEventListener('click', () => void run(async () => {
+    await drop(await Promise.all([
+      webpFile('opaque-lossy', 'qa-lossy.webp'), webpFile('alpha-lossy', 'qa-alpha.webp'), webpFile('animated', 'qa-animated.webp'),
+    ]));
+    observe({action: 'loose static and animated WebP', expected: 'Static files convert automatically in Uncategorized; animation has a durable explicit failure.'});
   }));
   const setWidth = (width: number) => {
     frame.style.width = `${width}px`;
