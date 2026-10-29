@@ -108,11 +108,11 @@ The coordinator subsequently reported a 31/31 actual contour/native run and an e
 
 ## Part 3 — documentation and WebP test readback, 2026-10-29 17:18 UTC
 
-**Test coverage and measurement/provenance wording: accepted. One small README consistency correction is outstanding in this snapshot.** Previously reviewed runtime/package/notice hashes remain unchanged; no source approval is reopened by the test reorganization.
+**Test coverage and measurement/provenance wording: accepted. The small README consistency correction identified in this snapshot was resolved in the Part 4 readback below.** Previously reviewed runtime/package/notice hashes remain unchanged; no source approval is reopened by the test reorganization.
 
 README's 76.2% and 85.5% enlarged alpha-MAE improvements correctly round the recorded 76.2070% and 85.4928% observer results. It identifies the two procedural inputs, independent analytic targets, Chrome 155 and native errors of 397/9,216 and 1,289/9,216. It keeps approximate smooth output separate from the strict zero-only badge, describes the actual profile-3 method, and disclaims arbitrary-artwork, browser/profile and precompression recovery guarantees. The documented source-pixel checkbox affects only the original image. The limits for exact/native/SVG/ZIP operations otherwise match the reviewed source.
 
-**D1 — low, open:** README's Icons limit table still says `Source PNG`, `100 PNGs` and `folders/non-PNG files`, followed by `Static PNGs only; animated PNGs are rejected.` These stale lines contradict the surrounding WebP support documentation. Replace them with PNG/WebP source wording, supported-image import wording, unsupported-file traversal wording, and explicit static PNG/WebP support with both animated formats rejected. No numeric limit or runtime change is needed. The coordinator has been notified.
+**D1 — low, resolved at 2026-10-29 17:37 UTC:** At the initial readback, README's Icons limit table still said `Source PNG`, `100 PNGs` and `folders/non-PNG files`, followed by PNG-only static/animation wording. These lines contradicted the surrounding WebP support documentation. The coordinator corrected the source-format, supported-image and traversal labels and explicitly documented static PNG/WebP support with both animated formats rejected. Part 4 verifies the repaired text. Numeric limits and runtime behavior are unchanged.
 
 The 25 WebP Node checks remain present as 23 self-contained structural tests and two explicitly required encoded-fixture checks. The latter use direct reads and assertions, so missing manifest/files fail; neither file nor the browser harness adds a skip. README documents the preparation step and separate `node --import tsx tests/webp-encoded.check.ts` invocation. The default `*.test.ts` suite intentionally excludes the fixture-dependent `.check.ts`; it must not be reported as having executed those two tests. The verification record makes that distinction and attributes the reported 23/23 and 2/2 reruns correctly.
 
@@ -132,3 +132,24 @@ Reviewed documentation/test snapshot:
 | `artifacts/revision-7-verification.md` at readback | `102304627b5db1244d0017d24b9e5e1d5e56108f1e68d1b8d290059ffd11a0e5` |
 
 This was a bounded read-only review. No tests, generator, build or browser were run and no source/documentation fix was made by the reviewer. Final package and mixed-format production UI evidence remain separately owned; this readback does not duplicate their audit.
+
+## Part 4 — final documentation and production/live receipt readback, 2026-10-29 17:37 UTC
+
+**Verdict: D1 resolved; the inspected documentation and final observer receipts are consistent with the reviewed behavior and stated evidence limits. No remaining documentation correction is required by this bounded review.**
+
+The README now says `Source PNG or WebP`, `100 supported images` and `including folders/unsupported files`. The following paragraph explicitly supports static PNGs and WebPs and rejects animated PNGs and animated WebPs. The 20 MiB source, per-import 100 images/100 MiB, traversal 5,000 entries/32 levels and other numeric limits are unchanged. This directly resolves D1 without a runtime modification.
+
+The appended production journey identifies source commit `1e84baac2023be4a53c0eaabdb9e036c544bb688`, its 12-asset package and the separate package review. It distinguishes synthetic directory-entry events from physical operating-system drag gestures, saved download payload equality from observed operating-system delivery, historical preview records from new test cases, and the mobile protocol interruption from a passed interaction. The prior pending sections are explicitly earlier checkpoints; the later sections record the completed package, mixed-format persistence/export and private version-11 publication. Archive representations and their different hashes are identified rather than falsely compared as identical bytes. This reviewer has checked the written evidence for consistency, not rerun the package audit or verified the deployment independently.
+
+The live receipt attributes observation to the coordinator in Chrome 156/macOS/sRGB RGBA8. The 96px monochrome source's profile-3 result remains approximate: one compound path, about 4.8 KB, and 769/9,216 native differences. The visual assessment is qualified as one actual icon; the procedural 76.2%/85.5% improvements are not transferred to this private input. The two recovered 300×300 sources are identified by decoded WebP bytes despite their filename hints, and their general-RGBA results retain the disclosed 1,839/90,000 differences. The subsequent Pixel vectors result on one recovered WebP records zero of 90,000 visible differences, 1,547 merged shapes and about 90.1 KB. That is expressly a second-browser observation on one image, not a full browser/profile matrix or a smooth-exactness claim. The existing explanation that enlarged pixel geometry retains the source grid remains applicable.
+
+The receipt says only the previously agent-created persistent Site tab was reloaded; the original version-9 tab holding transient inputs was neither reloaded nor closed. It reports retained Library/Icons records, the existing owner-private audience, and no exported private filenames, pixels or screenshots in the record. These are coordinator observations, not browser actions performed by this reviewer.
+
+Final readback fingerprints at `2026-10-29T17:37:08Z`:
+
+| File | SHA-256 |
+| --- | --- |
+| README after D1 repair | `cc207e549beff2a2da613d09d556ed36c0c4f98adde41b92d317da641e14d5e3` |
+| `artifacts/revision-7-verification.md`, including final live Pixel vectors receipt | `1573bd9bfc83db4ff40d96ea44878179fab768e8a549d5ff2d50910f046cdb18` |
+
+Only this review artifact was changed. No tests, builds, generators or browsers were run, and no application, README or verification-record content was modified by this reviewer.

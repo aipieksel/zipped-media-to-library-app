@@ -1,4 +1,4 @@
-# Revision 7 verification — ongoing
+# Revision 7 verification — completed
 
 ## Continuous alpha contour source and focused tests
 
@@ -64,4 +64,4 @@ In the connected user's Chrome156/macOS/sRGB RGBA8, the saved 96px monochrome ic
 
 One recovered live WebP was then converted with Pixel vectors in that same Chrome156 session: zero of90,000 visible pixels differ at300x300, 1,547 merged shapes and about90.1KB. This supplies a second-browser observation on one actual WebP, not a full cross-browser fixture matrix.
 
-Documentation review's stale PNG-only limits text was corrected to cover both formats and both animation rejections; all numeric limits are unchanged. Independent resolution readback is requested. This artifact records actual browser observations and tests, not a claim of testing every browser/profile or physical OS drag/download behavior.
+Documentation review's stale PNG-only limits text was corrected to cover both formats and both animation rejections; all numeric limits are unchanged. Independent final readback resolved D1; see Part4 of revision-7-code-review.md. This artifact records actual browser observations and tests, not a claim of testing every browser/profile or physical OS drag/download behavior.
