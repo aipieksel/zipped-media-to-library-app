@@ -1,5 +1,5 @@
 /** Pure, dependency-free PNG/SVG operations. Imported by the local worker and tests. */
-export type ConversionMode = 'pixels' | 'embedded';
+export type ConversionMode = 'pixels' | 'embedded' | 'smooth';
 
 export const PNG_SVG_LIMITS = Object.freeze({
   maxInputBytes: 20 * 1024 * 1024,
@@ -9,7 +9,7 @@ export const PNG_SVG_LIMITS = Object.freeze({
   maxSvgBytes: 24 * 1024 * 1024,
 });
 
-export type PngSvgErrorCode = 'invalid-png' | 'animated-png' | 'image-limit' | 'vector-limit' | 'svg-limit';
+export type PngSvgErrorCode = 'invalid-png' | 'animated-png' | 'image-limit' | 'vector-limit' | 'svg-limit' | 'trace-limit' | 'invalid-svg';
 
 export class PngSvgError extends Error {
   constructor(message: string, public readonly code: PngSvgErrorCode) {

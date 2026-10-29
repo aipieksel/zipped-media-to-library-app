@@ -5,9 +5,11 @@ import JSZip from 'jszip';
 import { convertPng, decodePngPixels, verifySvgPixels } from '../src/png-svg-browser';
 import type { PngSvgFidelity, PngSvgResult } from '../src/png-svg-browser';
 import { allocateSvgFilename, PNG_SVG_LIMITS, PngSvgError } from '../src/png-svg';
+import { normalizeTracedSvg } from '../src/png-svg-trace';
 import { buildSvgZip } from '../src/png-svg-download';
 import {
-  concatenateBytes, createPngFixtures, encodeRgbaPng, pngChunk, pngHeader, PNG_SIGNATURE,
+  alphaTopology, concatenateBytes, createCurveReferenceFixture, createPngFixtures, encodeRgbaPng,
+  meanAbsoluteAlphaError, pngChunk, pngHeader, PNG_SIGNATURE,
 } from './png-fixture-generator';
 import type { PngFixture } from './png-fixture-generator';
 
@@ -64,8 +66,73 @@ function resultDetails(result: PngSvgResult): unknown {
   return {
     mode: result.mode, width: result.width, height: result.height,
     rectangleCount: result.rectangleCount, sourceBytes: result.sourceBytes,
+    pathCount: result.pathCount, engine: result.engine, verification: result.verification,
     outputBytes: result.outputBytes, fidelity: result.fidelity, warnings: result.warnings,
   };
+}
+
+/** Enlarge the SVG viewport, retaining its original viewBox and actual geometry. */
+async function rasterSvgAtSize(svg: string, width: number, height: number): Promise<Uint8ClampedArray> {
+  const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml');
+  parsed.documentElement.setAttribute('width', String(width));
+  parsed.documentElement.setAttribute('height', String(height));
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(parsed)], { type: 'image/svg+xml' }));
+  const image = new Image();
+  const canvas = document.createElement('canvas');
+  let timer: number | undefined;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      timer = window.setTimeout(() => reject(new Error('The enlarged SVG could not be rendered within 20 seconds.')), 20_000);
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error('The enlarged SVG failed to decode.'));
+      image.src = url;
+    });
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d', { alpha: true, colorSpace: 'srgb', willReadFrequently: true });
+    assert(context, 'A comparison canvas could not be created.');
+    context.drawImage(image, 0, 0);
+    return context.getImageData(0, 0, width, height, { colorSpace: 'srgb' }).data;
+  } finally {
+    if (timer !== undefined) window.clearTimeout(timer);
+    image.onload = null; image.onerror = null; image.removeAttribute('src');
+    URL.revokeObjectURL(url);
+    canvas.width = 0; canvas.height = 0;
+  }
+}
+
+/** Fail only the pinned local VTracer worker; the real fallback worker still runs. */
+async function convertWithVTracerStartupFailure(file: File): Promise<{ result: PngSvgResult; failedStarts: number }> {
+  const originalWorker = window.Worker;
+  let failedStarts = 0;
+  const interceptedWorker = new Proxy(originalWorker, {
+    construct(target, argumentsList) {
+      const workerUrl = new URL(String(argumentsList[0]), document.baseURI);
+      if (workerUrl.origin === location.origin && workerUrl.pathname.endsWith('/vendor/vtracer/worker.js')) {
+        failedStarts++;
+        throw new Error('Deliberate development check: VTracer worker startup failed.');
+      }
+      return Reflect.construct(target, argumentsList);
+    },
+  });
+  window.Worker = interceptedWorker;
+  try {
+    const result = await convertPng(file, { mode: 'smooth' });
+    assert(failedStarts === 1, `Expected one deliberately failed VTracer startup; observed ${failedStarts}.`);
+    assert(result.engine.name.startsWith('ImageTracer') && result.engine.version.startsWith('1.2.6'),
+      `The actual fallback engine was not reported: ${JSON.stringify(result.engine)}.`);
+    assert(result.warnings.some(warning => warning.startsWith('VTracer could not complete')),
+      'The VTracer failure and fallback were not disclosed.');
+    assert((result.pathCount ?? 0) > 0 && !result.svg.includes('<image'), 'The fallback did not produce editable geometry.');
+    const source = await decodePngPixels(file);
+    const comparison = await verifySvgPixels(result.svg, source.pixels, source.metadata.width, source.metadata.height);
+    assert(comparison.status !== 'unavailable' && comparison.status === result.fidelity.status &&
+      comparison.differingPixels === result.fidelity.differingPixels,
+    'Fallback fidelity does not match a fresh rendering of its downloadable SVG.');
+    return { result, failedStarts };
+  } finally {
+    window.Worker = originalWorker;
+  }
 }
 
 async function rejectsWithCode(operation: () => Promise<unknown>, code: string): Promise<unknown> {
@@ -106,12 +173,17 @@ function setupPixelChecks(content: HTMLElement): void {
       <thead><tr><th>Check</th><th>Result</th><th>Milliseconds</th><th>Evidence</th></tr></thead>
       <tbody id="results"></tbody>
     </table></div>
+    <section id="curve-previews" aria-label="Synthetic contour comparison"></section>
     <details><summary>Full JSON report</summary><pre id="json-report">No report yet.</pre></details>`;
   const runButton = content.querySelector<HTMLButtonElement>('#run-checks')!;
   const downloadButton = content.querySelector<HTMLButtonElement>('#download-report')!;
   const summary = content.querySelector<HTMLElement>('#summary')!;
   const results = content.querySelector<HTMLTableSectionElement>('#results')!;
   const jsonReport = content.querySelector<HTMLElement>('#json-report')!;
+  const curvePreviews = content.querySelector<HTMLElement>('#curve-previews')!;
+  const previewUrls: string[] = [];
+  const clearPreviews = () => { for (const url of previewUrls.splice(0)) URL.revokeObjectURL(url); curvePreviews.replaceChildren(); };
+  window.addEventListener('pagehide', clearPreviews);
   let report: BrowserReport | undefined;
   const converted = new Map<PngFixture['category'], PngSvgResult>();
 
@@ -156,6 +228,7 @@ function setupPixelChecks(content: HTMLElement): void {
     runButton.disabled = true;
     downloadButton.disabled = true;
     results.replaceChildren();
+    clearPreviews();
     converted.clear();
     report = {
       scope: 'Actual serialized SVG rendered at native dimensions against decoded PNG RGBA in this browser; transparent pixels ignore hidden RGB only when both alpha values are zero.',
@@ -300,6 +373,162 @@ function setupPixelChecks(content: HTMLElement): void {
           assert(await zip.file(entry.filename)?.async('string') === entry.svg, `ZIP entry ${entry.filename} changed or disappeared.`);
         }
         return { names, zipBytes: blob.size, entriesPreserved: true };
+      });
+
+      await check('Smooth silhouette: improve independent 4× contour reference while preserving hole, island and thin stroke', async () => {
+        const fixture = createCurveReferenceFixture();
+        const file = new File([fixture.bytes], fixture.name, { type: 'image/png' });
+        const pixelResult = await convertPng(file, { mode: 'pixels' });
+        verified(pixelResult.fidelity);
+        const smoothResult = await convertPng(file, { mode: 'smooth' });
+        assert(smoothResult.engine.id === 'silhouette', `Expected the conservative silhouette route; got ${JSON.stringify(smoothResult.engine)}.`);
+        assert((smoothResult.pathCount ?? 0) > 0 && !smoothResult.svg.includes('<image'), 'Smooth output must contain editable geometry.');
+        const size = 96 * fixture.referenceScale;
+        const pixelRender = await rasterSvgAtSize(pixelResult.svg, size, size);
+        const smoothRender = await rasterSvgAtSize(smoothResult.svg, size, size);
+        const pixelError = meanAbsoluteAlphaError(pixelRender, fixture.reference);
+        const smoothError = meanAbsoluteAlphaError(smoothRender, fixture.reference);
+        const expectedTopology = alphaTopology(fixture.reference, size, size);
+        const actualTopology = alphaTopology(smoothRender, size, size);
+        const evidence = {
+          metric: 'Mean absolute alpha-channel error at 4×, in 0–255 alpha units; independent analytic shape sampling',
+          pixelError, smoothError, improvementPercent: (pixelError - smoothError) / pixelError * 100,
+          expectedTopology, actualTopology, result: resultDetails(smoothResult),
+        };
+
+        const title = document.createElement('h2'); title.textContent = 'Actual 400% geometry and independent target';
+        const panels = document.createElement('div'); panels.style.cssText = 'display:flex;gap:14px;flex-wrap:wrap';
+        for (const [label, blob] of [
+          ['Pixel SVG · actual geometry', new Blob([pixelResult.svg], { type: 'image/svg+xml' })],
+          ['Smooth SVG · actual geometry', new Blob([smoothResult.svg], { type: 'image/svg+xml' })],
+          ['Independent 4× analytic reference', new Blob([encodeRgbaPng(fixture.reference, size, size)], { type: 'image/png' })],
+        ] as const) {
+          const panel = document.createElement('figure'); panel.style.cssText = 'margin:0;max-width:100%';
+          const caption = document.createElement('figcaption'); caption.textContent = label;
+          const image = document.createElement('img'); image.alt = label;
+          const url = URL.createObjectURL(blob); previewUrls.push(url); image.src = url;
+          image.width = size; image.height = size; image.style.cssText = 'display:block;max-width:100%;height:auto;background:white;border:1px solid #ccd4c9';
+          panel.append(caption, image); panels.append(panel);
+        }
+        curvePreviews.append(title, panels);
+        assert(smoothError < pixelError, `Smooth contour must improve the independent oracle: ${JSON.stringify(evidence)}.`);
+        assert(actualTopology.components === expectedTopology.components && actualTopology.holes === expectedTopology.holes,
+          `Smooth contour lost topology/details: ${JSON.stringify(evidence)}.`);
+        assert(smoothRender[(79 * 4 * size + 81 * 4) * 4 + 3] >= 128, 'The thin stroke endpoint was lost.');
+        assert(smoothResult.verification.browser === navigator.userAgent && Number.isFinite(Date.parse(smoothResult.verification.checkedAt)), 'Verification provenance is missing.');
+        assert(smoothResult.outputBytes === new Blob([smoothResult.svg]).size, 'SVG byte accounting differs from the saved payload.');
+        return evidence;
+      });
+
+      await check('Opaque smooth route executes VTracer and keeps distinct color fills', async () => {
+        const fixture = fixtures.find(item => item.category === 'opaque')!;
+        const result = await convertPng(pngFile(fixture), { mode: 'smooth' });
+        assert(result.engine.id === 'vtracer', `The retained VTracer engine must actually execute: ${JSON.stringify(resultDetails(result))}.`);
+        const svg = new DOMParser().parseFromString(result.svg, 'image/svg+xml');
+        const fills = new Set(Array.from(svg.querySelectorAll('[fill]')).map(node => node.getAttribute('fill')));
+        assert(fills.size >= 3, `Distinct colors were flattened: ${[...fills].join(', ')}.`);
+        assert((result.pathCount ?? 0) > 0 && !result.svg.includes('<image'), 'VTracer output is not editable geometry.');
+        return { ...(resultDetails(result) as object), distinctFills: [...fills] };
+      });
+
+      await check('Forced VTracer startup failure: opaque ImageTracer fallback runs and reports actual native differences', async () => {
+        const fixture = fixtures.find(item => item.category === 'opaque')!;
+        const originalWorker = window.Worker;
+        const { result, failedStarts } = await convertWithVTracerStartupFailure(pngFile(fixture));
+        assert(window.Worker === originalWorker, 'The Worker constructor was not restored after the failure injection.');
+        assert(result.engine.id === 'imagetracer', 'Opaque fallback reported the wrong route.');
+        const svg = new DOMParser().parseFromString(result.svg, 'image/svg+xml');
+        const fills = new Set(Array.from(svg.querySelectorAll('[fill]')).map(node => node.getAttribute('fill')));
+        assert(fills.size >= 3, `Opaque fallback flattened distinct colors: ${[...fills].join(', ')}.`);
+        return { failedStarts, workerRestored: true, distinctFills: [...fills], result: resultDetails(result) };
+      });
+
+      await check('Forced VTracer startup failure: silhouette fallback improves the independent 4× reference and preserves details', async () => {
+        const fixture = createCurveReferenceFixture();
+        const file = new File([fixture.bytes], fixture.name, { type: 'image/png' });
+        const originalWorker = window.Worker;
+        const { result, failedStarts } = await convertWithVTracerStartupFailure(file);
+        assert(window.Worker === originalWorker, 'The Worker constructor was not restored after the failure injection.');
+        assert(result.engine.id === 'silhouette', 'Silhouette fallback reported the wrong route.');
+        const pixelResult = await convertPng(file, { mode: 'pixels' });
+        verified(pixelResult.fidelity);
+        const size = fixture.width * fixture.referenceScale;
+        const smoothRender = await rasterSvgAtSize(result.svg, size, size);
+        const pixelRender = await rasterSvgAtSize(pixelResult.svg, size, size);
+        const smoothError = meanAbsoluteAlphaError(smoothRender, fixture.reference);
+        const pixelError = meanAbsoluteAlphaError(pixelRender, fixture.reference);
+        const expectedTopology = alphaTopology(fixture.reference, size, size);
+        const actualTopology = alphaTopology(smoothRender, size, size);
+        const evidence = { failedStarts, workerRestored: true, pixelError, smoothError, expectedTopology, actualTopology, result: resultDetails(result) };
+        assert(smoothError < pixelError, `Fallback contour must improve the independent oracle: ${JSON.stringify(evidence)}.`);
+        assert(actualTopology.components === expectedTopology.components && actualTopology.holes === expectedTopology.holes,
+          `Fallback contour lost topology/details: ${JSON.stringify(evidence)}.`);
+        assert(smoothRender[(79 * 4 * size + 81 * 4) * 4 + 3] >= 128, 'The fallback lost the thin stroke endpoint.');
+        return evidence;
+      });
+
+      await check('RGBA smooth route keeps a partially transparent interior and transparent exterior', async () => {
+        const pixels = new Uint8ClampedArray(16 * 16 * 4);
+        for (let y = 3; y < 13; y++) for (let x = 3; x < 13; x++) pixels.set([31, 117, 203, 127], (y * 16 + x) * 4);
+        const file = new File([encodeRgbaPng(pixels, 16, 16)], 'synthetic-translucent.png', { type: 'image/png' });
+        const result = await convertPng(file, { mode: 'smooth' });
+        assert(result.engine.id === 'imagetracer', `A translucent field must not enter binary silhouette tracing: ${result.engine.id}.`);
+        const rendered = await rasterSvgAtSize(result.svg, 16, 16);
+        assert(rendered[(8 * 16 + 8) * 4 + 3] === 127, 'The translucent interior was flattened or thresholded.');
+        assert(rendered[3] === 0, 'The transparent background was filled.');
+        return resultDetails(result);
+      });
+
+      await check('Indexed transparency and soft alpha fields use measured RGBA smooth output', async () => {
+        const results: unknown[] = [];
+        for (const category of ['palette', 'partial-alpha'] as const) {
+          const fixture = fixtures.find(item => item.category === category)!;
+          const result = await convertPng(pngFile(fixture), { mode: 'smooth' });
+          const source = await decodePngPixels(pngFile(fixture));
+          const independent = await verifySvgPixels(result.svg, source.pixels, fixture.width, fixture.height);
+          assert(result.engine.id === 'imagetracer', `${category} must use the alpha-aware route.`);
+          assert(result.fidelity.status !== 'unavailable', 'The actual smooth SVG must render.');
+          assert(result.fidelity.status === independent.status && result.fidelity.differingPixels === independent.differingPixels, 'Reported fidelity differs from a fresh check of the downloadable SVG.');
+          results.push({ category, result: resultDetails(result) });
+        }
+        return results;
+      });
+
+      await check('Fully transparent smooth input has no visible paths and verifies zero', async () => {
+        const fixture = fixtures.find(item => item.category === 'transparent')!;
+        const result = await convertPng(pngFile(fixture), { mode: 'smooth' });
+        verified(result.fidelity);
+        assert(result.pathCount === 0 && !result.svg.includes('<image'), 'Invisible input created visible geometry or a bitmap.');
+        return resultDetails(result);
+      });
+
+      await check('Smooth SVG allowlist rejects executable, external, bitmap and invalid geometry output', async () => {
+        const prefix = '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1">';
+        const rejected = [
+          '<script>alert(1)</script>', '<image href="data:image/png;base64,AA=="/>',
+          '<path d="M0 0L1 1Z" onload="alert(1)"/>', '<path d="M0 0L1 1Z" fill="url(#paint)"/>',
+          '<path d="M0 0L1e99 1Z"/>', '<foreignObject/>',
+        ];
+        for (const content of rejected) {
+          let failed = false;
+          try { normalizeTracedSvg(prefix + content + '</svg>', 1, 1); }
+          catch (error) { failed = error instanceof PngSvgError; }
+          assert(failed, `Unsafe tracer output was accepted: ${content}`);
+        }
+        return { rejectedCases: rejected.length };
+      });
+
+      await check('Smooth cancellation at a real RGBA worker progress event rejects as AbortError', async () => {
+        const controller = new AbortController();
+        let progressSeen = false;
+        const rejection = await rejectsAsAbort(() => convertPng(pngFile(partial), {
+          mode: 'smooth', signal: controller.signal,
+          onProgress: progress => {
+            if (progress.stage === 'converting' && progress.percent !== undefined) { progressSeen = true; controller.abort(); }
+          },
+        }));
+        assert(progressSeen, 'Cancellation never reached the active tracing worker.');
+        return { rejection, progressSeen };
       });
     } finally {
       report.completedAt = new Date().toISOString();

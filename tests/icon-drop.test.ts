@@ -14,11 +14,22 @@ function directory(name: string, batches: IconDropEntry[][]): IconDropEntry & {r
   return entry;
 }
 
-test('relative icon paths normalize Unicode and separators but reject traversal, absolute paths, control characters and excessive depth', () => {
-  assert.equal(normalizeIconPath('Set\\Cafe\u0301\\icon.png'), 'Set/Café/icon.png');
+test('relative icon paths preserve literal Unicode identity and normalize separators while rejecting unsafe paths', () => {
+  assert.equal(normalizeIconPath('Set\\Cafe\u0301\\icon.png'), 'Set/Cafe\u0301/icon.png');
   assert.equal(normalizeIconPath('Set/%2e%2e/%2F.png'), 'Set/%2e%2e/%2F.png');
   for (const path of ['', '/root.png', 'C:\\root.png', '../x.png', 'a/../x.png', 'a/./x.png', 'a//x.png', 'a\0.png']) assert.throws(() => normalizeIconPath(path));
   assert.throws(() => normalizeIconPath(Array(33).fill('folder').join('/')), IconDropLimitError);
+});
+
+test('canonically equivalent Unicode sibling folders retain distinct source identities before safe display allocation', async () => {
+  const composed = directory('Café', [[fileEntry('same.png')]]);
+  const decomposed = directory('Cafe\u0301', [[fileEntry('same.png')]]);
+  const root = directory('Pack', [[composed, decomposed]]);
+  const batch = prepareIconImport(await readIconDrop({entries: [{entry: root, rootKey: 'root'}], files: [], notices: []}));
+  assert.deepEqual(batch.directories.map(entry => entry.relativePath), ['Pack', 'Pack/Café', 'Pack/Cafe\u0301']);
+  assert.equal(new Set(batch.files.map(entry => entry.relativePath)).size, 2);
+  assert.equal(new Set(batch.files.map(entry => entry.relativePath.normalize('NFC'))).size, 1);
+  assert.equal(batch.files[0].rootKey, batch.files[1].rootKey);
 });
 
 test('drop captures live entry handles synchronously and never rereads protected DataTransfer during traversal', async () => {

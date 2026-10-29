@@ -168,3 +168,96 @@ export function createPngFixtures(): PngFixture[] {
   const alphaSweep = rgbaFixture('alpha-sweep', 256, sweepColors.length, (x, y) => [...sweepColors[y], x] as const);
   return [opaque, transparent, partial, antialiased, indexed, multicolor, alphaSweep];
 }
+
+export interface CurveReferenceFixture {
+  name: string;
+  width: number;
+  height: number;
+  rgba: Uint8ClampedArray;
+  bytes: Uint8Array;
+  referenceScale: number;
+  reference: Uint8ClampedArray;
+}
+
+function silhouetteContains(x: number, y: number): boolean {
+  const outer = ((x - 42.25) / 28.3) ** 2 + ((y - 44.1) / 31.2) ** 2 <= 1;
+  const hole = ((x - 41.7) / 13.4) ** 2 + ((y - 43.65) / 16.1) ** 2 < 1;
+  const island = (x - 13.25) ** 2 + (y - 12.75) ** 2 <= 2.3 ** 2;
+  const dx = 82.5 - 63, dy = 80 - 63;
+  const t = Math.max(0, Math.min(1, ((x - 63) * dx + (y - 63) * dy) / (dx * dx + dy * dy)));
+  const thinStroke = (x - 63 - t * dx) ** 2 + (y - 63 - t * dy) ** 2 <= 1.55 ** 2;
+  return (outer && !hole) || island || thinStroke;
+}
+
+function sampleKnownSilhouette(scale: number, samples: number): Uint8ClampedArray {
+  const width = 96 * scale;
+  const height = 96 * scale;
+  const pixels = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let covered = 0;
+      for (let sy = 0; sy < samples; sy++) {
+        for (let sx = 0; sx < samples; sx++) {
+          if (silhouetteContains((x + (sx + 0.5) / samples) / scale, (y + (sy + 0.5) / samples) / scale)) covered++;
+        }
+      }
+      pixels[(y * width + x) * 4 + 3] = Math.round(covered * 255 / (samples * samples));
+    }
+  }
+  return pixels;
+}
+
+/** A known continuous shape, independently sampled at native and 4× resolutions. */
+export function createCurveReferenceFixture(): CurveReferenceFixture {
+  const rgba = sampleKnownSilhouette(1, 8);
+  return {
+    name: 'synthetic-silhouette-96.png', width: 96, height: 96, rgba,
+    bytes: encodeRgbaPng(rgba, 96, 96), referenceScale: 4,
+    // This is sampled from analytic geometry, never a resized source PNG.
+    reference: sampleKnownSilhouette(4, 4),
+  };
+}
+
+export function meanAbsoluteAlphaError(actual: Uint8Array | Uint8ClampedArray, expected: Uint8Array | Uint8ClampedArray): number {
+  if (actual.length !== expected.length || actual.length % 4 !== 0) throw new Error('Comparison dimensions differ.');
+  let error = 0;
+  for (let offset = 3; offset < actual.length; offset += 4) error += Math.abs(actual[offset] - expected[offset]);
+  return error / (actual.length / 4);
+}
+
+/** Eight-connected foreground / four-connected background avoid diagonal ambiguity. */
+export function alphaTopology(pixels: Uint8Array | Uint8ClampedArray, width: number, height: number): { components: number; holes: number } {
+  if (pixels.length !== width * height * 4) throw new Error('Topology dimensions differ.');
+  const seen = new Uint8Array(width * height);
+  const queue = new Uint32Array(width * height);
+  let components = 0;
+  let holes = 0;
+  for (let origin = 0; origin < seen.length; origin++) {
+    if (seen[origin]) continue;
+    const visible = pixels[origin * 4 + 3] >= 128;
+    let head = 0, tail = 1;
+    let touchesBorder = false;
+    queue[0] = origin;
+    seen[origin] = 1;
+    while (head < tail) {
+      const pixel = queue[head++];
+      const x = pixel % width, y = Math.floor(pixel / width);
+      if (x === 0 || y === 0 || x === width - 1 || y === height - 1) touchesBorder = true;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if ((dx === 0 && dy === 0) || (!visible && dx !== 0 && dy !== 0)) continue;
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+          const neighbor = ny * width + nx;
+          if (!seen[neighbor] && (pixels[neighbor * 4 + 3] >= 128) === visible) {
+            seen[neighbor] = 1;
+            queue[tail++] = neighbor;
+          }
+        }
+      }
+    }
+    if (visible) components++;
+    else if (!touchesBorder) holes++;
+  }
+  return { components, holes };
+}

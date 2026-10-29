@@ -32,7 +32,9 @@ export function normalizeIconPath(input: string): string {
   if (typeof input !== 'string' || !input || input.length > ICON_IMPORT_LIMITS.maxPathLength || /^[\\/]/.test(input) || /^[a-z]:/i.test(input) || /[\u0000-\u001f\u007f-\u009f]/.test(input)) {
     throw new Error('A dropped file has an invalid or excessively long relative path.');
   }
-  const parts = input.replace(/\\/g, '/').normalize('NFC').split('/');
+  // Source paths are identities. Composed/decomposed sibling names may refer to
+  // different directories; normalize only their allocated display/export names.
+  const parts = input.replace(/\\/g, '/').split('/');
   if (parts.some(part => !part || part === '.' || part === '..')) throw new Error('Folder paths cannot contain empty segments, “.” or “..”.');
   if (parts.length > ICON_IMPORT_LIMITS.maxDepth) throw new IconDropLimitError(`Folders can be at most ${ICON_IMPORT_LIMITS.maxDepth} levels deep.`);
   return parts.join('/');
