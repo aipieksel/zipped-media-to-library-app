@@ -4,7 +4,7 @@ Prepared from pinned upstream sources on 2026-10-29. This notice accompanies the
 
 ## Scope and license selection
 
-The runtime packages are `vtracer-browser` 0.0.3 and `imagetracerjs` 1.2.6. The VTracer WebAssembly binding source is pinned to commit `2c137d3b0aa7a0c1f1f27b81981c611803e57597`. Its lockfile includes VTracer 1.0.0-alpha.4, VisionCortex 0.9.3 and the exact Rust package versions listed below.
+The runtime packages are `vtracer-browser` 0.0.3, `imagetracerjs` 1.2.6 and `fit-curve` 0.2.0 (see the additional fitting notice below). The VTracer WebAssembly binding source is pinned to commit `2c137d3b0aa7a0c1f1f27b81981c611803e57597`. Its lockfile includes VTracer 1.0.0-alpha.4, VisionCortex 0.9.3 and the exact Rust package versions listed below.
 
 Where a package explicitly offers MIT as an alternative to Apache-2.0, this notice reproduces its MIT option. Apache-only packages retain the complete Apache-2.0 terms. Supplementary notices, the BSD-2-Clause terms, public-domain/Unlicense text and the additional Unicode-3.0 terms are retained. Identical retained license texts share a section; the component tables map every package to its applicable section. Copyright statements in those sections are copied from the inspected upstream files without replacing their authors or years.
 
@@ -1307,4 +1307,33 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
+
+
+## Native alpha contour fitting: fit-curve 0.2.0
+
+The eligible monochrome contour worker also bundles fit-curve 0.2.0 (MIT), upstream https://github.com/soswow/fit-curve. The npm package has no runtime dependencies. The published archive SHA-256 is db5af99ede8211d077835b447ca3a4654f22715362702bd566d27a28fca89908; the lockfile records its SHA-512 integrity. This is an additional component beyond the preceding VTracer/ImageTracer tables. Its exact published LICENSE follows.
+
+```text
+The MIT License (MIT)
+
+Copyright (c) 2014 Volker Poplawski
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```

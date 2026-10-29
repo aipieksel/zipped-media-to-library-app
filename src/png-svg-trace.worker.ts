@@ -1,6 +1,7 @@
 import ImageTracer from 'imagetracerjs';
-import { createSilhouetteMask, createTracePalette, imageTracerOptions, normalizeTransparentPixels, PNG_SVG_TRACE_LIMITS, validateTraceInput } from './png-svg-trace';
+import { createTracePalette, imageTracerOptions, normalizeTransparentPixels, PNG_SVG_TRACE_LIMITS, validateTraceInput } from './png-svg-trace';
 import { PNG_SVG_LIMITS, PngSvgError } from './png-svg';
+import { createAlphaContourSvg } from './png-svg-contours';
 
 interface TraceRequest { pixels: ArrayBuffer; width: number; height: number; silhouette: boolean }
 const worker = globalThis as unknown as {
@@ -14,9 +15,16 @@ worker.onmessage = event => {
     if (!(buffer instanceof ArrayBuffer)) throw new Error('The tracing worker received invalid pixels.');
     const original = new Uint8ClampedArray(buffer);
     validateTraceInput(original, width, height);
-    const pixels = silhouette ? createSilhouetteMask(original, false) : normalizeTransparentPixels(original);
-    const palette = silhouette ? [{ r: 0, g: 0, b: 0, a: 0 }, { r: 0, g: 0, b: 0, a: 255 }] : createTracePalette(pixels);
-    const options = imageTracerOptions(palette, silhouette);
+    if (silhouette) {
+      const result = createAlphaContourSvg(original, width, height, {
+        onProgress: percent => worker.postMessage({ type: 'progress', percent }),
+      });
+      worker.postMessage({ type: 'result', svg: result.svg });
+      return;
+    }
+    const pixels = normalizeTransparentPixels(original);
+    const palette = createTracePalette(pixels);
+    const options = imageTracerOptions(palette);
     worker.postMessage({ type: 'progress', percent: 15 });
     const traced = ImageTracer.imagedataToTracedata({ width, height, data: pixels }, options);
     let paths = 0;
@@ -25,7 +33,7 @@ worker.onmessage = event => {
       if (traced.palette[layer].a === 0) { traced.layers[layer] = []; continue; }
       for (const path of traced.layers[layer]) { paths++; commands += path.segments.length; }
       if (paths > PNG_SVG_TRACE_LIMITS.maxPaths || commands > PNG_SVG_TRACE_LIMITS.maxPathCommands) {
-        throw new PngSvgError('This smooth trace contains too many paths. Use Pixel vectors or Embedded PNG.', 'trace-limit');
+        throw new PngSvgError('This smooth trace contains too many paths. Use Pixel vectors or Embedded bitmap.', 'trace-limit');
       }
     }
     worker.postMessage({ type: 'progress', percent: 90 });

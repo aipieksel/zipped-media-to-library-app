@@ -22,7 +22,7 @@ export type SilhouetteAnalysis =
   | { silhouette: SilhouetteInfo; reason: null }
   | { silhouette: null; reason: SilhouetteRejectionReason };
 export interface PngSvgEngine {
-  id: 'pixel-rectangles' | 'original-png' | 'vtracer' | 'imagetracer' | 'silhouette';
+  id: 'pixel-rectangles' | 'original-png' | 'original-webp' | 'vtracer' | 'imagetracer' | 'silhouette';
   name: string;
   version: string;
 }
@@ -30,7 +30,7 @@ export interface PngSvgEngine {
 export const TRACE_ENGINES = Object.freeze({
   vtracer: { id: 'vtracer', name: 'VTracer', version: '1.0.0-alpha.4 / browser 0.0.3 / profile 1' },
   imagetracer: { id: 'imagetracer', name: 'ImageTracer', version: '1.2.6 / RGBA profile 1' },
-  silhouette: { id: 'silhouette', name: 'ImageTracer · silhouette contours', version: '1.2.6 / silhouette profile 2' },
+  silhouette: { id: 'silhouette', name: 'Native alpha contours', version: 'marching squares 1 / fit-curve 0.2.0 / silhouette profile 3' },
 } satisfies Record<string, PngSvgEngine>);
 
 const SILHOUETTE_SUPPORT_RADIUS = 3;
@@ -52,7 +52,7 @@ export function validateTraceInput(pixels: Uint8Array | Uint8ClampedArray, width
     throw new PngSvgError('The decoded pixels do not match the tracing dimensions.', 'invalid-png');
   }
   if (width > PNG_SVG_TRACE_LIMITS.maxSide || height > PNG_SVG_TRACE_LIMITS.maxSide || width * height > PNG_SVG_TRACE_LIMITS.maxPixels) {
-    throw new PngSvgError('Smooth curves supports up to 262,144 pixels and 1,024 pixels per side. Use Pixel vectors or Embedded PNG for this original; no resizing has been applied.', 'trace-limit');
+    throw new PngSvgError('Smooth curves supports up to 262,144 pixels and 1,024 pixels per side. Use Pixel vectors or Embedded bitmap for this original; no resizing has been applied.', 'trace-limit');
   }
 }
 
@@ -283,7 +283,7 @@ export function validateSvgPath(data: string): number {
       }
     }
     commands += count / required;
-    if (commands > PNG_SVG_TRACE_LIMITS.maxPathCommands) throw new PngSvgError('The smooth SVG contains too many path segments. Use Pixel vectors or Embedded PNG.', 'trace-limit');
+    if (commands > PNG_SVG_TRACE_LIMITS.maxPathCommands) throw new PngSvgError('The smooth SVG contains too many path segments. Use Pixel vectors or Embedded bitmap.', 'trace-limit');
   }
   return commands;
 }
@@ -354,7 +354,7 @@ export function normalizeTracedSvg(raw: string, width: number, height: number, f
       if (!node.hasAttribute('d') || node.children.length) throw new PngSvgError('The tracer returned an invalid path element.', 'invalid-svg');
       pathCount++;
       if (pathCount > PNG_SVG_TRACE_LIMITS.maxPaths || totalCommands > PNG_SVG_TRACE_LIMITS.maxPathCommands) {
-        throw new PngSvgError('The smooth SVG is too complex. Use Pixel vectors or Embedded PNG.', 'trace-limit');
+        throw new PngSvgError('The smooth SVG is too complex. Use Pixel vectors or Embedded bitmap.', 'trace-limit');
       }
       if (foreground) attributes.push(`fill="rgb(${foreground.r},${foreground.g},${foreground.b})"`);
       return `<path ${attributes.join(' ')}/>`;

@@ -118,3 +118,7 @@ Independent GPR approved the combined contour/WebP amendment after F8 correction
 - checklist.md: `5f0e8e8a12db6606c8a4563849b10c99de54f07937b8774b9b5159e8188ac91a`
 - fix-plan.md: `c1804f4db03baad895d40010ba2321a6695b9bde17a26ce1dc3620af6399456c`
 - test-plan.md: `e33338cb4511e4dc295937006180eee75848e9ff277cc951eb2e54e905f1f926`
+
+### Continuous contour implementation checkpoint
+
+Exact fit-curve0.2.0 installed (one dependency), full MIT notice appended without normalizing the existing21CR bytes. The independent contour suite passed33/33; root actual Chrome155 native browser suite passed31/31 with frozen references. Original/resampled enlarged alpha MAE improved76.2070%/85.4928% versus pixel geometry. Four roundness guards report100%curved coverage and0degreeflat; actual400%visual inspected. Smooth native errors remain397/9216 and1289/9216, disclosed honestly. See artifacts/revision-7-verification.md. WebP/runtimeproduction/release remain pending.

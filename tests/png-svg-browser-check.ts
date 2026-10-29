@@ -13,6 +13,7 @@ import {
   meanAbsoluteAlphaError, pngChunk, pngHeader, PNG_SIGNATURE,
 } from './png-fixture-generator';
 import type { PngFixture } from './png-fixture-generator';
+import { inspectCircularContours } from './png-svg-curve-metrics';
 
 if (!import.meta.env.DEV) throw new Error('The PNG browser harness is available only in the development server.');
 
@@ -61,6 +62,12 @@ function pngFile(fixture: PngFixture, name = fixture.name): File {
 function verified(fidelity: PngSvgFidelity): void {
   assert(fidelity.status === 'verified' && fidelity.differingPixels === 0,
     `Expected verified with zero differences; received ${JSON.stringify(fidelity)}.`);
+}
+
+function alphaContourEngine(result: PngSvgResult): void {
+  assert(result.engine.id === 'silhouette' && result.engine.name === 'Native alpha contours' &&
+    result.engine.version === 'marching squares 1 / fit-curve 0.2.0 / silhouette profile 3',
+  `The actual native-alpha/cubic profile 3 engine was not reported: ${JSON.stringify(result.engine)}.`);
 }
 
 function resultDetails(result: PngSvgResult): unknown {
@@ -120,11 +127,12 @@ async function convertWithVTracerUnavailable(file: File, expectedStarts: 0 | 1):
   try {
     const result = await convertPng(file, { mode: 'smooth' });
     assert(failedStarts === expectedStarts, `Expected ${expectedStarts} deliberately failed VTracer startups; observed ${failedStarts}.`);
-    assert(result.engine.name.startsWith('ImageTracer') && result.engine.version.startsWith('1.2.6'),
-      `The actual ImageTracer engine was not reported: ${JSON.stringify(result.engine)}.`);
+    if (expectedStarts === 1) assert(result.engine.id === 'imagetracer' && result.engine.name.startsWith('ImageTracer') && result.engine.version.startsWith('1.2.6'),
+      `The actual opaque ImageTracer fallback was not reported: ${JSON.stringify(result.engine)}.`);
+    else alphaContourEngine(result);
     const hasFallbackWarning = result.warnings.some(warning => warning.startsWith('VTracer could not complete'));
     assert(hasFallbackWarning === (expectedStarts === 1), 'The fallback warning does not describe the actual route.');
-    assert((result.pathCount ?? 0) > 0 && !result.svg.includes('<image'), 'ImageTracer did not produce editable geometry.');
+    assert((result.pathCount ?? 0) > 0 && !result.svg.includes('<image'), 'The selected local engine did not produce editable geometry.');
     const source = await decodePngPixels(file);
     const comparison = await verifySvgPixels(result.svg, source.pixels, source.metadata.width, source.metadata.height);
     assert(comparison.status !== 'unavailable' && comparison.status === result.fidelity.status &&
@@ -382,8 +390,7 @@ function setupPixelChecks(content: HTMLElement): void {
         const pixelResult = await convertPng(file, { mode: 'pixels' });
         verified(pixelResult.fidelity);
         const smoothResult = await convertPng(file, { mode: 'smooth' });
-        assert(smoothResult.engine.id === 'silhouette', `Expected the conservative silhouette route; got ${JSON.stringify(smoothResult.engine)}.`);
-        assert(smoothResult.engine.name.startsWith('ImageTracer'), `The accepted silhouette engine must execute: ${JSON.stringify(smoothResult.engine)}.`);
+        alphaContourEngine(smoothResult);
         assert((smoothResult.pathCount ?? 0) > 0 && !smoothResult.svg.includes('<image'), 'Smooth output must contain editable geometry.');
         const size = 96 * fixture.referenceScale;
         const pixelRender = await rasterSvgAtSize(pixelResult.svg, size, size);
@@ -428,11 +435,12 @@ function setupPixelChecks(content: HTMLElement): void {
         const pixelResult = await convertPng(file, {mode: 'pixels'});
         verified(pixelResult.fidelity);
         const result = await convertPng(file, {mode: 'smooth'});
-        assert(result.engine.id === 'silhouette' && result.engine.version.endsWith('silhouette profile 2'), `The repaired silhouette route did not execute: ${JSON.stringify(resultDetails(result))}.`);
+        alphaContourEngine(result);
         assert(result.width === 96 && result.height === 96, 'The resampled fixture was resized during conversion.');
         assert(result.pathCount !== null && result.pathCount > 0 && result.pathCount <= 16, `Simple line art fragmented into ${result.pathCount} paths.`);
         const parsed = new DOMParser().parseFromString(result.svg, 'image/svg+xml');
         assert(!parsed.querySelector('image') && Array.from(parsed.querySelectorAll('path')).some(path => /[QCqc]/.test(path.getAttribute('d') ?? '')), 'The line result must contain editable curve geometry, not a bitmap.');
+        const roundness = inspectCircularContours(result.svg);
         const source = await decodePngPixels(file);
         const independent = await verifySvgPixels(result.svg, source.pixels, fixture.width, fixture.height);
         assert(independent.status !== 'unavailable' && result.fidelity.status === independent.status && result.fidelity.differingPixels === independent.differingPixels, 'The actual native recount disagrees with reported fidelity.');
@@ -458,7 +466,7 @@ function setupPixelChecks(content: HTMLElement): void {
           const offset = (Math.floor(probe.y * 4) * size + Math.floor(probe.x * 4)) * 4 + 3;
           return {...probe, expectedAlpha: fixture.reference[offset], actualAlpha: smoothRender[offset]};
         });
-        const evidence = {metric: 'Mean absolute alpha error at 4× against independently sampled analytic geometry', pixelError, smoothError, improvementPercent: (pixelError - smoothError) / pixelError * 100, expectedTopology, actualTopology, probes, freshNativeCheck: independent, result: resultDetails(result)};
+        const evidence = {metric: 'Mean absolute alpha error at 4× against independently sampled analytic geometry', pixelError, smoothError, improvementPercent: (pixelError - smoothError) / pixelError * 100, expectedTopology, actualTopology, roundness, probes, freshNativeCheck: independent, result: resultDetails(result)};
         const title = document.createElement('h2'); title.textContent = 'Resampled line icon · frozen input and independent 400% target';
         const panels = document.createElement('div'); panels.style.cssText = 'display:flex;gap:14px;flex-wrap:wrap';
         for (const [label, blob] of [
@@ -475,6 +483,7 @@ function setupPixelChecks(content: HTMLElement): void {
         }
         curvePreviews.append(title, panels);
         assert(smoothError < pixelError, `The frozen resampled-line oracle did not improve: ${JSON.stringify(evidence)}.`);
+        assert(roundness.pass, `The actual SVG retains faceted circular contours: ${JSON.stringify(roundness)}.`);
         assert(expectedTopology.components === 4 && expectedTopology.holes === 2 && actualTopology.components === 4 && actualTopology.holes === 2, `Ring/stroke/island topology changed: ${JSON.stringify(evidence)}.`);
         for (const probe of probes) assert((probe.expectedAlpha >= 128) === probe.inside && (probe.actualAlpha >= 128) === probe.inside, `A line-art feature probe failed: ${JSON.stringify(probe)}.`);
         assert(result.outputBytes === new Blob([result.svg]).size, 'Output byte count differs from the actual retained SVG.');
@@ -505,7 +514,7 @@ function setupPixelChecks(content: HTMLElement): void {
         const fixture = createAngularIconFixture();
         const file = new File([fixture.bytes], fixture.name, {type: 'image/png'});
         const result = await convertPng(file, {mode: 'smooth'});
-        assert(result.engine.id === 'silhouette', 'The angular control did not exercise the repaired silhouette route.');
+        alphaContourEngine(result);
         const size = fixture.width * fixture.referenceScale;
         const rendered = await rasterSvgAtSize(result.svg, size, size);
         const topology = alphaTopology(rendered, size, size);
@@ -546,13 +555,13 @@ function setupPixelChecks(content: HTMLElement): void {
         return { failedStarts, workerRestored: true, distinctFills: [...fills], result: resultDetails(result) };
       });
 
-      await check('Silhouette tracing with VTracer blocked: independent ImageTracer route improves the 4× reference and preserves details', async () => {
+      await check('Silhouette tracing with VTracer blocked: native alpha contours improve the 4× reference and preserve details', async () => {
         const fixture = createCurveReferenceFixture();
         const file = new File([fixture.bytes], fixture.name, { type: 'image/png' });
         const originalWorker = window.Worker;
         const { result, failedStarts } = await convertWithVTracerUnavailable(file, 0);
         assert(window.Worker === originalWorker, 'The Worker constructor was not restored after the failure injection.');
-        assert(result.engine.id === 'silhouette', 'Silhouette tracing reported the wrong route.');
+        alphaContourEngine(result);
         const pixelResult = await convertPng(file, { mode: 'pixels' });
         verified(pixelResult.fidelity);
         const size = fixture.width * fixture.referenceScale;
