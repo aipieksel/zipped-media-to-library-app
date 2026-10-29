@@ -2,23 +2,24 @@
   "schema": "project-development-plan/v1",
   "contractVersion": 2,
   "workflowPreset": "GAS",
-  "title": "Folio local PNG to SVG converter",
+  "title": "Folio local PNG and WebP to SVG icon workflow",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
   "status": "executing",
   "readiness": "ready",
   "blockers": [],
-  "planRevision": 5,
+  "planRevision": 7,
   "critiqueOutcome": "revised",
-  "reviewedPlanRevision": 5,
+  "reviewedPlanRevision": 7,
   "sourceBaseline": {
-    "description": "Revision4 shared UI/persistence and production engines published as Site version10; final live observation reopened R22 for resampled monochrome fringe routing. Local7ea954a and remote main4c496601 have identical tree ded5e2d27866b3141e679e53c2d619eb73c17de4.",
-    "revision": "7ea954a95a2bb0164ea8bb15910bcc1111c120e3",
+    "description": "Revision5 wider-fringe classifier reviewed and numerically verified, but actual400%visualQA rejected faceted rings. Exactfixtures and existingUI/storage verified; continuous-alpha correction under review.",
+    "revision": "af5614eb49c19878480437d84f20d66e8435ab53",
     "dirtyPaths": []
   },
   "scope": {
     "in": [
-      "Shared existing Library navigation/sidebar for Icons, toolbar controls, durable device-local folders and automatic PNG conversion, current source-grounded tracing improvement, native verification, tests/docs, frequent pushes and same private Site release"
+      "Shared existing Library navigation/sidebar for Icons, toolbar controls, durable device-local folders and automatic PNG conversion, current source-grounded tracing improvement, native verification, tests/docs, frequent pushes and same private Site release",
+      "S3: static lossy/lossless WebP alongside PNG in the same local Icons imports, modes, native verification, persistence and downloads; no new workspace or upload service."
     ],
     "out": [
       "Private payload commits or conversion uploads, Library/cloud schema migration, invented exact smooth recovery guarantees, new Site/audience, unrelated redesign, remote GPU/services"
@@ -42,12 +43,19 @@
       "role": "user",
       "origin": "User revision after reviewing published version 9, 29 October 2026, current conversation",
       "text": "[$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) Okay, so I've had a look at your work and I'm disappointed so far. Firstly, the sidebar, the left sidebar. The left sidebar for the PNG conversion should be the exact same sidebar as the library. So you see on the library sidebar you can go and choose HTML or images. And then, and then when you click on... Oh, sorry. So you get HTML, then you get images, and then next to it should be icons. Right? There shouldn't be an entirely different sidebar. And then the conversion mode and those things, that shouldn't be in the sidebar. It should be in a toolbar. Right? And it shouldn't be a drop zone and things like that, because the library sidebar doesn't have it. Now how it should work is I drop things in the canvas or in the sidebar, whichever. If I drop a folder in it, it should obviously create a folder with the exact same logic as the images or the HTML. If I just drag images in there, then it should go into a uncategorized default folder, right? And it will always stay there. And also as soon as I drop them, they should just convert. Right, so please fix that. What I recommend you do is change the left sidebar. That should be vertical from top to bottom of the entire page. Wait, sorry. Sorry, I mean move the HTML tab and the images tab where the library button is. Right? Just move that there and then put icons next to it. But keep the exact same tree view, the exact same Finder file, the exact same left sidebar now as the HTML and images use. Just add an icons one. And then once you have done that, I want you to use the AI development workflow to do a very deep research, because I know that there's been recent advancements in image to SVG conversion technology, and there's, like, a lot of\u2014 well, there is quite, I think there's, like a GitHub repository or two that has this figured out, or a concept or something. There is a way to make it pixel perfect automatically, because I dropped two images in there and I saw it's not great. It's not perfect. So I want you to do anything in your power to do it perfectly and implement it as such, please. And once again, commit frequently."
+    },
+    {
+      "id": "S3",
+      "role": "user",
+      "origin": "Current conversation amendment, 29 October 2026, after revision6 contour prototype review",
+      "text": "Please also support WebP-to-SVG conversion in the same Icons workflow, alongside PNG"
     }
   ],
   "requestHashes": {
     "S1": "f8d247c5ffb4b9570ca8bcdef14cedcbcf695b5f914180eda290dac85f3b41c0",
     "CA1": "2c2c3a9b1a35f91c614909e50fda8bc973409b2d8420ec0186e072f0ce4c6139",
-    "S2": "e716595ea1378a39f7257bf18ecdc9137d038f22b1a102807e5ac2a2a8222a0a"
+    "S2": "e716595ea1378a39f7257bf18ecdc9137d038f22b1a102807e5ac2a2a8222a0a",
+    "S3": "3250fb3562dd3ed5afd38d277822bfd77ff3035f85c61da4ee3c5ec3aca447b6"
   },
   "requirements": [
     {
@@ -244,6 +252,14 @@
         "S2"
       ],
       "kind": "requested"
+    },
+    {
+      "id": "R24",
+      "text": "Support static WebP-to-SVG alongside PNG throughout the same Icons workflow, retaining original bytes and truthful native fidelity checks.",
+      "sources": [
+        "S3"
+      ],
+      "kind": "requested"
     }
   ],
   "steps": [
@@ -308,9 +324,11 @@
         "tests/png-svg.test.ts",
         "tests/png-svg-browser-check.ts",
         "tests/png-fixture-generator.ts",
-        "tests/png-svg-trace.test.ts"
+        "tests/png-svg-trace.test.ts",
+        "src/png-svg-contours.ts",
+        "THIRD_PARTY_NOTICES.md"
       ],
-      "change": "Preserve exact modes; bounded source-reviewed tracer spike and adopt the supported local combination. Add explicit smooth mode, actual tracer identity, strict SVG validation and native pixel comparison. Retain cancellation/time/output bounds and truthful errors. Revision5: widen only narrow silhouette fringe eligibility with capped radius3 monotone-alpha distance maps; keep foreground/color/threshold/curve/native comparison unchanged; bump actual profile identity. Report a concise device-local eligibility reason through existing Smooth warnings when the general RGBA route is chosen, so the unavailable private source can be diagnosed without export.",
+      "change": "Preserve exact modes; bounded source-reviewed tracer spike and adopt the supported local combination. Add explicit smooth mode, actual tracer identity, strict SVG validation and native pixel comparison. Retain cancellation/time/output bounds and truthful errors. Revision5: widen only narrow silhouette fringe eligibility with capped radius3 monotone-alpha distance maps; keep foreground/color/threshold/curve/native comparison unchanged; bump actual profile identity. Report a concise device-local eligibility reason through existing Smooth warnings when the general RGBA route is chosen, so the unavailable private source can be diagnosed without export. Revision6 replaces only eligible monochrome binary-mask geometry with bounded native alpha marching-squares and pinnedMITfit-curve0.2.0 cubic fitting, shared closed-loop tangents, supported corners, actualprofile3provenance; other routes and exactreference unchanged.",
       "dependsOn": [
         "P1"
       ]
@@ -367,18 +385,20 @@
         "R19",
         "R20",
         "R22",
-        "R23"
+        "R23",
+        "R24"
       ],
       "paths": [
         "tests",
         "scripts/prepare-png-svg-check.mjs",
         "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter/artifacts"
       ],
-      "change": "Run decisive unit/browser/persistence/folder/reload/native-render/curve/preview checks; independent code, privacy and accessibility review; repair admitted findings; final build and privacy gate. Revision5 adds independent resampled96px line-art gate and soft-field/translucent-interior/island/angular-detail regressions; preserve original gates.",
+      "change": "Run decisive unit/browser/persistence/folder/reload/native-render/curve/preview checks; independent code, privacy and accessibility review; repair admitted findings; final build and privacy gate. Revision5 adds independent resampled96px line-art gate and soft-field/translucent-interior/island/angular-detail regressions; preserve original gates. Revision6 adds calibrated contour-specific roundness controls, explicit marching/fitting limits and actualenlargedvisualinspection; nofrozenoracleorqualitythresholdrelaxation.",
       "dependsOn": [
         "P2",
         "P3",
-        "P4"
+        "P4",
+        "P7"
       ]
     },
     {
@@ -389,7 +409,8 @@
         "R12",
         "R13",
         "R14",
-        "R21"
+        "R21",
+        "R24"
       ],
       "paths": [
         "README.md",
@@ -399,6 +420,43 @@
       "change": "Document tested behavior/research, push milestones and main with leases, mirror only source to the existing Site, preserve identity/R2/private audience, native build/save/deploy and verify. Keep previous user session tab open.",
       "dependsOn": [
         "P5"
+      ]
+    },
+    {
+      "id": "P7",
+      "requirements": [
+        "R24",
+        "R2",
+        "R3",
+        "R4",
+        "R7",
+        "R8",
+        "R9",
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R23"
+      ],
+      "paths": [
+        "src/raster-input.ts",
+        "src/png-svg.ts",
+        "src/png-svg-browser.ts",
+        "src/icon-drop.ts",
+        "src/icon-types.ts",
+        "src/icon-collection.ts",
+        "src/useIconCollection.ts",
+        "src/components/PngSvgWorkspace.tsx",
+        "src/App.tsx",
+        "src/png-svg-download.ts",
+        "tests",
+        "scripts/prepare-png-svg-check.mjs",
+        "scripts/prepare-webp-fixtures.py",
+        "README.md"
+      ],
+      "change": "Add bounded magic-based static WebP metadata inspection, native browser RGBA decode and original-byte image/webp embedding. Generalize existing PNG-only import/picker/messages/source provenance, preserve old PNG records without clearing/migrating storage, native compare and exact pixel engine unchanged. Add WebP fixture/parser/browser/persistence/mixed-format export regressions.",
+      "dependsOn": [
+        "P1"
       ]
     }
   ],
@@ -467,8 +525,8 @@
         "R21",
         "R22"
       ],
-      "method": "Audit exact pinned tracer source/license/output; bounded browser comparison on known circle, ring hole, tiny detail, multicolor and partial alpha/gradient fixtures; inspect actual curves and independent4x known-shape reference. Revision5: freeze resampled96px rings/angled-stroke/island input with independent4x oracle and old-predicate failure; test radius3 monotone support and new translucent-island/interior/broad-fade negatives.",
-      "expected": "Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen smooth route must improve the independently measured4x antialiased96px silhouette/curved-hole/thin-detail oracle over pixel geometry while retaining hole/topology/detail. A failed candidate is revised or rejected, never accepted just because its error is disclosed. Silhouette classifier negative cases cover multicolor, soft alpha fields and arbitrary translucent interiors. New fixture must preserve4components/2holes and endpoint/joint probes, use \u226416 paths, improve4x alpha MAE over pixel geometry, and report a fresh strict native recount. No curve/profile tolerance weakening.",
+      "method": "Audit exact pinned tracer source/license/output; bounded browser comparison on known circle, ring hole, tiny detail, multicolor and partial alpha/gradient fixtures; inspect actual curves and independent4x known-shape reference. Revision5: freeze resampled96px rings/angled-stroke/island input with independent4x oracle and old-predicate failure; test radius3 monotone support and new translucent-island/interior/broad-fade negatives. Revision6: native-alpha marching/cubicroute, four independently matched circularsubcontours and calibrated polygon/collinear/cubic controls; actual400%visualinspection.",
+      "expected": "Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen smooth route must improve the independently measured4x antialiased96px silhouette/curved-hole/thin-detail oracle over pixel geometry while retaining hole/topology/detail. A failed candidate is revised or rejected, never accepted just because its error is disclosed. Silhouette classifier negative cases cover multicolor, soft alpha fields and arbitrary translucent interiors. New fixture must preserve4components/2holes and endpoint/joint probes, use \u226416 paths, improve4x alpha MAE over pixel geometry, and report a fresh strict native recount. No curve/profile tolerance weakening. Each known circularboundary has>=80%genuinecurvedangularcoverage and<=15degreeflatspan; closure and collinear subdivisionscount. Existingnative,MAE,topology,sharp-detailandopacitygatesremain.",
       "boundary": "Does not establish universal recovery or accuracy on unavailable user originals."
     },
     {
@@ -498,15 +556,35 @@
       "method": "Check docs/research against sources and implementation; remote checkpoint refs/tree identity; same Site source commit, audience and native deployment status.",
       "expected": "Frequent durable commits, final main/current source and successful private publication; evidence and limits match actual execution.",
       "boundary": "Deployment response plus supported UI smoke."
+    },
+    {
+      "id": "T8",
+      "requirements": [
+        "R24",
+        "R2",
+        "R3",
+        "R4",
+        "R7",
+        "R8",
+        "R9",
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R23"
+      ],
+      "method": "Test WebP RIFF/VP8/VP8L/VP8X structure, allocation bounds, animation and malformed failures; actual lossy/lossless/transparent native conversion, embedded exact bytes/MIME, mixed PNG/WebP folders, duplicate stems, reload and downloaded SVG/ZIP identities.",
+      "expected": "Static WebP inputs use the same durable Icons workflow and decoded sRGB RGBA8 reference; default exact mode zero visible differences on fixtures, embedded bytes unchanged, smooth route disclosed; malformed structure/headers, animation and excessive dimensions fail before image decode allocation; structurally valid but undecodable compressed payloads fail during browser decode with recoverable state and no verification. Existing PNG checks still pass.",
+      "boundary": "One tested browser and procedurally generated fixture files; no claim to reconstruct precompression pixels or universal decoder/profile equivalence."
     }
   ],
   "planHashes": {
-    "checklist.md": "efc17110f52d0998ce4a7b1a9a91a5c897a224747731a59844b39d8827efc60c",
-    "fix-plan.md": "d38d1b06f1abc6506b1e63bd2990c6323267b4b2395bafd8f104e19da1d52ebe",
-    "test-plan.md": "c6d4485fb466088c98094825be0d31467a202504a1454e7d1176128cef871711"
+    "checklist.md": "5f0e8e8a12db6606c8a4563849b10c99de54f07937b8774b9b5159e8188ac91a",
+    "fix-plan.md": "c1804f4db03baad895d40010ba2321a6695b9bde17a26ce1dc3620af6399456c",
+    "test-plan.md": "e33338cb4511e4dc295937006180eee75848e9ff277cc951eb2e54e905f1f926"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-29T16:11:34.001948+00:00",
+  "updatedAt": "2026-10-29T16:44:19.918396+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",
@@ -514,6 +592,6 @@
     "critique.md",
     "results.md"
   ],
-  "definitionHash": "129ad05dcbe55c7c98b8b0cfa08b066e2d38f5ed1d281ceafafc66e95e28f4af",
-  "critiqueHash": "61100af6e59e3e2e518c63e3feeca9340cae79f674ff543a48b0448b3451d203"
+  "definitionHash": "0a78ebc792b4fe2717f7659915ddf9b56b70a82d9fe13e15d16d1255605fcb85",
+  "critiqueHash": "7c246d7428091745cd51a72fc9966013c3df4b1c6b3d1f6cdcf4fb2234c0d173"
 }

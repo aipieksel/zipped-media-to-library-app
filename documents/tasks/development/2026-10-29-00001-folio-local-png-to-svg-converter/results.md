@@ -101,3 +101,20 @@ Revision5 execution admission passed criticized finalization --resume and resolv
 
 
 Revision5 numeric verification passed15focused tests,209full application tests+4privacy tests(oneexisting skip), strictTypeScript and31nativebrowserchecks. Independentclassifier/warningreview approved. However root's actual400%visualinspection foundfacetedroundcontours; R22remainsopen. Numericimprovement55.98%onfrozenresampledreference is retainedbutnotusedtoacceptvisiblepolygonalrings. A boundedcurve-fit amendment is being assessed before further production source mutation. Details:artifacts/revision-5-verification.md.
+
+
+Revision5 codecheckpoint localaf5614e / remote4192e0b20265efb3bc5b766d358ac6b71f6d8430, treee14036af5ec629b53ba8a151afbb0869c30c193d. CandidateSitebuild source0e6245849d67160c4f68fa24b4e68ab2e9c3cc56 succeeded with12assets butwasnotpublished duevisualqualityfinding. Independentignoredline-fitspike showed0.01and0 stillleave32–45degreeflats; contourmetriccontrols calibrate correctly and reject allthese candidates. Revision6 nowreviewsnativecontinuous-alpha contours+cubic fitting underexistingS2/R22. Noadditionalapplicationmutationoccurredbeforeitsreview; prototypeworkisignored/procedural.
+
+## Revision7 scope amendment in progress
+
+S3 adds WebP alongside PNG. Root preserved all earlier request hashes and appended R24/P7/T8; no format runtime changes occurred before review. Revision6 ignored prototype passed the unchanged geometric guard: allfour known circle boundaries100%curved/0degreeflat, with actual400%visual inspection showing round rings. Browser raster/native/topology/angular gates and production integration remain pending. This does not turn the failed revision5 faceted candidate into accepted quality.
+
+### Revision7 execution admission
+
+Independent GPR approved the combined contour/WebP amendment after F8 correction. Current installed workflow3.1.0 finalizer and explicit-record executor resolution both exited0 at 2026-10-29T16:44:19.918396+00:00. Root remains sole execution/Git/build/Site owner; agents have disjoint source/test ownership. Original source hashes remain unchanged. Admission hashes (not to be restamped during normal checklist updates):
+
+- definition: `0a78ebc792b4fe2717f7659915ddf9b56b70a82d9fe13e15d16d1255605fcb85`
+- critique: `7c246d7428091745cd51a72fc9966013c3df4b1c6b3d1f6cdcf4fb2234c0d173`
+- checklist.md: `5f0e8e8a12db6606c8a4563849b10c99de54f07937b8774b9b5159e8188ac91a`
+- fix-plan.md: `c1804f4db03baad895d40010ba2321a6695b9bde17a26ce1dc3620af6399456c`
+- test-plan.md: `e33338cb4511e4dc295937006180eee75848e9ff277cc951eb2e54e905f1f926`
