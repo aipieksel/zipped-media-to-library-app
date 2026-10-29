@@ -69,3 +69,7 @@ Static accessibility review additionally verified labels, focus outlines, hidden
 Converter modules have no network, cloud, Drive, database or persistence path; independent review confirmed local numeric geometry/base64 generation and local ZIP creation. The application still loads its normal app assets and may request existing Library metadata. The development origin cannot read the production private collection because its request reaches sign-in; production user data, authenticated cloud mutations and Google Drive journeys were not tested or modified. The existing application suite covers the unchanged storage/import/Worker logic.
 
 Only source-generated fixtures and test code are tracked. Generated PNG/SVG/ZIP and screenshot payloads remain outside the repository.
+
+## Published app smoke check
+
+After native publication of version 9 succeeded, the connected browser loaded the published app and its existing Library, then opened the PNG to SVG view. Both navigation and new controls were visibly present. No catalogue contents or user-file names are copied into this repository. The optional connected-browser file-chooser attempt timed out; no production conversion result is claimed. Runtime source equality and the actual development-browser suite remain the conversion evidence.

@@ -1,6 +1,6 @@
 # Results and continuation
 
-Execution coordinator: /root. Current status: approved revision 2 implemented; browser verification and publication in progress.
+Execution coordinator: /root. Current status: complete. Approved revision 2 implemented and verified; GitHub main updated; existing private Site version 9 published.
 
 - Baseline GitHub main 2dc43cb; Site source 05766c8; app/CSS/worker source equal.
 - Actual delegated assessment: /root/codebase_assessment; actual fidelity research: /root/fidelity_research. Artifacts read and integrated.
@@ -25,7 +25,7 @@ Revision 2 admitted by resolve_plan_record --execution --require-critique, exit 
 - Engine and 19 focused tests: local dec0cda, remote bafefeaf3d5cd98447aa755cf8f49e827bd7d6cd; matching tree 04eba87b3e609e147cf47a9ccf51b440d4d30150.
 - Full suite: 180 executed tests passed (4 privacy + 176 application), zero failures; one pre-existing optional external real-Library fixture skip. TypeScript passed. See artifacts/unit-verification.md for scope and source hashes.
 - Independent implementation/security review found and confirmed repair of CR1: original previews now wait for structural/dimension validation and completed decoding. No open material static-review finding. See artifacts/code-review.md and security-verification.md.
-- Actual cloud Chrome UI imported all seven generated PNG fixtures successfully. Selected opaque (192 pixels), partial alpha (60), and full alpha sweep (2,560) showed zero differing pixels. Comprehensive repeatable browser report, download inspection, mobile and regression evidence are pending.
+- Actual cloud Chrome UI imported all seven generated PNG fixtures successfully. Selected opaque (192 pixels), partial alpha (60), and full alpha sweep (2,560) showed zero differing pixels. The complete browser, download-payload, mobile and regression evidence is recorded below.
 - Converter UI preserves the existing visual tokens and mounts as a separate transient workspace; Library data types, storage, cloud APIs and Worker remain unchanged.
 
 ## Browser and accessibility milestone
@@ -36,4 +36,18 @@ Revision 2 admitted by resolve_plan_record --execution --require-critique, exit 
 - Actual SVG/ZIP download anchor payloads and names matched generated previews; the cloud browser did not expose saved downloads, so OS delivery is explicitly unobserved. No browser-policy workaround was used.
 - Static accessibility findings A1 (small-text contrast) and A2 (focus after disappearing controls) repaired and independently re-reviewed. Actual keyboard Tab/Enter checks confirmed remove/retry/clear focus recovery. See artifacts/accessibility-verification.md.
 - README/PRIVACY updated and checked against code. Test fixtures/harness are procedural source; generated HTML/PNG stay ignored under .qa. Actual UI harness replaces the planned component-test filename to cover native browser behavior without adding a test framework dependency.
-- Final Worker build, main fast-forward and existing-private-Site publication remain pending. No user media or collection data has been added to source control.
+- Final Worker build, main fast-forward and existing-private-Site publication completed as recorded below. No user media or collection data has been added to source control.
+
+## Completed release
+
+- Browser/accessibility/documentation checkpoint: local 3718904, remote f1799b241501ac82df36ff9aec5825f44ec59fc1; matching tree d8ba9e9952ac69b31930a0a56476cc0713ff8213.
+- Final `npm test` passed again: privacy scan 132 source files, 4 privacy tests and 176 application tests passed, zero failures, one existing optional real-Library-fixture skip. Final TypeScript and `git diff --check` passed.
+- Production build completed through the native Sites workflow helper. Existing Vite dynamic/static-import and chunk-size warnings are non-fatal; they were not suppressed. New conversion worker was included among the six packaged frontend assets.
+- All 46 tracked runtime files under src/worker/public matched byte-for-byte between the GitHub implementation and Site checkout. Pinned dependencies, lockfile, TypeScript/Vite configuration and build command also matched. Only the seven changed runtime files were synchronized into the existing Site source; its private historical records and identity were preserved. GitHub's source-only privacy checks ran in the GitHub checkout; its repository-specific hooks were not substituted into the separate Site history.
+- GitHub main was still at the assessed baseline, then advanced with a leased, non-forced ref update to f1799b2. Final closeout documentation follows that implementation commit on main and the feature branch.
+- Site source checkpoint: 7011456d7b5cd0ba7e4889187d42008126f18191. Existing project appgprj_6adf889bceb8819185995cc72b70be04, R2 binding BUCKET and owner-private audience retained.
+- Native publication succeeded at 2026-10-29T13:38:29.407477Z. Version 9; deployment appgdep_6ae34c437da08191befdddfff807b427. URL: https://folio-html-workspace.byronjacobs.chatgpt.site
+- The connected browser then opened the published app, loaded the existing Library, and navigated successfully to the new PNG to SVG view. An optional connected-browser file-chooser check timed out, so production conversion is not claimed. Conversion correctness is supported by the real development-browser suite and exact runtime-source equality. No production collection mutations were performed.
+- Additional procedural 96 × 96 icon preview showed 0 / 9,216 visible differences with 190 merged shapes. A screenshot is kept only as QA evidence, not committed with user or generated media.
+- Read-only workflow-record closeout resolution passed. Original admission/review hashes and plan revision remain unchanged; status is `complete`.
+- No implementation blocker remains. Explicit verification boundaries: one browser engine/sRGB; browser/OS delivery of blob downloads unobserved; authenticated cloud writes and Drive journeys unchanged and not exercised.
