@@ -27,3 +27,19 @@ review staged changes as well. Removing a tracked file affects the current tree
 only. Old commits, clones and cached copies require separate history/cache
 remediation. Repository visibility is independent of the private live Site's
 access policy.
+
+## PNG to SVG data boundary
+
+The converter reads local files and processes them in the browser with canvas
+and a local worker. Its inputs and generated outputs remain in tab memory;
+they are not sent to the cloud collection, Google Drive or IndexedDB. Results
+survive switching workspaces in that tab, but are cleared on reload or close.
+Downloads save only when requested. Existing Library requests are separate.
+
+Generated SVGs, embedded PNG data and ZIP downloads remain user data and must
+not be committed, bundled with the app or attached as CI artifacts. Synthetic
+test images are generated from code by `tests/png-fixture-generator.ts`; do
+not replace them with real collection files or embedded source payloads.
+Keep browser captures and generated test downloads in ignored `.qa/` or
+outside the checkout. The repository's existing media exclusions and privacy
+checks continue to apply to both workspaces.

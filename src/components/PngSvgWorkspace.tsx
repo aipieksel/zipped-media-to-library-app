@@ -52,6 +52,9 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
   const [zipBusy, setZipBusy] = useState(false);
   const itemsRef = useRef<ConverterItem[]>([]);
   const input = useRef<HTMLInputElement>(null);
+  const addFilesButton = useRef<HTMLButtonElement>(null);
+  const fileButtons = useRef(new Map<string, HTMLButtonElement>());
+  const focusAfterUpdate = useRef<string | null | undefined>(undefined);
   const mounted = useRef(true);
   const pumping = useRef(false);
   const activeJob = useRef<ActiveJob | null>(null);
@@ -83,6 +86,14 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
   }, [active]);
 
   useEffect(() => {
+    const target = focusAfterUpdate.current;
+    if (target === undefined) return;
+    focusAfterUpdate.current = undefined;
+    if (target === null) addFilesButton.current?.focus();
+    else fileButtons.current.get(target)?.focus();
+  }, [items]);
+
+  useEffect(() => {
     // These files are intentionally session-only, so protect an unfinished batch.
     const beforeUnload = (event: BeforeUnloadEvent) => {
       if (itemsRef.current.some(isWorking)) event.preventDefault();
@@ -94,6 +105,13 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
   const processQueue = useCallback(async () => {
     if (pumping.current) return;
     pumping.current = true;
+    const preserveJobFocus = (id: string) => {
+      const focused = document.activeElement;
+      const lastPending = !itemsRef.current.some(entry => entry.id !== id && isWorking(entry));
+      if (focused?.getAttribute('data-png-stop') === id || (lastPending && focused?.hasAttribute('data-png-stop-batch'))) {
+        focusAfterUpdate.current = id;
+      }
+    };
     try {
       while (mounted.current) {
         const item = itemsRef.current.find(entry => entry.status === 'queued');
@@ -123,9 +141,11 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
           const retainedBytes = itemsRef.current.reduce((sum, entry) => sum + (entry.id === item.id ? 0 : entry.result?.outputBytes ?? 0), 0);
           if (retainedBytes + result.outputBytes > MAX_OUTPUT_BYTES) throw new Error('This batch has reached the 128 MB SVG memory limit. Download and remove completed files, then retry.');
           const svgUrl = URL.createObjectURL(new Blob([result.svg], {type: 'image/svg+xml'}));
+          preserveJobFocus(item.id);
           updateItems(current => current.map(entry => entry.id === item.id ? {...entry, status: 'ready', result, svgUrl, message: fidelityLabel(result), percent: undefined} : entry));
         } catch (error) {
           if (!mounted.current || activeJob.current !== job) continue;
+          preserveJobFocus(item.id);
           updateItems(current => current.map(entry => entry.id === item.id && entry.status === 'processing' ? {
             ...entry,
             status: job.controller.signal.aborted ? 'cancelled' : 'error',
@@ -161,6 +181,7 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
   };
 
   const cancelQueue = () => {
+    focusAfterUpdate.current = selectedId;
     activeJob.current?.controller.abort();
     updateItems(current => current.map(item => isWorking(item) ? {...item, status: 'cancelled', message: 'Conversion cancelled. Retry whenever you are ready.', percent: undefined} : item));
   };
@@ -172,6 +193,9 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
     if (index < 0) return;
     releaseItem(old[index]);
     const remaining = old.filter(item => item.id !== id);
+    if (fileButtons.current.get(id)?.closest('li')?.contains(document.activeElement)) {
+      focusAfterUpdate.current = remaining[Math.min(index, remaining.length - 1)]?.id ?? null;
+    }
     updateItems(() => remaining);
     setSelectedId(current => current === id ? remaining[Math.min(index, remaining.length - 1)]?.id ?? null : current);
   };
@@ -179,12 +203,14 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
   const clearItems = () => {
     activeJob.current?.controller.abort();
     itemsRef.current.forEach(releaseItem);
+    focusAfterUpdate.current = null;
     updateItems(() => []);
     setSelectedId(null);
     setNotice('');
   };
 
   const retry = (id: string, nextMode: ConversionMode) => {
+    focusAfterUpdate.current = id;
     if (activeJob.current?.id === id) activeJob.current.controller.abort();
     updateItems(current => current.map(item => {
       if (item.id !== id) return item;
@@ -245,10 +271,10 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
         <p>{mode === 'pixels' ? 'Preserve the pixel grid as editable SVG shapes.' : 'Keep the original PNG inside an SVG. The bitmap is not editable vector artwork.'}</p>
         <span className="png-mode-hint">Applies to new files. Existing files keep their mode.</span>
       </div>
-      <div className="png-batch-toolbar"><span>{readyCount} ready{pendingCount > 0 ? ` · ${pendingCount} pending` : ''}{failedCount > 0 ? ` · ${failedCount} need attention` : ''}</span>{pendingCount > 0 ? <button className="text-button" onClick={cancelQueue}><Square size={10}/>Stop batch</button> : <button className="text-button" disabled={!items.length} onClick={clearItems}>Clear all</button>}</div>
+      <div className="png-batch-toolbar"><span>{readyCount} ready{pendingCount > 0 ? ` · ${pendingCount} pending` : ''}{failedCount > 0 ? ` · ${failedCount} need attention` : ''}</span>{pendingCount > 0 ? <button className="text-button" data-png-stop-batch onClick={cancelQueue}><Square size={10}/>Stop batch</button> : <button className="text-button" disabled={!items.length} onClick={clearItems}>Clear all</button>}</div>
       <ul className="png-file-list" aria-label="PNG files">
         {items.map(item => <li key={item.id} className={'png-file-row ' + (selectedId === item.id ? 'is-selected' : '')}>
-          <button className="png-file-select" aria-pressed={selectedId === item.id} onClick={() => setSelectedId(item.id)} title={item.file.name}>
+          <button className="png-file-select" ref={node => {if (node) fileButtons.current.set(item.id, node); else fileButtons.current.delete(item.id);}} aria-pressed={selectedId === item.id} onClick={() => setSelectedId(item.id)} title={item.file.name}>
             <span className={'png-file-icon ' + (item.status === 'ready' && item.result?.fidelity.status === 'verified' ? 'is-verified' : '')}>{item.status === 'processing' ? <LoaderCircle size={16} className="spin"/> : item.status === 'error' || item.status === 'cancelled' ? <AlertTriangle size={16}/> : item.status === 'ready' && item.result?.fidelity.status === 'verified' ? <CheckCircle2 size={16}/> : <FileImage size={16}/>}</span>
             <span className="png-file-copy"><strong>{item.file.name}</strong><span>{item.result ? `${item.result.width} × ${item.result.height} · ${bytesLabel(item.result.outputBytes)}` : bytesLabel(item.file.size)} · {item.status === 'processing' ? 'Processing' : item.status === 'ready' ? modeLabel(item.mode) : item.status === 'queued' ? 'Queued' : item.status === 'cancelled' ? 'Stopped' : 'Needs attention'}</span></span>
           </button>
@@ -257,7 +283,7 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
         </li>)}
       </ul>
       {!items.length && <div className="png-list-empty"><FileImage size={22}/><p>Your PNGs will appear here.</p><span>Drop a batch anywhere in this tool.</span></div>}
-      <button className="png-add-files" onClick={() => input.current?.click()}><Upload size={13}/>Add PNGs<span>Up to 20 MB each</span></button>
+      <button ref={addFilesButton} className="png-add-files" onClick={() => input.current?.click()}><Upload size={13}/>Add PNGs<span>Up to 20 MB each</span></button>
       <div className="png-local-note"><ShieldCheck size={14}/><span>Processed on your device.<br/>Download your results before closing.</span></div>
     </aside>
 
@@ -288,7 +314,7 @@ export function PngSvgWorkspace({active}: {active: boolean}) {
           <div className="png-result-top">
             {selectedResult ? verified ? <CheckCircle2 size={17} className="png-success-icon"/> : <AlertTriangle size={17}/> : isWorking(selected) ? <LoaderCircle size={17} className="spin"/> : <AlertTriangle size={17}/>}
             <div><strong>{selectedResult ? fidelityLabel(selectedResult) : selected.status === 'error' ? 'Couldn’t convert this file' : selected.status === 'cancelled' ? 'Conversion stopped' : selected.message}</strong><p>{selectedResult ? selectedResult.fidelity.status === 'unavailable' ? selectedResult.fidelity.reason ?? 'The browser could not complete the native-size pixel check.' : `${selectedResult.fidelity.differingPixels?.toLocaleString()} of ${selectedResult.fidelity.totalPixels.toLocaleString()} pixels differ · checked at ${selectedResult.width} × ${selectedResult.height} in this browser (sRGB).` : selected.status === 'error' || selected.status === 'cancelled' ? selected.message : 'The SVG is checked after rendering at the original PNG dimensions.'}</p></div>
-            {isWorking(selected) && <button className="button" onClick={() => {activeJob.current?.id === selected.id && activeJob.current.controller.abort(); updateItems(current => current.map(item => item.id === selected.id ? {...item, status: 'cancelled', message: 'Conversion cancelled. Retry whenever you are ready.'} : item));}}>Stop</button>}
+            {isWorking(selected) && <button className="button" data-png-stop={selected.id} onClick={() => {focusAfterUpdate.current = selected.id; activeJob.current?.id === selected.id && activeJob.current.controller.abort(); updateItems(current => current.map(item => item.id === selected.id ? {...item, status: 'cancelled', message: 'Conversion cancelled. Retry whenever you are ready.'} : item));}}>Stop</button>}
           </div>
           {selectedResult && <div className="png-result-stats"><span><strong>{selectedResult.mode === 'pixels' ? selectedResult.rectangleCount?.toLocaleString() : '1'}</strong>{selectedResult.mode === 'pixels' ? 'merged shapes' : 'embedded bitmap'}</span><span><strong>{bytesLabel(selectedResult.outputBytes)}</strong>SVG size</span><span><strong>{selectedResult.sourceBytes ? (selectedResult.outputBytes / selectedResult.sourceBytes).toFixed(1) : '—'}×</strong>source size</span></div>}
           {selectedResult?.warnings.map((warning, index) => <p key={index} className="png-result-warning">{warning}</p>)}

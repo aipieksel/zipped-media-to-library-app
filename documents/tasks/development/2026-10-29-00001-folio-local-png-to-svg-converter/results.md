@@ -27,3 +27,13 @@ Revision 2 admitted by resolve_plan_record --execution --require-critique, exit 
 - Independent implementation/security review found and confirmed repair of CR1: original previews now wait for structural/dimension validation and completed decoding. No open material static-review finding. See artifacts/code-review.md and security-verification.md.
 - Actual cloud Chrome UI imported all seven generated PNG fixtures successfully. Selected opaque (192 pixels), partial alpha (60), and full alpha sweep (2,560) showed zero differing pixels. Comprehensive repeatable browser report, download inspection, mobile and regression evidence are pending.
 - Converter UI preserves the existing visual tokens and mounts as a separate transient workspace; Library data types, storage, cloud APIs and Worker remain unchanged.
+
+## Browser and accessibility milestone
+
+- Integrated UI checkpoint: local 6de84a9; remote 7095c2213a3bb9ddc70b1bd8f4a2ec7061adda1f; matching tree bdc226f1d9a4707ccc9153e6223c98c89d29d924.
+- Actual Chrome 155 native renderer suite: 19 passed, zero failed. Every required fixture category plus all 256 alpha values had zero visible differences; negative control exactly one. Original-byte embedded PNG, errors, limits, cancellation and complexity fallback passed. See artifacts/browser-verification.md.
+- Actual responsive app at 390 × 844: no horizontal overflow or horizontally clipped actions. Library navigation/state, native image dimensions, duplicate filenames, active batch cancellation/retry and invalid/oversized UI paths observed.
+- Actual SVG/ZIP download anchor payloads and names matched generated previews; the cloud browser did not expose saved downloads, so OS delivery is explicitly unobserved. No browser-policy workaround was used.
+- Static accessibility findings A1 (small-text contrast) and A2 (focus after disappearing controls) repaired and independently re-reviewed. Actual keyboard Tab/Enter checks confirmed remove/retry/clear focus recovery. See artifacts/accessibility-verification.md.
+- README/PRIVACY updated and checked against code. Test fixtures/harness are procedural source; generated HTML/PNG stay ignored under .qa. Actual UI harness replaces the planned component-test filename to cover native browser behavior without adding a test framework dependency.
+- Final Worker build, main fast-forward and existing-private-Site publication remain pending. No user media or collection data has been added to source control.
