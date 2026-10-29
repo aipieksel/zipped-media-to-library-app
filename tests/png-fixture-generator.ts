@@ -218,6 +218,75 @@ export function createCurveReferenceFixture(): CurveReferenceFixture {
   };
 }
 
+/** Independent line art: two rings, an angled stroke and a separate small island. */
+function resampledLineContains(x: number, y: number): boolean {
+  const ringA = (x - 28.4) ** 2 + (y - 29.2) ** 2;
+  const ringB = (x - 68.25) ** 2 + (y - 26.75) ** 2;
+  const inStroke = (ax: number, ay: number, bx: number, by: number) => {
+    const dx = bx - ax, dy = by - ay;
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
+    return (x - ax - t * dx) ** 2 + (y - ay - t * dy) ** 2 <= 2.1 ** 2;
+  };
+  return (ringA <= 18 ** 2 && ringA >= 13.5 ** 2) ||
+    (ringB <= 12 ** 2 && ringB >= 8 ** 2) ||
+    inStroke(16.2, 75.6, 48.3, 58.4) || inStroke(48.3, 58.4, 78.1, 80.2) ||
+    (x - 86.1) ** 2 + (y - 55.2) ** 2 <= 2.4 ** 2;
+}
+
+function sampleLineReference(): Uint8ClampedArray {
+  const scale = 4, samples = 4, width = 96 * scale;
+  const pixels = new Uint8ClampedArray(width * width * 4);
+  for (let y = 0; y < width; y++) for (let x = 0; x < width; x++) {
+    let covered = 0;
+    for (let sy = 0; sy < samples; sy++) for (let sx = 0; sx < samples; sx++) {
+      if (resampledLineContains((x + (sx + 0.5) / samples) / scale, (y + (sy + 0.5) / samples) / scale)) covered++;
+    }
+    pixels[(y * width + x) * 4 + 3] = Math.round(covered * 255 / (samples * samples));
+  }
+  return pixels;
+}
+
+/**
+ * Fixed resampling recipe, separate from the independent 4× reference above.
+ * An 8× point-sampled source passes through a separable tent of radius 1.25
+ * native pixels, creating a wider antialias fringe without changing geometry.
+ * No canvas, tracing output or user-provided artwork enters either sampler.
+ */
+export function createResampledLineIconFixture(): CurveReferenceFixture {
+  const width = 96, scale = 8, sourceWidth = width * scale, radius = 1.25;
+  const source = new Uint8Array(sourceWidth * sourceWidth);
+  for (let y = 0; y < sourceWidth; y++) for (let x = 0; x < sourceWidth; x++) {
+    source[y * sourceWidth + x] = Number(resampledLineContains((x + 0.5) / scale, (y + 0.5) / scale));
+  }
+  const taps = Array.from({length: width}, (_, target) => {
+    const center = target + 0.5;
+    const weights: {index: number; weight: number}[] = [];
+    let total = 0;
+    for (let index = Math.floor((center - radius) * scale); index <= Math.ceil((center + radius) * scale); index++) {
+      const weight = Math.max(0, 1 - Math.abs((index + 0.5) / scale - center) / radius);
+      if (weight) {weights.push({index, weight}); total += weight;}
+    }
+    return weights.map(tap => ({index: tap.index, weight: tap.weight / total}));
+  });
+  const horizontal = new Float64Array(sourceWidth * width);
+  for (let y = 0; y < sourceWidth; y++) for (let x = 0; x < width; x++) {
+    for (const tap of taps[x]) if (tap.index >= 0 && tap.index < sourceWidth) {
+      horizontal[y * width + x] += source[y * sourceWidth + tap.index] * tap.weight;
+    }
+  }
+  const rgba = new Uint8ClampedArray(width * width * 4);
+  for (let y = 0; y < width; y++) for (let x = 0; x < width; x++) {
+    let alpha = 0;
+    for (const tap of taps[y]) if (tap.index >= 0 && tap.index < sourceWidth) alpha += horizontal[tap.index * width + x] * tap.weight;
+    rgba[(y * width + x) * 4 + 3] = Math.round(alpha * 255);
+  }
+  return {
+    name: 'synthetic-resampled-line-icon-96.png', width, height: width, rgba,
+    bytes: encodeRgbaPng(rgba, width, width), referenceScale: 4,
+    reference: sampleLineReference(),
+  };
+}
+
 export function meanAbsoluteAlphaError(actual: Uint8Array | Uint8ClampedArray, expected: Uint8Array | Uint8ClampedArray): number {
   if (actual.length !== expected.length || actual.length % 4 !== 0) throw new Error('Comparison dimensions differ.');
   let error = 0;
