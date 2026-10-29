@@ -8,7 +8,8 @@ import { allocateSvgFilename, PNG_SVG_LIMITS, PngSvgError } from '../src/png-svg
 import { normalizeTracedSvg } from '../src/png-svg-trace';
 import { buildSvgZip } from '../src/png-svg-download';
 import {
-  alphaTopology, concatenateBytes, createCurveReferenceFixture, createPngFixtures, encodeRgbaPng,
+  alphaTopology, concatenateBytes, createAngularIconFixture, createCurveReferenceFixture, createPngFixtures,
+  createResampledLineIconFixture, createSilhouetteRejectionFixtures, encodeRgbaPng,
   meanAbsoluteAlphaError, pngChunk, pngHeader, PNG_SIGNATURE,
 } from './png-fixture-generator';
 import type { PngFixture } from './png-fixture-generator';
@@ -419,6 +420,107 @@ function setupPixelChecks(content: HTMLElement): void {
         assert(smoothResult.verification.browser === navigator.userAgent && Number.isFinite(Date.parse(smoothResult.verification.checkedAt)), 'Verification provenance is missing.');
         assert(smoothResult.outputBytes === new Blob([smoothResult.svg]).size, 'SVG byte accounting differs from the saved payload.');
         return evidence;
+      });
+
+      await check('Resampled line icon: bounded wider fringe yields compact contours and improves the independent 4× reference', async () => {
+        const fixture = createResampledLineIconFixture();
+        const file = new File([fixture.bytes], fixture.name, {type: 'image/png'});
+        const pixelResult = await convertPng(file, {mode: 'pixels'});
+        verified(pixelResult.fidelity);
+        const result = await convertPng(file, {mode: 'smooth'});
+        assert(result.engine.id === 'silhouette' && result.engine.version.endsWith('silhouette profile 2'), `The repaired silhouette route did not execute: ${JSON.stringify(resultDetails(result))}.`);
+        assert(result.width === 96 && result.height === 96, 'The resampled fixture was resized during conversion.');
+        assert(result.pathCount !== null && result.pathCount > 0 && result.pathCount <= 16, `Simple line art fragmented into ${result.pathCount} paths.`);
+        const parsed = new DOMParser().parseFromString(result.svg, 'image/svg+xml');
+        assert(!parsed.querySelector('image') && Array.from(parsed.querySelectorAll('path')).some(path => /[QCqc]/.test(path.getAttribute('d') ?? '')), 'The line result must contain editable curve geometry, not a bitmap.');
+        const source = await decodePngPixels(file);
+        const independent = await verifySvgPixels(result.svg, source.pixels, fixture.width, fixture.height);
+        assert(independent.status !== 'unavailable' && result.fidelity.status === independent.status && result.fidelity.differingPixels === independent.differingPixels, 'The actual native recount disagrees with reported fidelity.');
+        const size = fixture.width * fixture.referenceScale;
+        const pixelRender = await rasterSvgAtSize(pixelResult.svg, size, size);
+        const smoothRender = await rasterSvgAtSize(result.svg, size, size);
+        const pixelError = meanAbsoluteAlphaError(pixelRender, fixture.reference);
+        const smoothError = meanAbsoluteAlphaError(smoothRender, fixture.reference);
+        const expectedTopology = alphaTopology(fixture.reference, size, size);
+        const actualTopology = alphaTopology(smoothRender, size, size);
+        const probes = [
+          {name: 'first ring hole', x: 28.4, y: 29.2, inside: false},
+          {name: 'second ring hole', x: 68.25, y: 26.75, inside: false},
+          {name: 'first ring stroke', x: 45, y: 29.2, inside: true},
+          {name: 'second ring stroke', x: 78.5, y: 26.75, inside: true},
+          {name: 'angled stroke first endpoint', x: 16.25, y: 75.5, inside: true},
+          {name: 'angled stroke joint', x: 48.25, y: 58.5, inside: true},
+          {name: 'angled stroke last endpoint', x: 78, y: 80, inside: true},
+          {name: 'small island', x: 86, y: 55, inside: true},
+          {name: 'outside the stroke joint', x: 48.3, y: 54, inside: false},
+          {name: 'space between rings', x: 51, y: 28, inside: false},
+        ].map(probe => {
+          const offset = (Math.floor(probe.y * 4) * size + Math.floor(probe.x * 4)) * 4 + 3;
+          return {...probe, expectedAlpha: fixture.reference[offset], actualAlpha: smoothRender[offset]};
+        });
+        const evidence = {metric: 'Mean absolute alpha error at 4× against independently sampled analytic geometry', pixelError, smoothError, improvementPercent: (pixelError - smoothError) / pixelError * 100, expectedTopology, actualTopology, probes, freshNativeCheck: independent, result: resultDetails(result)};
+        const title = document.createElement('h2'); title.textContent = 'Resampled line icon · frozen input and independent 400% target';
+        const panels = document.createElement('div'); panels.style.cssText = 'display:flex;gap:14px;flex-wrap:wrap';
+        for (const [label, blob] of [
+          ['Pixel SVG · actual geometry', new Blob([pixelResult.svg], {type: 'image/svg+xml'})],
+          ['Smooth SVG · actual geometry', new Blob([result.svg], {type: 'image/svg+xml'})],
+          ['Independent analytic reference', new Blob([encodeRgbaPng(fixture.reference, size, size)], {type: 'image/png'})],
+        ] as const) {
+          const panel = document.createElement('figure'); panel.style.cssText = 'margin:0;max-width:100%';
+          const caption = document.createElement('figcaption'); caption.textContent = label;
+          const image = document.createElement('img'); image.alt = label;
+          const url = URL.createObjectURL(blob); previewUrls.push(url); image.src = url;
+          image.width = size; image.height = size; image.style.cssText = 'display:block;max-width:100%;height:auto;background:white;border:1px solid #ccd4c9';
+          panel.append(caption, image); panels.append(panel);
+        }
+        curvePreviews.append(title, panels);
+        assert(smoothError < pixelError, `The frozen resampled-line oracle did not improve: ${JSON.stringify(evidence)}.`);
+        assert(expectedTopology.components === 4 && expectedTopology.holes === 2 && actualTopology.components === 4 && actualTopology.holes === 2, `Ring/stroke/island topology changed: ${JSON.stringify(evidence)}.`);
+        for (const probe of probes) assert((probe.expectedAlpha >= 128) === probe.inside && (probe.actualAlpha >= 128) === probe.inside, `A line-art feature probe failed: ${JSON.stringify(probe)}.`);
+        assert(result.outputBytes === new Blob([result.svg]).size, 'Output byte count differs from the actual retained SVG.');
+        return evidence;
+      });
+
+      await check('Wider silhouette detection still rejects broad fades, enclosed translucent pockets and detached alpha patches', async () => {
+        const evidence: unknown[] = [];
+        for (const [name, fixture] of Object.entries(createSilhouetteRejectionFixtures())) {
+          const file = new File([fixture.bytes], fixture.name, {type: 'image/png'});
+          const result = await convertPng(file, {mode: 'smooth'});
+          assert(result.engine.id === 'imagetracer', `${name} was incorrectly thresholded as silhouette artwork.`);
+          assert(result.warnings.some(warning => warning.startsWith('RGBA tracing selected: ')), `${name} has no local eligibility explanation.`);
+          const rendered = await rasterSvgAtSize(result.svg, fixture.width, fixture.height);
+          const {x, y, alpha} = fixture.alphaProbe;
+          const actualAlpha = rendered[(y * fixture.width + x) * 4 + 3];
+          assert(actualAlpha === alpha, `${name} changed its deliberate alpha interior from ${alpha} to ${actualAlpha}.`);
+          assert(rendered[3] === 0, `${name} filled the transparent exterior.`);
+          const source = await decodePngPixels(file);
+          const independent = await verifySvgPixels(result.svg, source.pixels, fixture.width, fixture.height);
+          assert(independent.status !== 'unavailable' && independent.status === result.fidelity.status && independent.differingPixels === result.fidelity.differingPixels, `${name} reported a native count inconsistent with its output.`);
+          evidence.push({name, expectedAlpha: alpha, actualAlpha, freshNativeCheck: independent, result: resultDetails(result)});
+        }
+        return evidence;
+      });
+
+      await check('Sharp right-angle and 45-degree artwork retains corner and line probes', async () => {
+        const fixture = createAngularIconFixture();
+        const file = new File([fixture.bytes], fixture.name, {type: 'image/png'});
+        const result = await convertPng(file, {mode: 'smooth'});
+        assert(result.engine.id === 'silhouette', 'The angular control did not exercise the repaired silhouette route.');
+        const size = fixture.width * fixture.referenceScale;
+        const rendered = await rasterSvgAtSize(result.svg, size, size);
+        const topology = alphaTopology(rendered, size, size);
+        assert(topology.components === 2 && topology.holes === 0, `Angular topology changed: ${JSON.stringify(topology)}.`);
+        const probes = [[11, 17, true], [12.5, 17, false], [12.5, 19, true], [23, 9.75, true], [23, 8.25, false], [18.75, 13.75, true]] as const;
+        const observed = probes.map(([x, y, inside]) => {
+          const offset = (Math.floor(y * 4) * size + Math.floor(x * 4)) * 4 + 3;
+          const expectedAlpha = fixture.reference[offset], actualAlpha = rendered[offset];
+          assert((expectedAlpha >= 128) === inside && (actualAlpha >= 128) === inside, `Angular probe ${x},${y} changed: reference ${expectedAlpha}, output ${actualAlpha}.`);
+          return {x, y, inside, expectedAlpha, actualAlpha};
+        });
+        const source = await decodePngPixels(file);
+        const independent = await verifySvgPixels(result.svg, source.pixels, fixture.width, fixture.height);
+        assert(independent.status !== 'unavailable' && independent.status === result.fidelity.status && independent.differingPixels === result.fidelity.differingPixels, 'Angular output does not match its reported native count.');
+        return {topology, probes: observed, alphaErrorAt4x: meanAbsoluteAlphaError(rendered, fixture.reference), freshNativeCheck: independent, result: resultDetails(result)};
       });
 
       await check('Opaque smooth route executes VTracer and keeps distinct color fills', async () => {

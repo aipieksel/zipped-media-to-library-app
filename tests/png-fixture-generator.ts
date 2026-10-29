@@ -287,6 +287,61 @@ export function createResampledLineIconFixture(): CurveReferenceFixture {
   };
 }
 
+export interface SilhouetteRejectionFixture {
+  name: string;
+  width: number;
+  height: number;
+  rgba: Uint8ClampedArray;
+  bytes: Uint8Array;
+  alphaProbe: {x: number; y: number; alpha: number};
+}
+
+/** Same RGB does not imply that intermediate alpha is merely an outline fringe. */
+export function createSilhouetteRejectionFixtures(): Record<'broadFade' | 'interiorPocket' | 'detachedPatch', SilhouetteRejectionFixture> {
+  const make = (name: string, alphaAt: (x: number, y: number) => number, x: number, y: number): SilhouetteRejectionFixture => {
+    const width = 32, height = 32, rgba = new Uint8ClampedArray(width * height * 4);
+    for (let py = 0; py < height; py++) for (let px = 0; px < width; px++) rgba[(py * width + px) * 4 + 3] = alphaAt(px, py);
+    return {name, width, height, rgba, bytes: encodeRgbaPng(rgba, width, height), alphaProbe: {x, y, alpha: alphaAt(x, y)}};
+  };
+  return {
+    broadFade: make('synthetic-broad-alpha-fade.png', (x, y) => {
+      if (x < 4 || x >= 26 || y < 4 || y >= 28) return 0;
+      return x < 8 ? 255 : Math.round(255 * (26 - x) / 19);
+    }, 17, 16),
+    interiorPocket: make('synthetic-opaque-body-alpha-pocket.png', (x, y) => {
+      if (x < 4 || x >= 28 || y < 4 || y >= 28) return 0;
+      // A genuine translucent interior, enclosed by opaque pixels even near the outer edge.
+      return x >= 5 && x < 9 && y >= 12 && y < 16 ? 128 : 255;
+    }, 6, 13),
+    detachedPatch: make('synthetic-detached-translucent-patch.png', (x, y) => {
+      if (x >= 4 && x < 12 && y >= 6 && y < 24) return 255;
+      // The transparent column x=12 separates the patch from its nearby opaque neighbor.
+      return x >= 13 && x < 15 && y >= 12 && y < 16 ? 128 : 0;
+    }, 13, 13),
+  };
+}
+
+/** Sharp right-angle and 45-degree art guards against indiscriminate rounding. */
+export function createAngularIconFixture(): CurveReferenceFixture {
+  const width = 32;
+  const contains = (x: number, y: number) =>
+    (x >= 4.25 && x <= 25.75 && y >= 4.25 && y <= 25.75 && (x <= 11.75 || y >= 18.25)) ||
+    (x >= 18.25 && y >= x - 14 && y <= 14.25);
+  const sample = (scale: number, samples: number) => {
+    const size = width * scale, pixels = new Uint8ClampedArray(size * size * 4);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      let covered = 0;
+      for (let sy = 0; sy < samples; sy++) for (let sx = 0; sx < samples; sx++) {
+        if (contains((x + (sx + 0.5) / samples) / scale, (y + (sy + 0.5) / samples) / scale)) covered++;
+      }
+      pixels[(y * size + x) * 4 + 3] = Math.round(255 * covered / (samples * samples));
+    }
+    return pixels;
+  };
+  const rgba = sample(1, 8);
+  return {name: 'synthetic-angular-icon-32.png', width, height: width, rgba, bytes: encodeRgbaPng(rgba, width, width), referenceScale: 4, reference: sample(4, 4)};
+}
+
 export function meanAbsoluteAlphaError(actual: Uint8Array | Uint8ClampedArray, expected: Uint8Array | Uint8ClampedArray): number {
   if (actual.length !== expected.length || actual.length % 4 !== 0) throw new Error('Comparison dimensions differ.');
   let error = 0;

@@ -6,7 +6,7 @@
  * The parent controls the browser and the actual App iframe interactions.
  */
 import JSZip from 'jszip';
-import { createCurveReferenceFixture, createPngFixtures } from './png-fixture-generator';
+import { createCurveReferenceFixture, createPngFixtures, createResampledLineIconFixture } from './png-fixture-generator';
 import type { PngFixture } from './png-fixture-generator';
 import { openIconCollection, projectIconCollection, ICON_DB_NAME } from '../src/icon-collection';
 import { filterTree, getPageOrder } from '../src/tree';
@@ -349,6 +349,7 @@ function setupInteractive(content: HTMLElement): void {
       <button id="drop-invalid">Drop invalid PNG</button>
       <button id="drop-pending">Drop cancellation batch</button>
       <button id="drop-silhouette">Drop 96px analytic silhouette</button>
+      <button id="drop-resampled">Drop 96px resampled line icon</button>
     </div>
     <div class="controls">
       <button id="drop-library">Drop opaque PNG in current Library tab</button>
@@ -566,6 +567,11 @@ function setupInteractive(content: HTMLElement): void {
     const fixture = createCurveReferenceFixture();
     await drop([new File([fixture.bytes], `qa-${fixture.name}`, {type: 'image/png', lastModified: 1_700_000_000_000})]);
     observe({action: 'analytic silhouette fixture', dimensions: [fixture.width, fixture.height], referenceScale: fixture.referenceScale, features: ['curved outer contour', 'curved transparent hole', 'small island', 'thin stroke'], boundary: 'The real app owns conversion. Select Smooth curves in its toolbar; this button does not choose a mode or assert visual quality.'});
+  }));
+  content.querySelector('#drop-resampled')!.addEventListener('click', () => void run(async () => {
+    const fixture = createResampledLineIconFixture();
+    await drop([new File([fixture.bytes], `qa-${fixture.name}`, {type: 'image/png', lastModified: 1_700_000_000_000})]);
+    observe({action: 'frozen resampled line fixture', dimensions: [fixture.width, fixture.height], referenceScale: fixture.referenceScale, boundary: 'Procedural source only. The real production app owns conversion and saved verification.'});
   }));
   const setWidth = (width: number) => {
     frame.style.width = `${width}px`;

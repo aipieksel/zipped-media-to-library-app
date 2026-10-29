@@ -1,14 +1,100 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import ImageTracer from 'imagetracerjs';
 import { PngSvgError } from '../src/png-svg';
 import {
-  createSilhouetteMask, createTracePalette, detectSilhouette, imageTracerOptions,
+  analyzeSilhouette, createSilhouetteMask, createTracePalette, detectSilhouette, imageTracerOptions,
   isFullyOpaque, normalizeTransparentPixels, PNG_SVG_TRACE_LIMITS, validateSvgPath, validateTraceInput,
 } from '../src/png-svg-trace';
-import { alphaTopology, createCurveReferenceFixture, createPngFixtures, meanAbsoluteAlphaError } from './png-fixture-generator';
+import { alphaTopology, createAngularIconFixture, createCurveReferenceFixture, createPngFixtures, createResampledLineIconFixture, createSilhouetteRejectionFixtures, meanAbsoluteAlphaError } from './png-fixture-generator';
 
 const curve = createCurveReferenceFixture();
+const resampledLine = createResampledLineIconFixture();
+
+test('resampled 96px line fixture retains independent rings, angled stroke and island with a wider AA fringe', () => {
+  assert.equal(createHash('sha256').update(resampledLine.rgba).digest('hex'), 'e9ddccbdc4720ebcfa31732ec5fc5fc994331e6fd0afc31bc325afe2c05b826a', 'Native fixture changed after the pre-fix RED receipt.');
+  assert.equal(createHash('sha256').update(resampledLine.reference).digest('hex'), 'aba5ae34163f0ed3a97b1c4507edabd68e5138a375bed6f60169949bbb951aee', 'Independent oracle changed after the pre-fix RED receipt.');
+  assert.deepEqual(alphaTopology(resampledLine.rgba, 96, 96), {components: 4, holes: 2});
+  assert.deepEqual(alphaTopology(resampledLine.reference, 384, 384), {components: 4, holes: 2});
+  let opaque = 0, transparent = 0, widerFringe = 0;
+  for (let y = 0; y < 96; y++) for (let x = 0; x < 96; x++) {
+    const alpha = resampledLine.rgba[(y * 96 + x) * 4 + 3];
+    if (alpha === 255) {opaque++; continue;}
+    if (alpha === 0) {transparent++; continue;}
+    let touchesOpaque = false, touchesTransparent = false;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const nx = x + dx, ny = y + dy;
+      const neighbor = nx < 0 || ny < 0 || nx >= 96 || ny >= 96 ? 0 : resampledLine.rgba[(ny * 96 + nx) * 4 + 3];
+      touchesOpaque ||= neighbor === 255;
+      touchesTransparent ||= neighbor === 0;
+    }
+    if (!touchesOpaque || !touchesTransparent) widerFringe++;
+  }
+  assert.ok(opaque >= 4 && transparent > 0, 'The input has real opaque and transparent anchors.');
+  assert.ok(widerFringe > 100, 'The fixture must exercise antialias pixels beyond the former immediate-neighbor rule.');
+  const enlarged = new Uint8ClampedArray(resampledLine.reference.length);
+  for (let y = 0; y < 384; y++) for (let x = 0; x < 384; x++) {
+    const source = (Math.floor(y / 4) * 96 + Math.floor(x / 4)) * 4;
+    enlarged.set(resampledLine.rgba.subarray(source, source + 4), (y * 384 + x) * 4);
+  }
+  assert.ok(meanAbsoluteAlphaError(enlarged, resampledLine.reference) > 0.5, 'The analytic target is not an enlarged copy of the filtered source.');
+});
+
+test('silhouette routing accepts the fixed resampled line fixture without changing source pixels', () => {
+  const original = resampledLine.rgba.slice();
+  const result = detectSilhouette(resampledLine.rgba, 96, 96);
+  assert.ok(result, 'A monochrome opaque line icon with a bounded wider antialias fringe must use silhouette contours.');
+  assert.deepEqual(result.color, {r: 0, g: 0, b: 0, a: 255});
+  assert.deepEqual(resampledLine.rgba, original);
+  assert.equal(analyzeSilhouette(resampledLine.rgba, 96, 96).reason, null);
+});
+
+const rejectionFixtures = createSilhouetteRejectionFixtures();
+for (const [name, reason] of [
+  ['broadFade', 'opaque-support-too-distant'],
+  ['interiorPocket', 'transparent-support-too-distant'],
+  ['detachedPatch', 'opaque-support-too-distant'],
+] as const) {
+  test(`silhouette rejection preserves ${name} and explains its unsupported alpha region`, () => {
+    const fixture = rejectionFixtures[name], original = fixture.rgba.slice();
+    const result = analyzeSilhouette(fixture.rgba, fixture.width, fixture.height);
+    assert.equal(result.silhouette, null);
+    assert.equal(result.reason, reason);
+    assert.equal(detectSilhouette(fixture.rgba, fixture.width, fixture.height), null);
+    assert.deepEqual(fixture.rgba, original);
+    assert.ok(original.some((value, index) => index % 4 === 3 && value === 255), 'This rejection must have a real opaque anchor, not merely fail the no-opaque guard.');
+    const {x, y, alpha} = fixture.alphaProbe;
+    assert.ok(alpha > 0 && alpha < 255);
+    assert.equal(original[(y * fixture.width + x) * 4 + 3], alpha);
+  });
+}
+
+test('silhouette diagnostics distinguish missing anchors, binary art and visible color variation', () => {
+  const translucent = resampledLine.rgba.slice();
+  for (let offset = 3; offset < translucent.length; offset += 4) translucent[offset] = Math.round(translucent[offset] * 0.5);
+  assert.equal(analyzeSilhouette(translucent, 96, 96).reason, 'insufficient-opaque-core');
+  const opaque = new Uint8ClampedArray(4 * 4 * 4);
+  for (let offset = 3; offset < opaque.length; offset += 4) opaque[offset] = 255;
+  assert.equal(analyzeSilhouette(opaque, 4, 4).reason, 'no-transparent-background');
+  const binary = opaque.slice(); binary[3] = 0;
+  assert.equal(analyzeSilhouette(binary, 4, 4).reason, 'no-antialiased-edge');
+  const distinctColor = resampledLine.rgba.slice();
+  const offset = distinctColor.findIndex((value, index) => index % 4 === 3 && value === 255);
+  distinctColor[offset - 3] = 255;
+  assert.equal(analyzeSilhouette(distinctColor, 96, 96).reason, 'foreground-color-mismatch');
+});
+
+test('sharp right-angle and 45-degree fixture retains independent corner and line probes', () => {
+  const fixture = createAngularIconFixture();
+  assert.deepEqual(alphaTopology(fixture.rgba, 32, 32), {components: 2, holes: 0});
+  assert.deepEqual(alphaTopology(fixture.reference, 128, 128), {components: 2, holes: 0});
+  assert.ok(detectSilhouette(fixture.rgba, 32, 32));
+  for (const [x, y, inside] of [[11, 17, true], [12.5, 17, false], [12.5, 19, true], [23, 9.75, true], [23, 8.25, false], [18.75, 13.75, true]] as const) {
+    const alpha = fixture.reference[(Math.floor(y * 4) * 128 + Math.floor(x * 4)) * 4 + 3];
+    assert.equal(alpha >= 128, inside, `Independent angular probe ${x},${y}`);
+  }
+});
 
 test('known 96px curve has independent 4x reference, curved hole, separate island and narrow connected stroke', () => {
   assert.equal(curve.bytes[0], 137);

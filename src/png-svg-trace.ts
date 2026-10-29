@@ -11,6 +11,16 @@ export const PNG_SVG_TRACE_LIMITS = Object.freeze({
 
 export interface TraceColor { r: number; g: number; b: number; a: number }
 export interface SilhouetteInfo { color: TraceColor; opaquePixels: number; edgePixels: number }
+export type SilhouetteRejectionReason =
+  | 'insufficient-opaque-core'
+  | 'no-transparent-background'
+  | 'no-antialiased-edge'
+  | 'foreground-color-mismatch'
+  | 'opaque-support-too-distant'
+  | 'transparent-support-too-distant';
+export type SilhouetteAnalysis =
+  | { silhouette: SilhouetteInfo; reason: null }
+  | { silhouette: null; reason: SilhouetteRejectionReason };
 export interface PngSvgEngine {
   id: 'pixel-rectangles' | 'original-png' | 'vtracer' | 'imagetracer' | 'silhouette';
   name: string;
@@ -20,8 +30,22 @@ export interface PngSvgEngine {
 export const TRACE_ENGINES = Object.freeze({
   vtracer: { id: 'vtracer', name: 'VTracer', version: '1.0.0-alpha.4 / browser 0.0.3 / profile 1' },
   imagetracer: { id: 'imagetracer', name: 'ImageTracer', version: '1.2.6 / RGBA profile 1' },
-  silhouette: { id: 'silhouette', name: 'ImageTracer · silhouette contours', version: '1.2.6 / silhouette profile 1' },
+  silhouette: { id: 'silhouette', name: 'ImageTracer · silhouette contours', version: '1.2.6 / silhouette profile 2' },
 } satisfies Record<string, PngSvgEngine>);
+
+const SILHOUETTE_SUPPORT_RADIUS = 3;
+const SILHOUETTE_REJECTION_MESSAGES: Record<SilhouetteRejectionReason, string> = {
+  'insufficient-opaque-core': 'Fewer than four fully opaque pixels were found.',
+  'no-transparent-background': 'No fully transparent background pixels were found.',
+  'no-antialiased-edge': 'No partially transparent edge pixels were found.',
+  'foreground-color-mismatch': 'Visible colors exceed the single-foreground color tolerance.',
+  'opaque-support-too-distant': 'Some partial-alpha pixels cannot reach opaque pixels within 3 pixels without decreasing opacity.',
+  'transparent-support-too-distant': 'Some partial-alpha pixels cannot reach transparency within 3 pixels without increasing opacity.',
+};
+
+export function silhouetteRejectionMessage(reason: SilhouetteRejectionReason): string {
+  return SILHOUETTE_REJECTION_MESSAGES[reason];
+}
 
 export function validateTraceInput(pixels: Uint8Array | Uint8ClampedArray, width: number, height: number): void {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || pixels.length !== width * height * 4) {
@@ -38,11 +62,66 @@ export function isFullyOpaque(pixels: Uint8Array | Uint8ClampedArray): boolean {
 }
 
 /**
- * Deliberately narrow: one opaque foreground color, transparent background,
- * and at most a one-pixel antialias fringe. Soft fields and translucent fills
- * stay on the RGBA tracer. The original pixel reference is never modified.
+ * Shortest eight-neighbor paths, capped at the narrow-fringe radius. Propagate
+ * outward from the target in reverse alpha order so a valid path back to the
+ * target never turns away from its opacity. Every pixel enters the BFS once.
  */
-export function detectSilhouette(pixels: Uint8Array | Uint8ClampedArray, width: number, height: number): SilhouetteInfo | null {
+function alphaSupportDistances(pixels: Uint8Array | Uint8ClampedArray, width: number, height: number, opaque: boolean): Uint8Array {
+  const count = width * height;
+  const unreached = SILHOUETTE_SUPPORT_RADIUS + 1;
+  const distances = new Uint8Array(count).fill(unreached);
+  const queue = new Uint32Array(count);
+  let head = 0;
+  let tail = 0;
+  const targetAlpha = opaque ? 255 : 0;
+  for (let pixel = 0; pixel < count; pixel++) {
+    if (pixels[pixel * 4 + 3] === targetAlpha) {
+      distances[pixel] = 0;
+      queue[tail++] = pixel;
+    }
+  }
+  if (!opaque) {
+    // The transparent exterior is one step from a border pixel. Seed these
+    // after all distance-zero pixels to retain breadth-first ordering.
+    const seedBorder = (pixel: number) => {
+      if (distances[pixel] === unreached) {
+        distances[pixel] = 1;
+        queue[tail++] = pixel;
+      }
+    };
+    for (let x = 0; x < width; x++) { seedBorder(x); seedBorder((height - 1) * width + x); }
+    for (let y = 1; y < height - 1; y++) { seedBorder(y * width); seedBorder(y * width + width - 1); }
+  }
+  while (head < tail) {
+    const pixel = queue[head++];
+    const distance = distances[pixel];
+    if (distance === SILHOUETTE_SUPPORT_RADIUS) continue;
+    const alpha = pixels[pixel * 4 + 3];
+    const x = pixel % width;
+    const y = Math.floor(pixel / width);
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+        const neighbor = ny * width + nx;
+        if (distances[neighbor] !== unreached) continue;
+        const neighborAlpha = pixels[neighbor * 4 + 3];
+        if (opaque ? neighborAlpha > alpha : neighborAlpha < alpha) continue;
+        distances[neighbor] = distance + 1;
+        queue[tail++] = neighbor;
+      }
+    }
+  }
+  return distances;
+}
+
+/**
+ * One opaque foreground color, transparent background and a narrow monotone
+ * antialias fringe. Broader alpha fields remain on RGBA tracing. Report the
+ * actual failed guard without interpreting the image's subject or intent.
+ */
+export function analyzeSilhouette(pixels: Uint8Array | Uint8ClampedArray, width: number, height: number): SilhouetteAnalysis {
   validateTraceInput(pixels, width, height);
   let color: TraceColor | undefined;
   let opaquePixels = 0;
@@ -56,31 +135,39 @@ export function detectSilhouette(pixels: Uint8Array | Uint8ClampedArray, width: 
     } else if (alpha === 0) transparentPixels++;
     else edgePixels++;
   }
-  if (!color || opaquePixels < 4 || !transparentPixels || !edgePixels) return null;
+  if (!color || opaquePixels < 4) return { silhouette: null, reason: 'insufficient-opaque-core' };
+  if (!transparentPixels) return { silhouette: null, reason: 'no-transparent-background' };
+  if (!edgePixels) return { silhouette: null, reason: 'no-antialiased-edge' };
   for (let offset = 0; offset < pixels.length; offset += 4) {
     const alpha = pixels[offset + 3];
     if (!alpha) continue;
     // Compare premultiplied channels to tolerate only canvas readback rounding.
     if (Math.abs(pixels[offset] - color.r) * alpha > 384 ||
         Math.abs(pixels[offset + 1] - color.g) * alpha > 384 ||
-        Math.abs(pixels[offset + 2] - color.b) * alpha > 384) return null;
-    if (alpha === 255) continue;
-    const pixel = offset / 4;
-    const x = pixel % width;
-    const y = Math.floor(pixel / width);
-    let nextToOpaque = false;
-    let nextToTransparent = false;
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        const nx = x + dx, ny = y + dy;
-        const neighbor = nx < 0 || nx >= width || ny < 0 || ny >= height ? 0 : pixels[(ny * width + nx) * 4 + 3];
-        if (neighbor === 255) nextToOpaque = true;
-        if (neighbor === 0) nextToTransparent = true;
-      }
+        Math.abs(pixels[offset + 2] - color.b) * alpha > 384) {
+      return { silhouette: null, reason: 'foreground-color-mismatch' };
     }
-    if (!nextToOpaque || !nextToTransparent) return null;
   }
-  return { color, opaquePixels, edgePixels };
+  const opaqueSupport = alphaSupportDistances(pixels, width, height, true);
+  for (let pixel = 0; pixel < opaqueSupport.length; pixel++) {
+    const alpha = pixels[pixel * 4 + 3];
+    if (alpha > 0 && alpha < 255 && opaqueSupport[pixel] > SILHOUETTE_SUPPORT_RADIUS) {
+      return { silhouette: null, reason: 'opaque-support-too-distant' };
+    }
+  }
+  const transparentSupport = alphaSupportDistances(pixels, width, height, false);
+  for (let pixel = 0; pixel < transparentSupport.length; pixel++) {
+    const alpha = pixels[pixel * 4 + 3];
+    if (alpha > 0 && alpha < 255 && transparentSupport[pixel] > SILHOUETTE_SUPPORT_RADIUS) {
+      return { silhouette: null, reason: 'transparent-support-too-distant' };
+    }
+  }
+  return { silhouette: { color, opaquePixels, edgePixels }, reason: null };
+}
+
+/** Compatibility API for callers interested only in conservative eligibility. */
+export function detectSilhouette(pixels: Uint8Array | Uint8ClampedArray, width: number, height: number): SilhouetteInfo | null {
+  return analyzeSilhouette(pixels, width, height).silhouette;
 }
 
 export function createSilhouetteMask(pixels: Uint8Array | Uint8ClampedArray, opaqueBackground: boolean): Uint8ClampedArray {

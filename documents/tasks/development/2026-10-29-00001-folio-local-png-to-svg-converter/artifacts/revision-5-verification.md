@@ -1,0 +1,13 @@
+# Revision5 verification — numeric gates passed; visual contour finding remains
+
+Root observed the actual native-browser suite finish at2026-10-29T16:18:37.509Z in Chrome155/Linux/DPR1: **31 passed,0 failed**. The original28 checks remained in place. The independent test owner froze the new input/oracle and recorded RED before the engine mutation, then15focused Node tests passed. Root's full `npm test` run passed **209application tests plus4privacy tests**, zero failures, with one pre-existing optional external-Library-fixture skip. TypeScript and gitdiff whitespace checks exited0. The final independent production diff review approved the classifier and actual-guard diagnostics; see revision-5-code-review.md.
+
+The frozen resampled96px input produced four paths,1,119SVG bytes, and a fresh independently recounted native difference of1,287/9,216pixels. At4x against the independently sampled analytic target, pixel-geometry alpha MAE was5.831583658854167 and smooth MAE2.56707763671875, a55.97975118094853%reduction. Expected/actual topology remained4components/2holes and all ten probes passed. The separate sharp-angle control retained2components/0holes and all six probes; its native count was140/1,024 and output304bytes/twopaths.
+
+All three broader-opacity rejection fixtures remained on general RGBA tracing with the actual local guard explanation. Their intentional alpha probes survived exactly: broadfade121, enclosedpocket128 and detachedpatch128. The source/reference bytes were not changed to obtain these results.
+
+## Decisive visual finding after numeric pass
+
+Root then inspected the actual side-by-side400%render of both independent fixtures. Although alpha MAE improved and the current tests passed, the purported smooth rings visibly contained long straight facets (approximately8–12sides); some nominally round endpoints/islands were also angular. The expected analytic target has smooth circular contours. The existing check for anyQ/Ccommand and aggregate MAE did not reject this visibly inadequate round-contour result.
+
+This is **not accepted as completed R22quality**. Existing ImageTracer line tolerance0.5 can select straight segments before its quadratic fitting path is considered. A bounded follow-up will investigate stricter straight-line acceptance while retaining the current quadratic tolerance, source/mask, sharp-detail checks and independent references. Any change to the reviewed frozen curve settings will receive a focused plan amendment/review first. No new private user fixture is needed, no exactness condition changes, and the candidate package will not be published merely because all31checks passed.

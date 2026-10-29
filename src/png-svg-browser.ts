@@ -1,6 +1,6 @@
 import { compareVisiblePixels, createEmbeddedPngSvg, inspectPng, PNG_SVG_LIMITS, PngSvgError } from './png-svg';
 import type { ConversionMode, PixelSvgOutput, PngMetadata, PngSvgErrorCode } from './png-svg';
-import { detectSilhouette, isFullyOpaque, normalizeTracedSvg, PNG_SVG_TRACE_LIMITS, TRACE_ENGINES, validateTraceInput } from './png-svg-trace';
+import { analyzeSilhouette, isFullyOpaque, normalizeTracedSvg, PNG_SVG_TRACE_LIMITS, silhouetteRejectionMessage, TRACE_ENGINES, validateTraceInput } from './png-svg-trace';
 import type { PngSvgEngine, TraceColor } from './png-svg-trace';
 import type { VTracer, VTracerPixelsOptions } from 'vtracer-browser';
 
@@ -344,15 +344,19 @@ interface SmoothSvgOutput { svg: string; pathCount: number; engine: PngSvgEngine
 
 async function generateSmoothSvg(pixels: Uint8ClampedArray, width: number, height: number, options: ConvertPngOptions): Promise<SmoothSvgOutput> {
   validateTraceInput(pixels, width, height);
-  const silhouette = detectSilhouette(pixels, width, height);
+  const analysis = analyzeSilhouette(pixels, width, height);
+  const silhouette = analysis.silhouette;
+  const opaque = isFullyOpaque(pixels);
   const warnings = ['Smooth curves approximate the source. The native pixel comparison reports every visible difference; enlarged curves do not recover a unique original drawing.'];
   let foreground: TraceColor | undefined;
   if (silhouette) {
     foreground = silhouette.color;
-    warnings.push('A single opaque foreground with antialiased edges was detected. Its half-alpha contour was fitted and the foreground color restored; native edge coverage changes.');
+    warnings.push('A single opaque foreground with antialiased edges within the three-pixel support limit was detected. Its half-alpha contour was fitted and the foreground color restored; native edge coverage changes.');
+  } else if (!opaque && analysis.reason !== null) {
+    warnings.push(`RGBA tracing selected: ${silhouetteRejectionMessage(analysis.reason)}`);
   }
   // The measured silhouette profile uses ImageTracer; RGB-only VTracer handles opaque sources.
-  if (!silhouette && isFullyOpaque(pixels)) {
+  if (!silhouette && opaque) {
     try {
       const raw = await traceWithVTracer(pixels, width, height, options);
       checkAbort(options.signal);
