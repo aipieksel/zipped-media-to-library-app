@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useMemo,useRef,useState,useSyncExternalStore} from 'react';
 import type {CSSProperties} from 'react';
-import {ArrowLeft,ArrowRight,ArrowDownUp,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle} from 'lucide-react';
+import {ArrowLeft,ArrowRight,ArrowDownUp,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle,Library,ScanLine,ShieldCheck} from 'lucide-react';
 import type {ArchiveMeta,HtmlPage,ImportBundle,ItemKind,ItemOrganization,Snapshot,WorkspaceFolder} from './types';
 import {listWorkspace,saveImport,putSnapshot,deleteRoot,getPreference,setPreference,createFolder,setItemFavorite,moveItemsToFolder,syncCloudCollection,setFolderFavorite} from './db';
 import {importImages} from './archive';
@@ -26,6 +26,7 @@ import type {GridLayout} from './grid';
 import {CanvasControls} from './components/CanvasControls';
 import {itemDateInfo,treeDateMetadata,dateDescription} from './metadata';
 import {firstFolderPage,removeArchiveFolderFavorites} from './folder-favorites';
+import {PngSvgWorkspace} from './components/PngSvgWorkspace';
 
 type Preferences={selectedId:string|null;selectedByKind?:Partial<Record<ItemKind,string>>;kind?:ItemKind;expanded:string[];viewport:number;fit:boolean;orders?:Partial<Record<ItemKind,ViewOrder>>;sidebarWidth?:number;grids?:Partial<Record<ItemKind,GridLayout>>;imageShape?:ImageShape};
 type ImportResult={name:string;ok:boolean;message:string};
@@ -43,6 +44,7 @@ function Modal({title,children,onClose}:{title:string;children:React.ReactNode;o
 }
 
 export default function App(){
+  const [workspace,setWorkspace]=useState<'library'|'converter'>(()=>window.location.hash==='#png-to-svg'?'converter':'library');
   const [archives,setArchives]=useState<ArchiveMeta[]>([]);
   const [items,setItems]=useState<HtmlPage[]>([]);
   const [snapshots,setSnapshots]=useState<Map<string,Snapshot>>(new Map());
@@ -113,6 +115,15 @@ export default function App(){
   const mounted=useRef(true);
   const remembered=useRef<Partial<Record<ItemKind,string>>>({});
   const organizationLock=useRef(false);
+
+  useEffect(()=>{
+    const change=()=>{setWorkspace(window.location.hash==='#png-to-svg'?'converter':'library');setPopover(null);setSidebarOpen(false);setDragging(false);dragDepth.current=0;};
+    window.addEventListener('hashchange',change);return()=>window.removeEventListener('hashchange',change);
+  },[]);
+  const switchWorkspace=(next:'library'|'converter')=>{
+    setWorkspace(next);setPopover(null);setSidebarOpen(false);setDragging(false);dragDepth.current=0;
+    window.location.hash=next==='converter'?'png-to-svg':'library';
+  };
 
   const itemMap=useMemo(()=>new Map(items.map(item=>[item.id,item])),[items]);
   const archiveMap=useMemo(()=>new Map(archives.map(archive=>[archive.id,archive])),[archives]);
@@ -265,7 +276,7 @@ export default function App(){
   },[filteredItems,position,selectItem]);
   useEffect(()=>{
     const keydown=(event:KeyboardEvent)=>{
-      if(anyModal||popover||event.defaultPrevented||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+      if(workspace!=='library'||anyModal||popover||event.defaultPrevented||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
       const target=event.target as Element;
       if(target?.closest?.('input,textarea,select,[contenteditable="true"],[role="textbox"]'))return;
       if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();step(event.key==='ArrowDown'?1:-1);}
@@ -274,7 +285,7 @@ export default function App(){
       if(event.key==='/'){event.preventDefault();setSidebarOpen(true);requestAnimationFrame(()=>searchRef.current?.focus());}
     };
     window.addEventListener('keydown',keydown);return()=>window.removeEventListener('keydown',keydown);
-  },[step,filteredItems,selectItem,anyModal,popover]);
+  },[step,filteredItems,selectItem,anyModal,popover,workspace]);
   const switchKind=(nextKind:ItemKind)=>{
     if(selectedId)remembered.current[kind]=selectedId;
     setKind(nextKind);setQuery('');setSelectedId(remembered.current[nextKind]??null);setPopover(null);setWarnings([]);
@@ -438,7 +449,13 @@ export default function App(){
   const updateGrid=(grid:GridLayout)=>{setGrids(current=>({...current,[kind]:normalizeGrid(grid)}));setCanvasPages(current=>({...current,[kind]:0}));};
   useEffect(()=>{setCanvasPages(current=>resetGridPages(current,'all'));},[query,favoritesOnly]);
   useEffect(()=>{setCanvasPages(current=>resetGridPages(current,'image'));},[imageShape]);
-  return <div className="app-shell" style={{'--sidebar-width':sidebarWidth+'px'} as CSSProperties}
+  return <div className="folio-app">
+    <nav className="workspace-navigation" aria-label="Workspace">
+      <button aria-pressed={workspace==='library'} onClick={()=>switchWorkspace('library')}><Library size={14}/>Library</button>
+      <button aria-pressed={workspace==='converter'} onClick={()=>switchWorkspace('converter')}><ScanLine size={14}/>PNG to SVG</button>
+      {workspace==='converter'&&<span className="workspace-navigation-note"><ShieldCheck size={12}/>On-device conversion</span>}
+    </nav>
+    {workspace==='library'&&<div className="app-shell" style={{'--sidebar-width':sidebarWidth+'px'} as CSSProperties}
     onDragEnter={event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();dragDepth.current++;setDragging(true);}}}
     onDragLeave={event=>{event.preventDefault();dragDepth.current--;if(dragDepth.current<=0){dragDepth.current=0;setDragging(false);}}}
     onDragOver={event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();event.dataTransfer.dropEffect='copy';}}}
@@ -567,9 +584,12 @@ export default function App(){
     {helpOpen&&<Modal title="Workspace help" onClose={()=>setHelpOpen(false)}><div className="modal-body help-content">
       <section><h3>Import and browse</h3><p>Drop several ZIPs or images anywhere, use the + button, or import one downloadable ZIP/image from a Google Drive share link. Nested ZIPs keep their hierarchy. HTML and Images have separate tabs; HTML resources stay attached behind the scenes. Index pages use their folder names. Click a folder to preview its first matching file; its arrow only expands or collapses. Star a folder to include its current contents in Favorites.</p><p><kbd>↑</kbd> <kbd>↓</kbd> or the top arrows cycle through every matching file across folders, including collapsed ones. The last file loops to the first. <kbd>←</kbd> <kbd>→</kbd> control focused tree branches. <kbd>/</kbd> finds a file. Typing fields keep their own arrow keys.</p></section>
       <section><h3>Keep what matters</h3><p>Star a file, filter Favorites, or use Move to folder. Create folders with the sidebar folder-plus button or directly from the move menu. Use Sort to order names or dates, group by month, or show all files together. Drag the sidebar divider to resize it; double-click to reset. Folders organize references; original paths and linked resources stay intact.</p><p>Download saves original image bytes. For HTML, it downloads a ZIP containing the page’s owning archive and its assets. Source-only HTML and saved PNGs are available in Settings.</p></section>
+      <section><h3>PNG to SVG</h3><p>Use the workspace switch to open the local converter. Drop PNGs, compare the original and generated SVG, and download individual files or a ZIP. Pixel vectors preserve the pixel grid as editable fills; Embedded PNG puts the original bitmap inside an SVG. Every result receives a native-size rendered pixel check. Converter files stay in this tab’s memory and are not added to the library. Download them before closing or reloading.</p></section>
       <section><h3>Views and screenshots</h3><p>Settings contains preview width, fit, live/screenshot view, and current or batch captures. Gallery shows saved HTML screenshots or your original images. Captures run in the browser while you browse. These are DOM renderings, not server-side Playwright screenshots; remote resources, video, frames, canvas effects, and some CSS may differ.</p></section>
       <section><h3>Saved collection and browser imports</h3><p>The Banner Collection is saved privately on this Site. Its file list appears automatically; resource bytes load only when you open a page or image. Files you drop or import from Drive are saved only in this browser. Favorites, folders and screenshots also stay in this browser. Clearing browser storage removes those local settings and imports, while the private collection remains available. Hiding a collection import keeps it hidden after refresh on this browser. Imported scripts run in an isolated frame and can still request their external resources.</p><p>Supported images: PNG, JPEG, WebP, GIF, AVIF, SVG, BMP, and ICO. Limits: 256 MB per ZIP, 768 MB extracted per import, 128 MB per file, 20,000 entries, eight nested ZIP levels. Available browser storage limits the total collection. Password-protected ZIPs and server applications are unsupported.</p></section>
     </div></Modal>}
+    </div>}
+    <PngSvgWorkspace active={workspace==='converter'}/>
   </div>;
 }
 
