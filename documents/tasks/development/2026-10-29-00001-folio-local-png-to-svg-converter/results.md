@@ -51,3 +51,7 @@ Revision 2 admitted by resolve_plan_record --execution --require-critique, exit 
 - Additional procedural 96 × 96 icon preview showed 0 / 9,216 visible differences with 190 merged shapes. A screenshot is kept only as QA evidence, not committed with user or generated media.
 - Read-only workflow-record closeout resolution passed. Original admission/review hashes and plan revision remain unchanged; status is `complete`.
 - No implementation blocker remains. Explicit verification boundaries: one browser engine/sRGB; browser/OS delivery of blob downloads unobserved; authenticated cloud writes and Drive journeys unchanged and not exercised.
+
+## Revision 3 — user correction and reopened execution
+
+Revision2 completion is retained in artifacts/revision-2-complete, with its original review hashes. New S2 supersedes the separate/sidebar/transient design. BaselineGitHub b66763e, Site7011456/version9 confirmed. Independent assessment, actual live preview diagnosis and current primary-source research are in progress. No application mutation has occurred before revision3 review. Root is the record and execution coordinator; disjoint source ownership will start only after admission.

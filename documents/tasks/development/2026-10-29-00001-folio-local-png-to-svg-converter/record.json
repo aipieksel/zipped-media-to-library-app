@@ -5,23 +5,23 @@
   "title": "Folio local PNG to SVG converter",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
-  "status": "complete",
-  "readiness": "ready",
+  "status": "draft",
+  "readiness": "not_ready",
   "blockers": [],
-  "planRevision": 2,
+  "planRevision": 3,
   "critiqueOutcome": "ready",
   "reviewedPlanRevision": 2,
   "sourceBaseline": {
-    "description": "GitHub main matches published Site app source; source-only record work is current dirty state",
-    "revision": "2dc43cb0a91981514243b4ce5fed014ea0de59c0",
+    "description": "Revision 2 complete, GitHub main and published Site version 9 confirmed. New source-only revision3 assessment records are dirty.",
+    "revision": "b66763e4be353bb17827e7da27b4ebf9783e15b5",
     "dirtyPaths": []
   },
   "scope": {
     "in": [
-      "Integrated local PNG-to-SVG tool, scoped navigation, conversion/verification/downloads, tests/docs, checkpoint pushes and same-site private publication"
+      "Shared existing Library navigation/sidebar for Icons, toolbar controls, durable device-local folders and automatic PNG conversion, current source-grounded tracing improvement, native verification, tests/docs, frequent pushes and same private Site release"
     ],
     "out": [
-      "Curve tracing, DB/cloud data changes, private media commits, new Site/audience, unrelated UI redesign"
+      "Private payload commits or conversion uploads, Library/cloud schema migration, invented exact smooth recovery guarantees, new Site/audience, unrelated redesign, remote GPU/services"
     ]
   },
   "requestSources": [
@@ -29,13 +29,19 @@
       "id": "S1",
       "role": "user",
       "origin": "Current user message, 29 October 2026; repository/site links, quoted brief and integrated implementation/checkpoint instructions",
-      "text": "[https://github.com/aipieksel/zipped-media-to-library-app](https://github.com/aipieksel/zipped-media-to-library-app) [$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) [https://folio-html-workspace.byronjacobs.chatgpt.site/](https://folio-html-workspace.byronjacobs.chatgpt.site/) \"**Build a standalone, local PNG-to-SVG icon converter.** Prioritize an exact visual match at the PNG’s original dimensions.\n\n**Default mode — pixel vectors:** Decode each PNG to RGBA pixels and generate real SVG geometry for the visible pixels. Merge adjacent pixels of identical color and opacity to reduce file size. Preserve dimensions, transparency, and antialiased edge pixels. This mode should produce editable SVG fills, while keeping the original pixel-grid appearance.\n\n**Second mode — embedded PNG:** Place the original PNG bytes inside an SVG for cases where pixel vectors become impractically large. Label this clearly as a bitmap inside an SVG, not editable vector artwork.\n\n**Interface:** Make it a standalone local tool with drag-and-drop batch import, original and SVG previews, individual downloads, and a ZIP download. Preserve source filenames where possible and resolve collisions safely. Files must never leave the device.\n\n**Fidelity check:** Render each generated SVG at its native dimensions and compare its RGBA pixels with the decoded source PNG. Show “pixel match verified” only when there are zero visible differences; otherwise show the differing-pixel count. Test opaque, transparent, partially transparent, antialiased, palette-based, and multicolor PNGs.\n\n**Be honest about the limit:** Pixel-exact SVG geometry will still look pixelated when enlarged. Smooth, editable curves cannot generally be recovered exactly from arbitrary PNGs. Do not claim universal pixel accuracy across browsers or color profiles without testing it.\"\n\nOkay, so you'll see that I've added a repository, one ChatGPT site, a brief, and the AI development workflow. Now, I want you to modify our app on our repository that we have and add what the brief says to our existing repository application that we already have, right? So instead of making it a standalone where it's just that, build it into our current one that we have. Obviously you will need to be sure that there is proper navigation and that the UI makes sense. The UI already works great. So it's the perfect UI. But obviously now because we're adding a new feature, we need to extend it a bit to make it a bit more improved, right? So please do that. And then what I want you to do is choose the best— sorry, choose from the AI development workflow the relative phases and agents and tools that you need and plan it accordingly in order to do this as accurately and as good and as successfully as you can, please. And then do it from start to finish, all in one go. But it's very important that after each step or each phase or each milestone or each big piece of code, that you commit to the repository constantly, so that when something does crash on ChatGPT and it does stop working or you time out, that work is not lost, please."
+      "text": "[https://github.com/aipieksel/zipped-media-to-library-app](https://github.com/aipieksel/zipped-media-to-library-app) [$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) [https://folio-html-workspace.byronjacobs.chatgpt.site/](https://folio-html-workspace.byronjacobs.chatgpt.site/) \"**Build a standalone, local PNG-to-SVG icon converter.** Prioritize an exact visual match at the PNG\u2019s original dimensions.\n\n**Default mode \u2014 pixel vectors:** Decode each PNG to RGBA pixels and generate real SVG geometry for the visible pixels. Merge adjacent pixels of identical color and opacity to reduce file size. Preserve dimensions, transparency, and antialiased edge pixels. This mode should produce editable SVG fills, while keeping the original pixel-grid appearance.\n\n**Second mode \u2014 embedded PNG:** Place the original PNG bytes inside an SVG for cases where pixel vectors become impractically large. Label this clearly as a bitmap inside an SVG, not editable vector artwork.\n\n**Interface:** Make it a standalone local tool with drag-and-drop batch import, original and SVG previews, individual downloads, and a ZIP download. Preserve source filenames where possible and resolve collisions safely. Files must never leave the device.\n\n**Fidelity check:** Render each generated SVG at its native dimensions and compare its RGBA pixels with the decoded source PNG. Show \u201cpixel match verified\u201d only when there are zero visible differences; otherwise show the differing-pixel count. Test opaque, transparent, partially transparent, antialiased, palette-based, and multicolor PNGs.\n\n**Be honest about the limit:** Pixel-exact SVG geometry will still look pixelated when enlarged. Smooth, editable curves cannot generally be recovered exactly from arbitrary PNGs. Do not claim universal pixel accuracy across browsers or color profiles without testing it.\"\n\nOkay, so you'll see that I've added a repository, one ChatGPT site, a brief, and the AI development workflow. Now, I want you to modify our app on our repository that we have and add what the brief says to our existing repository application that we already have, right? So instead of making it a standalone where it's just that, build it into our current one that we have. Obviously you will need to be sure that there is proper navigation and that the UI makes sense. The UI already works great. So it's the perfect UI. But obviously now because we're adding a new feature, we need to extend it a bit to make it a bit more improved, right? So please do that. And then what I want you to do is choose the best\u2014 sorry, choose from the AI development workflow the relative phases and agents and tools that you need and plan it accordingly in order to do this as accurately and as good and as successfully as you can, please. And then do it from start to finish, all in one go. But it's very important that after each step or each phase or each milestone or each big piece of code, that you commit to the repository constantly, so that when something does crash on ChatGPT and it does stop working or you time out, that work is not lost, please."
     },
     {
       "id": "CA1",
       "role": "context",
       "origin": "artifacts/assessment.md by /root/codebase_assessment",
-      "text": "Independent assessment C1–C13: React/TS/Vite; preserve ItemKind/database/collection state, local converter isolation, reusable compact design, Worker deployment and source privacy."
+      "text": "Independent assessment C1\u2013C13: React/TS/Vite; preserve ItemKind/database/collection state, local converter isolation, reusable compact design, Worker deployment and source privacy."
+    },
+    {
+      "id": "S2",
+      "role": "user",
+      "origin": "User revision after reviewing published version 9, 29 October 2026, current conversation",
+      "text": "[$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) Okay, so I've had a look at your work and I'm disappointed so far. Firstly, the sidebar, the left sidebar. The left sidebar for the PNG conversion should be the exact same sidebar as the library. So you see on the library sidebar you can go and choose HTML or images. And then, and then when you click on... Oh, sorry. So you get HTML, then you get images, and then next to it should be icons. Right? There shouldn't be an entirely different sidebar. And then the conversion mode and those things, that shouldn't be in the sidebar. It should be in a toolbar. Right? And it shouldn't be a drop zone and things like that, because the library sidebar doesn't have it. Now how it should work is I drop things in the canvas or in the sidebar, whichever. If I drop a folder in it, it should obviously create a folder with the exact same logic as the images or the HTML. If I just drag images in there, then it should go into a uncategorized default folder, right? And it will always stay there. And also as soon as I drop them, they should just convert. Right, so please fix that. What I recommend you do is change the left sidebar. That should be vertical from top to bottom of the entire page. Wait, sorry. Sorry, I mean move the HTML tab and the images tab where the library button is. Right? Just move that there and then put icons next to it. But keep the exact same tree view, the exact same Finder file, the exact same left sidebar now as the HTML and images use. Just add an icons one. And then once you have done that, I want you to use the AI development workflow to do a very deep research, because I know that there's been recent advancements in image to SVG conversion technology, and there's, like, a lot of\u2014 well, there is quite, I think there's, like a GitHub repository or two that has this figured out, or a concept or something. There is a way to make it pixel perfect automatically, because I dropped two images in there and I saw it's not great. It's not perfect. So I want you to do anything in your power to do it perfectly and implement it as such, please. And once again, commit frequently."
     }
   ],
   "requestHashes": {
@@ -45,15 +51,16 @@
   "requirements": [
     {
       "id": "R1",
-      "text": "Integrate the converter with clear navigation and preserve the library UI and state.",
+      "text": "Use the exact existing Library sidebar, search and tree for Icons, preserving familiar controls.",
       "sources": [
-        "S1"
+        "S1",
+        "S2"
       ],
       "kind": "requested"
     },
     {
       "id": "R2",
-      "text": "Generate editable pixel geometry and merge identical adjacent pixels.",
+      "text": "Keep editable merged pixel geometry as the default exact-native conversion.",
       "sources": [
         "S1"
       ],
@@ -61,7 +68,7 @@
     },
     {
       "id": "R3",
-      "text": "Preserve native dimensions, transparency and antialiased edge pixels.",
+      "text": "Preserve native dimensions, transparency and antialiased edge pixels in pixel mode.",
       "sources": [
         "S1"
       ],
@@ -69,7 +76,7 @@
     },
     {
       "id": "R4",
-      "text": "Add clearly labeled embedded-PNG mode using the original bytes.",
+      "text": "Retain clearly labeled original-byte embedded PNG mode.",
       "sources": [
         "S1"
       ],
@@ -77,23 +84,25 @@
     },
     {
       "id": "R5",
-      "text": "Support responsive drag-and-drop batch processing with useful error states.",
+      "text": "Support batch import, responsive interactions, bounded conversion and useful failure recovery.",
       "sources": [
-        "S1"
+        "S1",
+        "S2"
       ],
       "kind": "requested"
     },
     {
       "id": "R6",
-      "text": "Show original and SVG previews, including native-size viewing.",
+      "text": "Show aligned original and actual SVG previews at native size and enlarged sizes.",
       "sources": [
-        "S1"
+        "S1",
+        "S2"
       ],
       "kind": "requested"
     },
     {
       "id": "R7",
-      "text": "Provide individual and ZIP downloads with safe, collision-free filenames.",
+      "text": "Provide individual and ZIP downloads with safe unique source-based filenames.",
       "sources": [
         "S1"
       ],
@@ -101,31 +110,34 @@
     },
     {
       "id": "R8",
-      "text": "Keep conversion files on the device and out of the source repository.",
+      "text": "Keep icon inputs and results on the device and private media out of GitHub.",
       "sources": [
-        "S1"
+        "S1",
+        "S2"
       ],
       "kind": "requested"
     },
     {
       "id": "R9",
-      "text": "Verify the rendered SVG and show either zero differences or the differing-pixel count.",
+      "text": "Independently render each downloaded SVG at native dimensions; verify only zero visible RGBA differences and otherwise show the count.",
       "sources": [
-        "S1"
+        "S1",
+        "S2"
       ],
       "kind": "requested"
     },
     {
       "id": "R10",
-      "text": "Test opaque, transparent, partial-alpha, antialiased, palette and multicolor PNGs.",
+      "text": "Test opaque, transparent, partial-alpha, antialiased, palette and multicolor PNGs, including new tracing regressions.",
       "sources": [
-        "S1"
+        "S1",
+        "S2"
       ],
       "kind": "requested"
     },
     {
       "id": "R11",
-      "text": "Explain pixel-grid scaling and the limits of browser and color-profile verification.",
+      "text": "State scaling, approximation, color-reference and tested-browser limits honestly.",
       "sources": [
         "S1"
       ],
@@ -133,28 +145,104 @@
     },
     {
       "id": "R12",
-      "text": "Complete the reviewed plan and independent verification.",
+      "text": "Use the selected workflow phases and real independent review, then complete verified implementation.",
       "sources": [
-        "S1"
+        "S1",
+        "S2"
       ],
       "kind": "requested"
     },
     {
       "id": "R13",
-      "text": "Commit and push meaningful milestones.",
+      "text": "Commit and push each meaningful milestone frequently.",
       "sources": [
-        "S1"
+        "S1",
+        "S2"
       ],
       "kind": "requested"
     },
     {
       "id": "R14",
-      "text": "Publish the verified app to the existing private site.",
+      "text": "Publish the verified revision to the existing owner-private Site.",
       "sources": [
+        "S1",
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R15",
+      "text": "Move HTML and Images to top navigation and add Icons alongside them.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R16",
+      "text": "Place conversion mode and preview controls in the canvas toolbar; remove the separate converter sidebar/drop-zone.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R17",
+      "text": "Accept file and directory drops on sidebar or canvas and preserve nested folder structure.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R18",
+      "text": "Place loose PNGs into a persistent default Uncategorized folder.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R19",
+      "text": "Persist original icons, folders and completed results locally across navigation and reload.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R20",
+      "text": "Automatically convert newly imported PNGs after durable import and recover interrupted queued work.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R21",
+      "text": "Research current image-to-SVG repositories and methods deeply using primary sources and select an implementable local approach.",
+      "sources": [
+        "S2"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R22",
+      "text": "Implement a researched smooth-curve option for scalable artwork and measure its actual native error without weakening exact mode.",
+      "sources": [
+        "S2",
         "S1"
       ],
-      "kind": "necessary",
-      "justification": "The user identifies the existing app Site and requests the feature end to end; publishing to the same private app makes the integrated change usable. Sites skill defaults publication without audience changes."
+      "kind": "requested"
+    },
+    {
+      "id": "R23",
+      "text": "Preserve existing HTML/Image Library data, backend contracts and interactions.",
+      "sources": [
+        "S1",
+        "S2"
+      ],
+      "kind": "requested"
     }
   ],
   "steps": [
@@ -162,34 +250,34 @@
       "id": "P1",
       "requirements": [
         "R12",
-        "R13"
+        "R13",
+        "R21"
       ],
       "paths": [
         "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter"
       ],
-      "change": "Capture assessment, research and UI plan, get independent critique, checkpoint",
+      "change": "Preserve revision 2, capture correction, assess ownership, diagnose fidelity, compare current vectorizers, specify reused UI, independently review revision 3 and push checkpoint.",
       "dependsOn": []
     },
     {
       "id": "P2",
       "requirements": [
-        "R2",
-        "R3",
-        "R4",
         "R5",
-        "R7",
         "R8",
-        "R9",
-        "R10",
-        "R11"
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R23"
       ],
       "paths": [
-        "src/png-svg.ts",
-        "src/png-svg.worker.ts",
-        "src/png-svg-browser.ts",
-        "src/png-svg-download.ts"
+        "src/icon-collection.ts",
+        "src/icon-drop.ts",
+        "src/useIconCollection.ts",
+        "tests/icon-collection.test.ts",
+        "tests/icon-drop.test.ts"
       ],
-      "change": "Implement bounded native-size RGBA conversion, local worker, original-byte embedding, actual SVG render check and filename/export helper",
+      "change": "Implement isolated local IndexedDB icon collection, atomic source persistence, nested folder ingestion, shared tree projection, serial recoverable queue, revision-guarded results, favorites/move and safe filenames. No Library DB or cloud schema change.",
       "dependsOn": [
         "P1"
       ]
@@ -197,49 +285,58 @@
     {
       "id": "P3",
       "requirements": [
-        "R1",
+        "R2",
+        "R3",
         "R4",
         "R5",
-        "R6",
-        "R7",
         "R8",
         "R9",
-        "R11"
+        "R10",
+        "R11",
+        "R21",
+        "R22"
       ],
       "paths": [
-        "src/App.tsx",
-        "src/components/PngSvgWorkspace.tsx",
-        "src/components/png-svg.css",
-        "src/styles.css"
+        "src/png-svg.ts",
+        "src/png-svg-browser.ts",
+        "src/png-svg.worker.ts",
+        "src/png-svg-trace.ts",
+        "src/png-svg-trace.worker.ts",
+        "package.json",
+        "package-lock.json",
+        "tests/png-svg.test.ts",
+        "tests/png-svg-browser-check.ts"
       ],
-      "change": "Add compact workspace navigation and local converter queue/previews/downloads with independent state and handlers",
+      "change": "Preserve exact modes; bounded source-reviewed tracer spike and adopt the supported local combination. Add explicit smooth mode, actual tracer identity, strict SVG validation and native pixel comparison. Retain cancellation/time/output bounds and truthful errors.",
       "dependsOn": [
-        "P1",
-        "P2"
+        "P1"
       ]
     },
     {
       "id": "P4",
       "requirements": [
         "R1",
-        "R2",
-        "R3",
-        "R4",
         "R5",
         "R6",
         "R7",
         "R8",
-        "R9",
-        "R10",
         "R11",
-        "R12"
+        "R15",
+        "R16",
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R23"
       ],
       "paths": [
-        "tests/png-svg.test.ts",
-        "tests/png-svg-components.test.ts",
-        "tests/png-fixture-generator.ts"
+        "src/App.tsx",
+        "src/components/ArchiveTree.tsx",
+        "src/components/PngSvgWorkspace.tsx",
+        "src/components/png-svg.css",
+        "src/styles.css"
       ],
-      "change": "Generate synthetic PNG cases; unit/byte/ZIP and actual browser verification; independent review",
+      "change": "Replace split workspace with top HTML/Images/Icons, one shared sidebar/tree, per-section selection/preferences and canvas-only icon view. Toolbar modes apply explicitly to current selection and next imports. Aligned comparison with synchronized zoom/pan and local persistence status. Reuse current controls and export actual saved outputs.",
       "dependsOn": [
         "P2",
         "P3"
@@ -248,20 +345,57 @@
     {
       "id": "P5",
       "requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7",
+        "R8",
+        "R9",
+        "R10",
+        "R11",
+        "R12",
+        "R15",
+        "R16",
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R22",
+        "R23"
+      ],
+      "paths": [
+        "tests",
+        "scripts/prepare-png-svg-check.mjs",
+        "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter/artifacts"
+      ],
+      "change": "Run decisive unit/browser/persistence/folder/reload/native-render/curve/preview checks; independent code, privacy and accessibility review; repair admitted findings; final build and privacy gate.",
+      "dependsOn": [
+        "P2",
+        "P3",
+        "P4"
+      ]
+    },
+    {
+      "id": "P6",
+      "requirements": [
         "R8",
         "R11",
         "R12",
         "R13",
-        "R14"
+        "R14",
+        "R21"
       ],
       "paths": [
         "README.md",
         "PRIVACY.md",
         "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter"
       ],
-      "change": "Document, test/build/privacy gate, checkpoint pushes, reconcile main and publish existing private Site",
+      "change": "Document tested behavior/research, push milestones and main with leases, mirror only source to the existing Site, preserve identity/R2/private audience, native build/save/deploy and verify. Keep previous user session tab open.",
       "dependsOn": [
-        "P4"
+        "P5"
       ]
     }
   ],
@@ -271,99 +405,96 @@
       "requirements": [
         "R2",
         "R3",
-        "R9"
+        "R4",
+        "R9",
+        "R10"
       ],
-      "method": "Node core tests with independent rectangle raster reconstruction and negative comparator cases",
-      "expected": "Identical RGBA and coverage, no overlaps, exact differences, no tolerance",
-      "boundary": "Pure logic; browser pixels separate"
+      "method": "Run existing independent rectangle/comparator/embedded and real native browser fixtures, plus deliberate one-pixel negative control.",
+      "expected": "All established standard native cases zero; mismatch count exactly1; no false badge.",
+      "boundary": "Recorded browser and sRGB8 only."
     },
     {
       "id": "T2",
       "requirements": [
-        "R4",
-        "R7"
+        "R5",
+        "R8",
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R23"
       ],
-      "method": "Embedded byte decode and JSZip readback with duplicate/Unicode/path/reserved names",
-      "expected": "Original PNG bytes unchanged and every output unique/safe",
-      "boundary": "Node bytes/ZIP tests"
+      "method": "Test collection transaction/revision/path contracts; browser folder + loose imports, duplicate names, reload with completed/pending/failed records, removal during conversion and Library switching.",
+      "expected": "One durable Uncategorized; nested names/empty folders preserved, safe collisions; source saved before queue; results survive reload; stale job never resurrects removed item; no cloud writes.",
+      "boundary": "Synthetic inputs in dedicated development origin; no production collection mutation."
     },
     {
       "id": "T3",
       "requirements": [
+        "R1",
         "R5",
-        "R8"
+        "R6",
+        "R15",
+        "R16",
+        "R17",
+        "R23"
       ],
-      "method": "Malformed PNG/bounds/animation/cancel/session budget cases plus converter dependency and network review",
-      "expected": "Useful errors, no stale success, bounded allocations, no file requests/storage",
-      "boundary": "Unit/component and actual browser checks"
+      "method": "Desktop and narrow browser journeys through top tabs, shared search/favorites/sort/tree/keyboard/move, both drop targets and synchronized previews at100/200/400/Fit.",
+      "expected": "One sidebar DOM/component with matching controls; controls remain in canvas toolbar; equal image size/origin/checker phase and synchronized pan; no clipped main actions; HTML/Images retain selection.",
+      "boundary": "Actual browser UI plus source integration tests."
     },
     {
       "id": "T4",
       "requirements": [
-        "R3",
-        "R4",
-        "R9",
-        "R10",
-        "R11"
+        "R7",
+        "R19"
       ],
-      "method": "Actual browser native decode→SVG raster comparison for six required PNG classes and deliberate single-pixel mismatch",
-      "expected": "All six representative standard PNG categories and partial-alpha embedded SVG have zero native visible differences; intentional one-pixel mutation counts 1; unsupported/error cases never claim verified.",
-      "boundary": "Record actual browser/version/sRGB; no other engines certified"
+      "method": "Read back saved SVG and ZIP payloads after reload, duplicate names and changing mode.",
+      "expected": "Preview/verification/download bytes equal; exports include each requested ready result once with unique safe names.",
+      "boundary": "Blob anchor and ZIP content; do not claim unobserved OS delivery."
     },
     {
       "id": "T5",
       "requirements": [
-        "R1",
         "R5",
-        "R6",
-        "R7"
+        "R8",
+        "R9",
+        "R10",
+        "R11",
+        "R21",
+        "R22"
       ],
-      "method": "Browser library→converter→batch→previews→mode retry→SVG/ZIP downloads→library",
-      "expected": "Inputs/results independent, navigation preserved, bytes/names reconcile and controls operate",
-      "boundary": "Development browser, existing production collection separate"
+      "method": "Audit exact pinned tracer source/license/output; bounded browser comparison on known circle, ring hole, tiny detail, multicolor and partial alpha/gradient fixtures; inspect actual curves and independent4x known-shape reference.",
+      "expected": "Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen tracer proven better on relevant synthetic contour than pixel geometry at4x, otherwise retain an honest measured option and report limitation.",
+      "boundary": "Does not establish universal recovery or accuracy on unavailable user originals."
     },
     {
       "id": "T6",
       "requirements": [
-        "R1",
         "R5",
-        "R6",
-        "R12"
+        "R8",
+        "R12",
+        "R19",
+        "R20",
+        "R22",
+        "R23"
       ],
-      "method": "Desktop/mobile layout and keyboard/a11y, independent code/privacy review",
-      "expected": "No clipped primary actions/overflow, scoped shortcuts, focus/labels/status correct, no unresolved high findings",
-      "boundary": "Observed viewports and static review"
+      "method": "Independent review of app/storage/worker/cancel/quota/failure/keyboard/privacy; npm test, tsc and production build, repository privacy index check.",
+      "expected": "No unresolved high severity findings; positive and failure evidence; no runtime conversion uploads or CDN fetches; existing suite passes.",
+      "boundary": "Local test and built source."
     },
     {
       "id": "T7",
       "requirements": [
-        "R1",
-        "R8",
-        "R12"
-      ],
-      "method": "npm test; tsc build; npm run build; npm run check:privacy",
-      "expected": "Existing suite and final app/Worker package pass, no private payloads staged",
-      "boundary": "Source/build, not live rendering"
-    },
-    {
-      "id": "T8",
-      "requirements": [
         "R11",
-        "R12"
-      ],
-      "method": "README/PRIVACY and recorded outcomes checked against actual code/test results",
-      "expected": "Accurate limitation, data lifetime and browser coverage claims",
-      "boundary": "Documentation and independent review"
-    },
-    {
-      "id": "T9",
-      "requirements": [
+        "R12",
         "R13",
-        "R14"
+        "R14",
+        "R21"
       ],
-      "method": "Git remote refs/commit checkpoints and Sites source/save/deploy status",
-      "expected": "Significant source milestones pushed; main final state and existing private Site published",
-      "boundary": "Remote and native deployment evidence"
+      "method": "Check docs/research against sources and implementation; remote checkpoint refs/tree identity; same Site source commit, audience and native deployment status.",
+      "expected": "Frequent durable commits, final main/current source and successful private publication; evidence and limits match actual execution.",
+      "boundary": "Deployment response plus supported UI smoke."
     }
   ],
   "planHashes": {
@@ -372,7 +503,7 @@
     "test-plan.md": "ada1ee5b281f6c2347c2ee81c9b8cfd7a4b3496870fd604a3b859acf66780e7a"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-29T13:56:30.652731+00:00",
+  "updatedAt": "2026-10-29T14:18:05.169867+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",

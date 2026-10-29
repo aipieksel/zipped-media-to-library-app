@@ -1,0 +1,509 @@
+{
+  "catalogueFingerprint": "438486f892fa59c209076f271c549404e3ed50ace35fd38505d470b4d4004ca3",
+  "intent": "implement",
+  "request": "Revision 3 of the existing Folio PNG-to-SVG feature: replace Library/PNG workspace navigation with top-level HTML, Images and Icons; use the exact existing Library sidebar/tree for Icons; put conversion controls in the canvas toolbar without a dedicated converter sidebar/dropzone; preserve folder-drop hierarchy; persist loose PNGs in one Uncategorized folder; save browser-local originals/results and automatically convert with reload/recovery. Preserve current Library data, cloud schema, source-only repository rules, accurate representation/fidelity labels and frequent pushed checkpoints. Research any newly requested optional smooth mode without weakening the exact pixel-vector default or claiming exact smooth recovery. This selection is a plan for the revision, not evidence that downstream stages ran.",
+  "evaluated": [
+    {
+      "id": "command:G0",
+      "disposition": "not-applicable",
+      "reason": "Durable browser imports, hierarchy and shared-navigation changes cross persistence/UI boundaries; a quick-change gate is insufficient."
+    },
+    {
+      "id": "command:GS",
+      "disposition": "not-applicable",
+      "reason": "Equivalent assessment, plan, critique and implementation are supplied by GAS/GPP/GPR/execute-plan in this existing record, without allocating a second pipeline."
+    },
+    {
+      "id": "command:GPL",
+      "disposition": "not-applicable",
+      "reason": "The revised user outcome is concrete; GPP maps the requested navigation, hierarchy and durability to dependencies and tests."
+    },
+    {
+      "id": "command:GCP",
+      "disposition": "not-applicable",
+      "reason": "Equivalent code planning is supplied by GPP after current assessment, architecture and UI evidence; no second planning starter is needed."
+    },
+    {
+      "id": "command:GA",
+      "disposition": "not-applicable",
+      "reason": "Architecture advice is now material and selected as GAA; the full architecture/build pipeline would duplicate the composed implementation and review."
+    },
+    {
+      "id": "command:G1",
+      "disposition": "not-applicable",
+      "reason": "The atomic chain supplies the standard reviewed build while adding diagnosis, compatibility extraction and local data checks required by the revision."
+    },
+    {
+      "id": "command:GB",
+      "disposition": "not-applicable",
+      "reason": "A parallel fast-build pipeline would duplicate source ownership and undermine the explicitly requested milestone checkpoints."
+    },
+    {
+      "id": "command:GT",
+      "disposition": "not-applicable",
+      "reason": "Targeted regression and persistence tests are mandatory, but no formal RED/GREEN workflow is selected; implementation and actual runtime verification remain separate."
+    },
+    {
+      "id": "command:G7",
+      "disposition": "not-applicable",
+      "reason": "Source-faithful design and actual rendered comparisons are supplied by design-ui and GVE/GVA; a separate visual rebuild pipeline would duplicate ownership."
+    },
+    {
+      "id": "command:GEA",
+      "disposition": "not-applicable",
+      "reason": "Root owns integration and assigned implementers own storage/tests; GVE stays a verification operation rather than implementing the change it judges."
+    },
+    {
+      "id": "command:GCA",
+      "disposition": "not-applicable",
+      "reason": "The code reviewer must remain independent of application mutations; execute-plan implements and GVR reviews."
+    },
+    {
+      "id": "command:GR",
+      "disposition": "not-applicable",
+      "reason": "No general cleanup is requested; only the sidebar/controller extraction necessary for the revised feature belongs in the reviewed implementation."
+    },
+    {
+      "id": "command:GH",
+      "disposition": "not-applicable",
+      "reason": "Repository reorganization is unrelated. Existing source-media privacy checks still run without moving unrelated files."
+    },
+    {
+      "id": "command:GF",
+      "disposition": "not-applicable",
+      "reason": "Root already coordinates source checkpoints, final package and same private Site publication; no separate feature-finalizer pipeline is needed."
+    },
+    {
+      "id": "command:GC",
+      "disposition": "not-applicable",
+      "reason": "Equivalent build and independent code review are supplied by execute-plan/GVR without repeating execution."
+    },
+    {
+      "id": "command:GX",
+      "disposition": "not-applicable",
+      "reason": "Equivalent scoped data/security verification is supplied by GVS; corrections return to the implementation owner."
+    },
+    {
+      "id": "command:GU",
+      "disposition": "not-applicable",
+      "reason": "Equivalent keyboard, focus, mobile drawer and shared-tree accessibility checks are supplied by GVA."
+    },
+    {
+      "id": "command:GE",
+      "disposition": "not-applicable",
+      "reason": "Equivalent implementation and real browser journey checks are supplied by execute-plan/GVE."
+    },
+    {
+      "id": "command:GJ",
+      "disposition": "not-applicable",
+      "reason": "A general customer/admin automation program is outside scope; the existing dev harness can cover durable icon journeys and directory-drop cases."
+    },
+    {
+      "id": "command:GP",
+      "disposition": "not-applicable",
+      "reason": "Queue recovery, resource admission and lazy Blob loading are targeted GUT/GVE acceptance checks, not a separate optimization/build program."
+    },
+    {
+      "id": "command:GD",
+      "disposition": "not-applicable",
+      "reason": "Equivalent tested documentation updates are supplied by GVD after implementation."
+    },
+    {
+      "id": "command:G6",
+      "disposition": "not-applicable",
+      "reason": "The selected atomic sequence already includes execution, docs, E2E and independent review plus revision-specific persistence checks."
+    },
+    {
+      "id": "command:GAS",
+      "disposition": "selected",
+      "reason": "Reassess current App/tree/preferences/import/database owners and retain the previous release findings as history; establish a concrete source-backed compatibility contract."
+    },
+    {
+      "id": "command:GRS",
+      "disposition": "selected",
+      "reason": "Research directory-input and IndexedDB lifecycle constraints from primary sources and any newly requested optional smooth representation; reuse unchanged prior PNG fidelity research with its boundaries."
+    },
+    {
+      "id": "command:GDA",
+      "disposition": "not-applicable",
+      "reason": "The affected source/UI inventory is captured by GAS and current rendered diagnosis, then consumed by design-ui; a second audit command adds no distinct owner."
+    },
+    {
+      "id": "command:GAA",
+      "disposition": "selected",
+      "reason": "Evaluate separate icon database versus additive shared stores, nested folder identity, lazy source/result access, cross-tab queue recovery and unchanged cloud schema before planning."
+    },
+    {
+      "id": "command:GDS",
+      "disposition": "not-applicable",
+      "reason": "Equivalent bounded UI specification is supplied by stage:design-ui, using the exact existing sidebar and current top bar."
+    },
+    {
+      "id": "command:GPP",
+      "disposition": "selected",
+      "reason": "Create one revised file-owned plan and decisive tests for shared navigation, directory import, durable source-first conversion, reload/recovery and preserved Library state."
+    },
+    {
+      "id": "command:GPR",
+      "disposition": "selected",
+      "reason": "Independently review the materially changed plan revision, including storage transactions, stale-result suppression, hierarchy collisions and actual UI reuse; prior revision-2 approval is insufficient."
+    },
+    {
+      "id": "command:GTF",
+      "disposition": "not-applicable",
+      "reason": "Formal TDD RED admission is not selected; meaningful new persistence and hierarchy tests belong to approved implementation without claiming incidental infrastructure failures as RED."
+    },
+    {
+      "id": "command:GEX",
+      "disposition": "not-applicable",
+      "reason": "Equivalent reviewed source execution uses stage:execute-plan with the portable adapter and root-owned integration/build/checkpoints."
+    },
+    {
+      "id": "command:GTE",
+      "disposition": "not-applicable",
+      "reason": "No demonstrated RED prerequisite exists; ordinary reviewed execution is the chosen path."
+    },
+    {
+      "id": "command:GUT",
+      "disposition": "selected",
+      "reason": "Run the existing suite and new path/tree/storage tests; verify collision allocation, queue revision guards, atomic import/output persistence and unchanged archive/cloud behavior."
+    },
+    {
+      "id": "command:GVE",
+      "disposition": "selected",
+      "reason": "Verify actual directory and loose-file import, automatic conversion, one shared sidebar, durable save/reload/resume, deletion/retry races, SVG/ZIP payloads, original fidelity and Library state preservation."
+    },
+    {
+      "id": "command:GVR",
+      "disposition": "selected",
+      "reason": "Independently review source and evidence for canonical ownership, async races, transaction boundaries, lazy resource lifetime and honest representation/fidelity labels."
+    },
+    {
+      "id": "command:GVS",
+      "disposition": "selected",
+      "reason": "Check that durable icon bytes remain local, cloud/Drive schema and access paths are untouched, stored/generated content is bounded, names are safe and repository media exclusions remain enforced."
+    },
+    {
+      "id": "command:GVA",
+      "disposition": "selected",
+      "reason": "Verify top-level HTML/Images/Icons tabs, shared tree semantics, keyboard navigation, focus return, toolbar controls, status announcements and mobile drawer behavior."
+    },
+    {
+      "id": "command:GVP",
+      "disposition": "not-applicable",
+      "reason": "No separate performance target is requested; GUT/GVE cover count/byte limits, serial conversion, lazy Blob hydration and bounded recovery behavior. Measure more only if those expose a concrete problem."
+    },
+    {
+      "id": "command:GVD",
+      "disposition": "selected",
+      "reason": "Replace outdated transient-memory/dedicated-workspace help with tested durable local Icons behavior, folder handling, controls, clear-storage consequences and accurate mode/fidelity limits."
+    },
+    {
+      "id": "command:GCL",
+      "disposition": "not-applicable",
+      "reason": "A post-delivery refactor is not needed; necessary removal of duplicate converter chrome belongs to the approved revision implementation."
+    },
+    {
+      "id": "command:GRC",
+      "disposition": "not-applicable",
+      "reason": "The user has specified the feature revision; a repository-wide contribution portfolio would distract from completing it."
+    },
+    {
+      "id": "stage:research-technical",
+      "disposition": "not-applicable",
+      "reason": "Equivalent targeted research is supplied by command:GRS, reusing valid earlier fidelity sources and checking new storage/drop questions."
+    },
+    {
+      "id": "stage:discover-contributions",
+      "disposition": "not-applicable",
+      "reason": "No repository-wide opportunity discovery is requested."
+    },
+    {
+      "id": "stage:assess-codebase",
+      "disposition": "not-applicable",
+      "reason": "Equivalent current-source assessment is supplied by command:GAS and this real read-only assessor."
+    },
+    {
+      "id": "stage:diagnose-failure",
+      "disposition": "selected",
+      "reason": "Trace the reported UI/fidelity mismatch before changes: current App hides the Library shell and mounts a separate transient converter; distinguish confirmed mismatch from the newly requested durability behavior."
+    },
+    {
+      "id": "stage:extract-behaviour-spec",
+      "disposition": "selected",
+      "reason": "Extract the existing shared sidebar, selection, favorites, folder opening, sort, keyboard and persisted preferences as source-backed invariants before moving UI/controller ownership."
+    },
+    {
+      "id": "stage:plan-goals",
+      "disposition": "not-applicable",
+      "reason": "The revised outcomes are explicit; GPP already provides requirements, dependency order and acceptance checks in the same record."
+    },
+    {
+      "id": "stage:design-architecture",
+      "disposition": "not-applicable",
+      "reason": "Equivalent architecture advice is supplied by command:GAA after source assessment."
+    },
+    {
+      "id": "stage:design-ui",
+      "disposition": "selected",
+      "reason": "Specify HTML/Images/Icons in the existing top bar, the actual shared Library sidebar, canvas-toolbar conversion controls and durable queued/error/empty states without a separate converter sidebar or dropzone."
+    },
+    {
+      "id": "stage:review-ui-spec",
+      "disposition": "not-applicable",
+      "reason": "Independent GPR reviews the bounded shared-sidebar UI contract together with data/controller ownership and responsive states; a second preimplementation critique would duplicate it."
+    },
+    {
+      "id": "stage:plan-code",
+      "disposition": "not-applicable",
+      "reason": "Equivalent evidence-based file/test planning is supplied by command:GPP."
+    },
+    {
+      "id": "stage:plan-tests",
+      "disposition": "not-applicable",
+      "reason": "GPP includes new storage/reload/folder/drop acceptance checks and retained raster cases; no separate test-strategy stage is needed."
+    },
+    {
+      "id": "stage:review-plan",
+      "disposition": "not-applicable",
+      "reason": "Equivalent independent current-revision critique is supplied by command:GPR before execution admission."
+    },
+    {
+      "id": "stage:write-red-tests",
+      "disposition": "not-applicable",
+      "reason": "Formal RED/GREEN is not selected; tests are written in the approved execution and then run by GUT/GVE."
+    },
+    {
+      "id": "stage:execute-plan",
+      "disposition": "selected",
+      "reason": "Implement only the reviewed revision with root owning App/shared chrome/build/checkpoints, disjoint storage/drop/controller/test ownership, and no cloud schema or private media changes."
+    },
+    {
+      "id": "stage:fix-reviewed-defects",
+      "disposition": "not-applicable",
+      "reason": "No new delivered-code review findings exist yet; authorized in-scope repairs stay with the execution owner, with renewed admission for material scope changes."
+    },
+    {
+      "id": "stage:run-tests",
+      "disposition": "not-applicable",
+      "reason": "Equivalent unit/integration and regression verification is supplied by command:GUT; root coordinates the final production build."
+    },
+    {
+      "id": "stage:run-e2e",
+      "disposition": "not-applicable",
+      "reason": "Equivalent durable browser journeys, directory-drop and native raster checks are supplied by command:GVE."
+    },
+    {
+      "id": "stage:review-code",
+      "disposition": "not-applicable",
+      "reason": "Equivalent independent diff and evidence review is supplied by command:GVR."
+    },
+    {
+      "id": "stage:review-ui",
+      "disposition": "not-applicable",
+      "reason": "GVE explicitly compares the actual shared sidebar/topnav/canvas against the established Library view and approved UI spec; GVA checks interaction. No duplicate visual-review pass is planned."
+    },
+    {
+      "id": "stage:review-accessibility",
+      "disposition": "not-applicable",
+      "reason": "Equivalent shared navigation/tree/toolbar and responsive accessibility checks are supplied by command:GVA."
+    },
+    {
+      "id": "stage:review-security",
+      "disposition": "not-applicable",
+      "reason": "Equivalent local data, input validation, output safety and cloud isolation review is supplied by command:GVS."
+    },
+    {
+      "id": "stage:review-dependencies",
+      "disposition": "not-applicable",
+      "reason": "Existing idb/React/JSZip cover the recommended persistence design. GRS/GVR/GVS must reevaluate any optional tracing dependency if proposed; no new package is assumed at selection time."
+    },
+    {
+      "id": "stage:verify-goal",
+      "disposition": "not-applicable",
+      "reason": "Root reconciles revised requirements with observed GUT/GVE/review evidence and release identity before handoff; a separate goal-verifier role would duplicate that closeout."
+    },
+    {
+      "id": "stage:update-docs",
+      "disposition": "not-applicable",
+      "reason": "Equivalent tested help/README/privacy updates are supplied by command:GVD."
+    },
+    {
+      "id": "stage:verify-docs",
+      "disposition": "not-applicable",
+      "reason": "GVD must check changed durability and representation claims against actual code/results; root verifies the final user-facing statements without a second docs stage."
+    },
+    {
+      "id": "stage:verify-performance",
+      "disposition": "not-applicable",
+      "reason": "Equivalent bounded queue/resource/resume checks are supplied by GUT/GVE; no broad benchmarking or optimization project is requested."
+    },
+    {
+      "id": "pipeline:quick-safe-change",
+      "disposition": "not-applicable",
+      "reason": "Durable storage and multi-view compatibility need architecture, diagnosis and runtime checks beyond this quick recipe; equivalent atomic implementation gates are already selected."
+    },
+    {
+      "id": "pipeline:standard-verified-build",
+      "disposition": "not-applicable",
+      "reason": "Equivalent assessment, planning, execution and review use selected G commands plus execute-plan; the whole recipe would repeat work and omit the new targeted diagnosis."
+    },
+    {
+      "id": "pipeline:test-first-feature",
+      "disposition": "not-applicable",
+      "reason": "Formal RED evidence is not the selected gate; current-revision plan review, meaningful tests and actual browser persistence verification supply acceptance."
+    },
+    {
+      "id": "pipeline:ui-design-fidelity",
+      "disposition": "covered",
+      "reason": "Borrow design-ui and execute-plan in recipe order; equivalent assessment, plan review, browser, accessibility and documentation operations use selected G commands.",
+      "coveredBy": [
+        "stage:design-ui",
+        "stage:execute-plan"
+      ]
+    },
+    {
+      "id": "pipeline:high-assurance-delivery",
+      "disposition": "not-applicable",
+      "reason": "Durable data now merits behavior extraction, architecture and the database lens, but the full recipe adds unrequested formal TDD and duplicate dependency/goal/docs stages. Equivalent targeted operations are composed explicitly."
+    },
+    {
+      "id": "specialist:react-frontend",
+      "disposition": "selected",
+      "reason": "Apply the actual React 19/TypeScript/Vite component/state ownership, shared sidebar composition, async cleanup and responsive toolbar behavior."
+    },
+    {
+      "id": "specialist:editor-schema",
+      "disposition": "selected",
+      "reason": "Preserve stable folder/item IDs, saved selection/preferences, hierarchy and import/export semantics; maintain one canonical local icon model and explicit presentation adapters."
+    },
+    {
+      "id": "specialist:wordpress-woocommerce",
+      "disposition": "not-applicable",
+      "reason": "No WordPress/WooCommerce runtime or extension is involved in the inspected Folio application."
+    },
+    {
+      "id": "specialist:whmcs",
+      "disposition": "not-applicable",
+      "reason": "No WHMCS billing, module or account lifecycle is in scope."
+    },
+    {
+      "id": "specialist:vscode-agents-pro",
+      "disposition": "not-applicable",
+      "reason": "This is a browser React application; using the portable workflow does not create a VS Code/native queue integration task."
+    },
+    {
+      "id": "specialist:plugins-mcp",
+      "disposition": "not-applicable",
+      "reason": "The workflow and Sites plugins are existing tools; their manifests, routers and MCP interfaces are not being changed."
+    },
+    {
+      "id": "specialist:browser-extraction",
+      "disposition": "not-applicable",
+      "reason": "Source and existing browser reference are available; no website extraction is requested. React/design-ui/GVE own the bounded rendered comparison."
+    },
+    {
+      "id": "specialist:native-yaml-archives",
+      "disposition": "not-applicable",
+      "reason": "Directory input and SVG/ZIP output do not target a native YAML/editor schema; focused path/ZIP tests cover the actual boundary."
+    },
+    {
+      "id": "specialist:content-seo",
+      "disposition": "not-applicable",
+      "reason": "No SEO, content migration, sitemap, canonical URL or marketing page is affected."
+    },
+    {
+      "id": "specialist:python-data",
+      "disposition": "not-applicable",
+      "reason": "Product storage/conversion remains TypeScript in the browser; workflow helper scripts do not make a Python pipeline part of the feature."
+    },
+    {
+      "id": "specialist:database",
+      "disposition": "selected",
+      "reason": "New IndexedDB imports, Blob stores, atomic state transitions, uniqueness, quota failures and queue concurrency affect persisted user data. Apply engine-specific idb/IndexedDB checks, not SQL or Postgres RLS assumptions."
+    },
+    {
+      "id": "specialist:infrastructure",
+      "disposition": "not-applicable",
+      "reason": "The existing hosting/Worker configuration and private audience remain unchanged; migration-release covers source/package/deploy reconciliation without new provisioning."
+    },
+    {
+      "id": "specialist:migration-release",
+      "disposition": "selected",
+      "reason": "Reconcile the previously published release with the new navigation/storage revision, preserve old Library data and significant pushed milestones, and verify the exact final private Site source/deployment."
+    },
+    {
+      "id": "specialist:realtime-native",
+      "disposition": "not-applicable",
+      "reason": "No native application, WebRTC or streaming integration is involved; browser job and multi-tab lifecycle concerns belong to React/database ownership."
+    }
+  ],
+  "chain": [
+    {
+      "id": "command:GAS",
+      "why": "Reassess current App/tree/preferences/import/database owners and retain the previous release findings as history; establish a concrete source-backed compatibility contract."
+    },
+    {
+      "id": "command:GRS",
+      "why": "Research directory-input and IndexedDB lifecycle constraints from primary sources and any newly requested optional smooth representation; reuse unchanged prior PNG fidelity research with its boundaries."
+    },
+    {
+      "id": "stage:diagnose-failure",
+      "why": "Trace the reported UI/fidelity mismatch before changes: current App hides the Library shell and mounts a separate transient converter; distinguish confirmed mismatch from the newly requested durability behavior."
+    },
+    {
+      "id": "stage:extract-behaviour-spec",
+      "why": "Extract the existing shared sidebar, selection, favorites, folder opening, sort, keyboard and persisted preferences as source-backed invariants before moving UI/controller ownership."
+    },
+    {
+      "id": "command:GAA",
+      "why": "Evaluate separate icon database versus additive shared stores, nested folder identity, lazy source/result access, cross-tab queue recovery and unchanged cloud schema before planning."
+    },
+    {
+      "id": "stage:design-ui",
+      "why": "Specify HTML/Images/Icons in the existing top bar, the actual shared Library sidebar, canvas-toolbar conversion controls and durable queued/error/empty states without a separate converter sidebar or dropzone."
+    },
+    {
+      "id": "command:GPP",
+      "why": "Create one revised file-owned plan and decisive tests for shared navigation, directory import, durable source-first conversion, reload/recovery and preserved Library state."
+    },
+    {
+      "id": "command:GPR",
+      "why": "Independently review the materially changed plan revision, including storage transactions, stale-result suppression, hierarchy collisions and actual UI reuse; prior revision-2 approval is insufficient."
+    },
+    {
+      "id": "stage:execute-plan",
+      "why": "Implement only the reviewed revision with root owning App/shared chrome/build/checkpoints, disjoint storage/drop/controller/test ownership, and no cloud schema or private media changes."
+    },
+    {
+      "id": "command:GUT",
+      "why": "Run the existing suite and new path/tree/storage tests; verify collision allocation, queue revision guards, atomic import/output persistence and unchanged archive/cloud behavior."
+    },
+    {
+      "id": "command:GVE",
+      "why": "Verify actual directory and loose-file import, automatic conversion, one shared sidebar, durable save/reload/resume, deletion/retry races, SVG/ZIP payloads, original fidelity and Library state preservation."
+    },
+    {
+      "id": "command:GVR",
+      "why": "Independently review source and evidence for canonical ownership, async races, transaction boundaries, lazy resource lifetime and honest representation/fidelity labels."
+    },
+    {
+      "id": "command:GVS",
+      "why": "Check that durable icon bytes remain local, cloud/Drive schema and access paths are untouched, stored/generated content is bounded, names are safe and repository media exclusions remain enforced."
+    },
+    {
+      "id": "command:GVA",
+      "why": "Verify top-level HTML/Images/Icons tabs, shared tree semantics, keyboard navigation, focus return, toolbar controls, status announcements and mobile drawer behavior."
+    },
+    {
+      "id": "command:GVD",
+      "why": "Replace outdated transient-memory/dedicated-workspace help with tested durable local Icons behavior, folder handling, controls, clear-storage consequences and accurate mode/fidelity limits."
+    }
+  ],
+  "specialists": [
+    "specialist:react-frontend",
+    "specialist:editor-schema",
+    "specialist:database",
+    "specialist:migration-release"
+  ]
+}

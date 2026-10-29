@@ -1,73 +1,57 @@
-# Test plan — revision 2
+# Test plan — revision 3
 
-## T1 — R2, R3, R9
+## T1 — R2, R3, R4, R9, R10
 
-Procedure: Node core tests with independent rectangle raster reconstruction and negative comparator cases
+Procedure: Run existing independent rectangle/comparator/embedded and real native browser fixtures, plus deliberate one-pixel negative control.
 
-Expected: Identical RGBA and coverage, no overlaps, exact differences, no tolerance
+Expected: All established standard native cases zero; mismatch count exactly1; no false badge.
 
-Boundary: Pure logic; browser pixels separate
+Boundary: Recorded browser and sRGB8 only.
 
-## T2 — R4, R7
+## T2 — R5, R8, R17, R18, R19, R20, R23
 
-Procedure: Embedded byte decode and JSZip readback with duplicate/Unicode/path/reserved names
+Procedure: Test collection transaction/revision/path contracts; browser folder + loose imports, duplicate names, reload with completed/pending/failed records, removal during conversion and Library switching.
 
-Expected: Original PNG bytes unchanged and every output unique/safe
+Expected: One durable Uncategorized; nested names/empty folders preserved, safe collisions; source saved before queue; results survive reload; stale job never resurrects removed item; no cloud writes.
 
-Boundary: Node bytes/ZIP tests
+Boundary: Synthetic inputs in dedicated development origin; no production collection mutation.
 
-## T3 — R5, R8
+## T3 — R1, R5, R6, R15, R16, R17, R23
 
-Procedure: Malformed PNG/bounds/animation/cancel/session budget cases plus converter dependency and network review
+Procedure: Desktop and narrow browser journeys through top tabs, shared search/favorites/sort/tree/keyboard/move, both drop targets and synchronized previews at100/200/400/Fit.
 
-Expected: Useful errors, no stale success, bounded allocations, no file requests/storage
+Expected: One sidebar DOM/component with matching controls; controls remain in canvas toolbar; equal image size/origin/checker phase and synchronized pan; no clipped main actions; HTML/Images retain selection.
 
-Boundary: Unit/component and actual browser checks
+Boundary: Actual browser UI plus source integration tests.
 
-## T4 — R3, R4, R9, R10, R11
+## T4 — R7, R19
 
-Procedure: Actual browser native decode→SVG raster comparison for six required PNG classes and deliberate single-pixel mismatch
+Procedure: Read back saved SVG and ZIP payloads after reload, duplicate names and changing mode.
 
-Expected: Require zero visible differences for each representative standard opaque, fully transparent, partial-alpha, antialiased, true indexed PLTE+tRNS and multicolor PNG in the tested browser. Also require zero differences for at least one partial-alpha original-byte embedded SVG. Separately require a deliberate one-visible-pixel mutation to produce count 1 and no verified badge, and unsupported/profile exceptions to be accurately labeled. Zero tolerance; positive cases cannot pass merely by reporting a mismatch.
+Expected: Preview/verification/download bytes equal; exports include each requested ready result once with unique safe names.
 
-Boundary: Record actual browser/version/sRGB; no other engines certified
+Boundary: Blob anchor and ZIP content; do not claim unobserved OS delivery.
 
-## T5 — R1, R5, R6, R7
+## T5 — R5, R8, R9, R10, R11, R21, R22
 
-Procedure: Browser library→converter→batch→previews→mode retry→SVG/ZIP downloads→library
+Procedure: Audit exact pinned tracer source/license/output; bounded browser comparison on known circle, ring hole, tiny detail, multicolor and partial alpha/gradient fixtures; inspect actual curves and independent4x known-shape reference.
 
-Expected: Inputs/results independent, navigation preserved, bytes/names reconcile and controls operate
+Expected: Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen tracer proven better on relevant synthetic contour than pixel geometry at4x, otherwise retain an honest measured option and report limitation.
 
-Boundary: Development browser, existing production collection separate
+Boundary: Does not establish universal recovery or accuracy on unavailable user originals.
 
-## T6 — R1, R5, R6, R12
+## T6 — R5, R8, R12, R19, R20, R22, R23
 
-Procedure: Desktop/mobile layout and keyboard/a11y, independent code/privacy review
+Procedure: Independent review of app/storage/worker/cancel/quota/failure/keyboard/privacy; npm test, tsc and production build, repository privacy index check.
 
-Expected: No clipped primary actions/overflow, scoped shortcuts, focus/labels/status correct, no unresolved high findings
+Expected: No unresolved high severity findings; positive and failure evidence; no runtime conversion uploads or CDN fetches; existing suite passes.
 
-Boundary: Observed viewports and static review
+Boundary: Local test and built source.
 
-## T7 — R1, R8, R12
+## T7 — R11, R12, R13, R14, R21
 
-Procedure: npm test; tsc build; npm run build; npm run check:privacy
+Procedure: Check docs/research against sources and implementation; remote checkpoint refs/tree identity; same Site source commit, audience and native deployment status.
 
-Expected: Existing suite and final app/Worker package pass, no private payloads staged
+Expected: Frequent durable commits, final main/current source and successful private publication; evidence and limits match actual execution.
 
-Boundary: Source/build, not live rendering
-
-## T8 — R11, R12
-
-Procedure: README/PRIVACY and recorded outcomes checked against actual code/test results
-
-Expected: Accurate limitation, data lifetime and browser coverage claims
-
-Boundary: Documentation and independent review
-
-## T9 — R13, R14
-
-Procedure: Git remote refs/commit checkpoints and Sites source/save/deploy status
-
-Expected: Significant source milestones pushed; main final state and existing private Site published
-
-Boundary: Remote and native deployment evidence
+Boundary: Deployment response plus supported UI smoke.
