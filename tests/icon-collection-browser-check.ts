@@ -5,12 +5,15 @@
  * Loaded only by ignored .qa pages, never by the production entry graph.
  * The parent controls the browser and the actual App iframe interactions.
  */
-import { createPngFixtures } from './png-fixture-generator';
+import JSZip from 'jszip';
+import { createCurveReferenceFixture, createPngFixtures } from './png-fixture-generator';
 import type { PngFixture } from './png-fixture-generator';
-import { openIconCollection, ICON_DB_NAME } from '../src/icon-collection';
+import { openIconCollection, projectIconCollection, ICON_DB_NAME } from '../src/icon-collection';
+import { filterTree, getPageOrder } from '../src/tree';
 import type { IconCollectionSnapshot, IconImportBatch, IconRecord } from '../src/icon-types';
 import { convertPng } from '../src/png-svg-browser';
 import type { PngSvgResult } from '../src/png-svg-browser';
+import { uniqueId } from '../src/identity';
 
 if (!import.meta.env.DEV) throw new Error('Icon collection checks are available only in the development server.');
 
@@ -231,7 +234,7 @@ function noBlobs(value: unknown): boolean {
   return typeof value !== 'object' || value === null || Object.values(value).every(noBlobs);
 }
 
-function newTransfer(entries: QaEntry[], files: File[], realm: Window & typeof globalThis): DataTransfer {
+function newTransfer(entries: QaEntry[], files: File[], realm: Window & typeof globalThis): {transfer: DataTransfer; entryPlaceholders: Map<string, QaEntry>} {
   const localFile = (file: File) => new realm.File([file], file.name, { type: file.type, lastModified: file.lastModified });
   const localEntry = (entry: QaEntry): QaEntry => ({
     name: entry.name, fullPath: entry.fullPath, isFile: entry.isFile, isDirectory: entry.isDirectory,
@@ -245,14 +248,86 @@ function newTransfer(entries: QaEntry[], files: File[], realm: Window & typeof g
   // Files must belong to the actual app's realm: native OS drops would pass its
   // instanceof Blob validation, while parent-window File objects would not.
   const transfer = new realm.DataTransfer();
+  const entryPlaceholders = new Map<string, QaEntry>();
   for (const file of files) transfer.items.add(localFile(file));
   for (const sourceEntry of entries) {
     const entry = localEntry(sourceEntry);
-    const item = transfer.items.add(new realm.File([], entry.name, { type: 'application/octet-stream' }));
+    const placeholder = `__folio_qa_entry_${uniqueId()}__`;
+    const item = transfer.items.add(new realm.File([], placeholder, { type: 'application/x-folio-qa-entry' }));
     assert(item, 'This browser could not create a synthetic drop item.');
-    Object.defineProperty(item, 'webkitGetAsEntry', { configurable: true, value: () => entry });
+    entryPlaceholders.set(placeholder, entry);
   }
-  return transfer;
+  return {transfer, entryPlaceholders};
+}
+
+function activeTab(document: Document): string | null {
+  return document.querySelector('.workspace-navigation [role="tab"][aria-selected="true"]')?.textContent?.trim().replace(/\s*\d+$/, '').trim() ?? null;
+}
+
+function focusDescription(document: Document): unknown {
+  const element = document.activeElement as HTMLElement | null;
+  if (!element) return null;
+  return {
+    tag: element.tagName.toLowerCase(), id: element.id || null, role: element.getAttribute('role'),
+    ariaLabel: element.getAttribute('aria-label'), text: element.textContent?.trim().slice(0, 160) ?? '',
+    tabIndex: element.tabIndex, disabled: element.hasAttribute('disabled'), connected: element.isConnected,
+    visible: element.getClientRects().length > 0, pageId: element.getAttribute('data-page-id'), treeNode: element.getAttribute('data-tree-node'),
+    documentHasFocus: document.hasFocus(),
+  };
+}
+
+async function readLibraryItem(name: string): Promise<unknown | undefined> {
+  const request = indexedDB.open('folio-workspace');
+  request.onupgradeneeded = () => request.transaction?.abort();
+  const database = await requestValue(request);
+  try {
+    // Metadata only; never hydrate unrelated Library resource Blobs for this check.
+    const rows = await requestValue(database.transaction('pages', 'readonly').objectStore('pages').getAll());
+    return rows.find((row: {path?: string}) => row.path === name);
+  } finally { database.close(); }
+}
+
+async function waitForLibraryItem(name: string): Promise<unknown> {
+  const deadline = performance.now() + 15_000;
+  while (performance.now() < deadline) {
+    const item = await readLibraryItem(name);
+    if (item) return item;
+    await new Promise<void>(resolve => window.setTimeout(resolve, 50));
+  }
+  throw new Error(`The Library did not save procedural input ${name}.`);
+}
+
+/** A bounded, read-only-in-content native transaction delays the real Library writer. */
+async function holdLibraryImport(): Promise<{release: () => void; completed: Promise<void>; isHolding: () => boolean}> {
+  const request = indexedDB.open('folio-workspace');
+  request.onupgradeneeded = () => request.transaction?.abort();
+  const database = await requestValue(request);
+  const transaction = database.transaction(['archives', 'pages', 'files'], 'readwrite');
+  let holding = true;
+  let firstRead = true;
+  let resolveReady!: () => void;
+  let rejectReady!: (error: unknown) => void;
+  const ready = new Promise<void>((resolve, reject) => { resolveReady = resolve; rejectReady = reject; });
+  const release = () => { holding = false; window.clearTimeout(timer); };
+  const timer = window.setTimeout(release, 4_000);
+  const completed = new Promise<void>((resolve, reject) => {
+    transaction.oncomplete = () => { release(); database.close(); resolve(); };
+    transaction.onabort = () => { release(); database.close(); const error = transaction.error ?? new DOMException('The QA delay transaction was aborted.', 'AbortError'); rejectReady(error); reject(error); };
+    transaction.onerror = () => { /* The transaction's abort event owns failure cleanup. */ };
+  });
+  void completed.catch(() => undefined);
+  const keepAlive = () => {
+    const read = transaction.objectStore('archives').get('__folio_qa_read_only_keepalive__');
+    read.onsuccess = () => {
+      if (firstRead) { firstRead = false; resolveReady(); }
+      // Queue another native read while this transaction is active. No data is written.
+      if (holding) keepAlive();
+    };
+    read.onerror = () => rejectReady(read.error ?? new Error('The QA delay read failed.'));
+  };
+  keepAlive();
+  try { await ready; } catch (error) { release(); throw error; }
+  return {release, completed, isHolding: () => holding};
 }
 
 function setupInteractive(content: HTMLElement): void {
@@ -263,6 +338,8 @@ function setupInteractive(content: HTMLElement): void {
     Reloading affects only this development iframe. These controls do not delete any app database.</p>
     <div class="controls">
       <button id="show-icons">Show Icons</button>
+      <button id="show-html">Show HTML</button>
+      <button id="show-images">Show Images</button>
       <label>Drop target <select id="drop-target"><option value="canvas">Canvas</option><option value="sidebar">Sidebar</option></select></label>
       <button id="drop-loose">Drop loose PNGs</button>
       <button id="drop-duplicates">Drop duplicate filenames</button>
@@ -271,6 +348,12 @@ function setupInteractive(content: HTMLElement): void {
       <button id="drop-uncategorized">Drop folder named Uncategorized</button>
       <button id="drop-invalid">Drop invalid PNG</button>
       <button id="drop-pending">Drop cancellation batch</button>
+      <button id="drop-silhouette">Drop 96px analytic silhouette</button>
+    </div>
+    <div class="controls">
+      <button id="drop-library">Drop opaque PNG in current Library tab</button>
+      <button id="delayed-library">Delay Library import, then click Icons</button>
+      <button id="observe-download">Arm next app SVG/ZIP download observation</button>
     </div>
     <div class="controls">
       <button id="reload-app">Reload app iframe</button>
@@ -291,6 +374,9 @@ function setupInteractive(content: HTMLElement): void {
   const observations: unknown[] = [];
   let busy = false;
   let restoreAbort: (() => void) | undefined;
+  let restoreDownload: (() => void) | undefined;
+  let releaseLibraryDelay: (() => void) | undefined;
+  let librarySequence = 0;
 
   const observe = (value: unknown) => {
     observations.push({ observedAt: new Date().toISOString(), value });
@@ -322,22 +408,110 @@ function setupInteractive(content: HTMLElement): void {
     }, 'The Icons collection did not finish opening before import.');
     return document;
   };
-  const drop = async (files: File[], entries: QaEntry[] = []) => {
-    const document = await showIcons();
+  const dispatchDrop = (document: Document, files: File[], entries: QaEntry[] = []) => {
     const area = content.querySelector<HTMLSelectElement>('#drop-target')!.value;
     const target = document.querySelector<HTMLElement>(area === 'sidebar' ? '.sidebar' : '.main-workspace');
     assert(target, `The app's ${area} drop surface is missing.`);
     const realm = frame.contentWindow as Window & typeof globalThis;
-    const transfer = newTransfer(entries, files, realm);
-    for (const type of ['dragenter', 'dragover', 'drop']) {
-      target.dispatchEvent(new realm.DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: transfer }));
+    const {transfer, entryPlaceholders} = newTransfer(entries, files, realm);
+    const prototype = realm.DataTransferItem.prototype;
+    const originalDescriptor = Object.getOwnPropertyDescriptor(prototype, 'webkitGetAsEntry');
+    const originalGetter = prototype.webkitGetAsEntry;
+    const called = new Set<string>();
+    const receipts: {name: string; isDirectory: boolean; getterCalledByApp: true}[] = [];
+    function bridgedEntry(this: DataTransferItem) {
+      const file = this.getAsFile();
+      const entry = file && file.size === 0 && file.type === 'application/x-folio-qa-entry' ? entryPlaceholders.get(file.name) : undefined;
+      if (entry && file) {
+        called.add(file.name);
+        receipts.push({name: entry.name, isDirectory: entry.isDirectory, getterCalledByApp: true});
+        return entry;
+      }
+      return typeof originalGetter === 'function' ? originalGetter.call(this) : null;
     }
+    // Native DataTransfer can return a fresh wrapper on each items access. Scope
+    // the bridge to unique zero-byte placeholders in this iframe's native realm.
+    // The app captures entry objects synchronously; traversal continues normally
+    // after this prototype is restored immediately following the three events.
+    if (entryPlaceholders.size) Object.defineProperty(prototype, 'webkitGetAsEntry', {
+      configurable: originalDescriptor?.configurable ?? true,
+      enumerable: originalDescriptor?.enumerable ?? true,
+      writable: originalDescriptor && 'writable' in originalDescriptor ? originalDescriptor.writable : true,
+      value: bridgedEntry,
+    });
+    try {
+      for (const type of ['dragenter', 'dragover', 'drop']) target.dispatchEvent(new realm.DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: transfer }));
+    } finally {
+      if (entryPlaceholders.size) {
+        if (originalDescriptor) Object.defineProperty(prototype, 'webkitGetAsEntry', originalDescriptor);
+        else Reflect.deleteProperty(prototype, 'webkitGetAsEntry');
+        observe({action: 'synthetic directory-entry bridge receipt', target: area, expectedRoots: entryPlaceholders.size, capturedRoots: called.size, getterCalls: receipts, prototypeRestored: prototype.webkitGetAsEntry === originalGetter, boundary: 'Procedural entry bridge for synthetic DOM drops only; this is not an operating-system drag gesture.'});
+      }
+    }
+    assert(called.size === entryPlaceholders.size, `The real app did not capture every synthetic directory entry (${called.size}/${entryPlaceholders.size}); folder behavior has not been exercised.`);
+    return area;
+  };
+  const drop = async (files: File[], entries: QaEntry[] = []) => {
+    const document = await showIcons();
+    const area = dispatchDrop(document, files, entries);
     status.textContent = `Dropped ${files.length} loose files and ${entries.length} synthetic directory entries into the real ${area}. The app owns persistence and conversion.`;
     observe({ action: 'procedural drop', target: area, looseFiles: files.map(file => ({ name: file.name, bytes: file.size })),
       roots: entries.map(entry => entry.name), boundary: 'synthetic DOM drop event, not an OS drag gesture' });
   };
 
+  const showLibraryTab = async (label: 'HTML' | 'Images') => {
+    const document = await appDocument();
+    const button = Array.from(document.querySelectorAll<HTMLButtonElement>('.workspace-navigation [role="tab"]')).find(element => element.textContent?.trim().replace(/\s*\d+$/, '').trim() === label);
+    assert(button, `The real ${label} tab is unavailable.`);
+    button.click();
+    await waitUntil(() => activeTab(document) === label, `The real ${label} tab did not become active.`);
+    status.textContent = `${label} selected using the real application navigation.`;
+  };
+
+  const libraryDrop = async (delayed: boolean) => {
+    const document = await appDocument();
+    const beforeTab = activeTab(document);
+    assert(beforeTab === 'HTML' || beforeTab === 'Images', 'Select HTML or Images first. This Library control does not switch tabs before dropping.');
+    await waitUntil(() => { const input = document.querySelector<HTMLButtonElement>('button[aria-label="Import files"]'); return input && !input.disabled; }, 'The Library is not ready for another import.');
+    const filename = `qa-library-opaque-${Date.now()}-${++librarySequence}.png`;
+    const input = pngFile(fixtures.find(fixture => fixture.category === 'opaque')!, filename);
+    let delay: Awaited<ReturnType<typeof holdLibraryImport>> | undefined;
+    let selectedIconAtSwitch: string | null = null;
+    try {
+      if (delayed) { delay = await holdLibraryImport(); releaseLibraryDelay = delay.release; }
+      const area = dispatchDrop(document, [input]);
+      if (delay) {
+        await waitUntil(() => document.querySelector<HTMLButtonElement>('button[aria-label="Import files"]')?.disabled, 'The real Library import did not start while its write was delayed.', 2_000);
+        assert(delay.isHolding(), 'The bounded Library write delay expired before navigation; no race result can be claimed.');
+        await showIcons();
+        assert(delay.isHolding(), 'The Library writer was released before Icons became active.');
+        selectedIconAtSwitch = document.querySelector('[role="treeitem"][aria-selected="true"]')?.getAttribute('data-page-id') ?? null;
+        observe({action: 'Library writer delayed with a real native transaction', filename, beforeTab, activeTabBeforeRelease: activeTab(document), selectedIconAtSwitch, writesPerformedByDelay: 0, maximumDelayMs: 4_000});
+        delay.release(); await delay.completed; releaseLibraryDelay = undefined;
+      }
+      const saved = await waitForLibraryItem(filename);
+      await new Promise<void>(resolve => window.setTimeout(resolve, 100));
+      const afterTab = activeTab(document);
+      const hash = frame.contentWindow!.location.hash;
+      const selectedAfter = document.querySelector('[role="treeitem"][aria-selected="true"]')?.getAttribute('data-page-id') ?? null;
+      if (delayed) {
+        assert(afterTab === 'Icons' && hash === '#icons', `A completed Library import stole navigation: ${afterTab}, ${hash}.`);
+        assert(selectedAfter === selectedIconAtSwitch, 'A completed Library import changed the selected icon.');
+        assert(document.querySelector('[aria-label="Icon conversion canvas"]'), 'Icons navigation and canvas disagree after Library completion.');
+      } else {
+        assert(afterTab === 'Images' && hash === '#images', `The imported image selection and top navigation disagree: ${afterTab}, ${hash}.`);
+        assert(document.querySelector('.current-file strong')?.textContent === filename, 'The imported Library image was not selected.');
+      }
+      observe({action: delayed ? 'Library import completion preserves later Icons navigation' : 'Library opaque PNG import keeps navigation coherent', status: 'pass', filename, target: area, beforeTab, afterTab, hash, savedItem: saved, selectedAfter, selectedIconAtSwitch, activeElement: focusDescription(document), boundary: 'Real app drop and IDB save; delayed case holds a bounded native transaction without modifying stored data.'});
+      status.textContent = delayed ? 'Library import saved successfully without stealing the later Icons selection.' : 'Opaque PNG saved in the Library; Images navigation, URL and selected file agree.';
+    } finally { delay?.release(); releaseLibraryDelay = undefined; }
+  };
+
   content.querySelector('#show-icons')!.addEventListener('click', () => void run(async () => { await showIcons(); status.textContent = 'Icons selected in the real application.'; }));
+  content.querySelector('#show-html')!.addEventListener('click', () => void run(() => showLibraryTab('HTML')));
+  content.querySelector('#show-images')!.addEventListener('click', () => void run(() => showLibraryTab('Images')));
+  content.querySelector('#drop-library')!.addEventListener('click', () => void run(() => libraryDrop(false)));
+  content.querySelector('#delayed-library')!.addEventListener('click', () => void run(() => libraryDrop(true)));
   content.querySelector('#drop-loose')!.addEventListener('click', () => void run(() => drop(fixtures.map(fixture => pngFile(fixture)))));
   content.querySelector('#drop-duplicates')!.addEventListener('click', () => void run(() => drop(
     ['qa-icon.png', 'QA-ICON.PNG', 'qa-icon (2).png'].map(name => pngFile(fixtures[0], name)),
@@ -356,6 +530,11 @@ function setupInteractive(content: HTMLElement): void {
   content.querySelector('#drop-pending')!.addEventListener('click', () => void run(() => drop(
     Array.from({ length: 24 }, (_, index) => pngFile(fixtures.find(fixture => fixture.category === 'alpha-sweep')!, `qa-cancel-${index + 1}.png`)),
   )));
+  content.querySelector('#drop-silhouette')!.addEventListener('click', () => void run(async () => {
+    const fixture = createCurveReferenceFixture();
+    await drop([new File([fixture.bytes], `qa-${fixture.name}`, {type: 'image/png', lastModified: 1_700_000_000_000})]);
+    observe({action: 'analytic silhouette fixture', dimensions: [fixture.width, fixture.height], referenceScale: fixture.referenceScale, features: ['curved outer contour', 'curved transparent hole', 'small island', 'thin stroke'], boundary: 'The real app owns conversion. Select Smooth curves in its toolbar; this button does not choose a mode or assert visual quality.'});
+  }));
   const setWidth = (width: number) => {
     frame.style.width = `${width}px`;
     frame.width = String(width);
@@ -366,6 +545,8 @@ function setupInteractive(content: HTMLElement): void {
   content.querySelector('#desktop-width')!.addEventListener('click', () => setWidth(1360));
   content.querySelector('#reload-app')!.addEventListener('click', () => void run(async () => {
     restoreAbort?.();
+    restoreDownload?.();
+    releaseLibraryDelay?.();
     const before = frame.contentDocument;
     frame.contentWindow!.location.reload();
     await waitUntil(() => frame.contentDocument !== before && frame.contentDocument?.querySelector('.folio-app') ? frame.contentDocument : undefined,
@@ -380,7 +561,9 @@ function setupInteractive(content: HTMLElement): void {
   // adding a testing hook to the production implementation.
   wireInteractiveStorage({ content, frame, status, observe, run, appDocument,
     replaceAbortRestore: restore => { restoreAbort?.(); restoreAbort = restore; } });
-  window.addEventListener('pagehide', () => restoreAbort?.(), { once: true });
+  wireInteractiveDownloads({content, frame, status, observe, run, appDocument,
+    replaceRestore: restore => {restoreDownload?.(); restoreDownload = restore;}});
+  window.addEventListener('pagehide', () => {restoreAbort?.(); restoreDownload?.(); releaseLibraryDelay?.();}, { once: true });
   void appDocument().then(() => { status.textContent = 'The real app is ready. Select Icons or drop procedural inputs.'; })
     .catch(error => { status.textContent = explain(error); });
 }
@@ -422,6 +605,8 @@ function wireInteractiveStorage(controls: InteractiveStorageControls): void {
           .map(button => ({ label: button.textContent?.trim(), ariaPressed: button.getAttribute('aria-pressed'), ariaCurrent: button.getAttribute('aria-current'), ariaSelected: button.getAttribute('aria-selected') })),
         alerts: Array.from(document.querySelectorAll('[role="alert"]')).map(element => element.textContent?.trim()),
         statuses: Array.from(document.querySelectorAll('[role="status"]')).map(element => element.textContent?.trim()),
+        activeElement: focusDescription(document),
+        iframeFocusedInParent: window.document.activeElement === frame,
         sidebar: sidebar ? { width: sidebar.clientWidth, scrollWidth: sidebar.scrollWidth } : null,
         canvas: canvas ? { width: canvas.clientWidth, scrollWidth: canvas.scrollWidth } : null },
       boundary: 'Observed saved metadata and DOM state. Visual, keyboard and OS download judgments require the actual browser journey.',
@@ -459,6 +644,112 @@ function wireInteractiveStorage(controls: InteractiveStorageControls): void {
   };
   content.querySelector('#abort-source')!.addEventListener('click', () => void run(() => arm('source')));
   content.querySelector('#abort-result')!.addEventListener('click', () => void run(() => arm('result')));
+}
+
+interface InteractiveDownloadControls extends Omit<InteractiveStorageControls, 'replaceAbortRestore'> {
+  replaceRestore: (restore: () => void) => void;
+}
+
+/** Observe one real app download without suppressing its normal anchor click. */
+function wireInteractiveDownloads(controls: InteractiveDownloadControls): void {
+  const {content, frame, status, observe, run, appDocument, replaceRestore} = controls;
+  const maximumBytes = 128 * 1024 * 1024;
+  content.querySelector('#observe-download')!.addEventListener('click', () => void run(async () => {
+    replaceRestore(() => undefined);
+    const document = await appDocument();
+    assert(activeTab(document) === 'Icons', 'Open Icons before observing an SVG or ZIP download.');
+    const realm = frame.contentWindow as Window & typeof globalThis;
+    assert(realm.location.origin === window.location.origin, 'Only the same-origin development app may be observed.');
+    const query = document.querySelector<HTMLInputElement>('input[aria-label="Find a file"]')?.value ?? '';
+    const favoritesOnly = document.querySelector('.favorites-filter')?.getAttribute('aria-pressed') === 'true';
+    const store = await openIconCollection();
+    const expected = new Map<string, {id: string; revision: number; blob: Blob}>();
+    try {
+      const saved = await store.snapshot();
+      const projection = projectIconCollection(saved, favoritesOnly);
+      const visible = new Set(getPageOrder(filterTree(projection.tree, query, new Map(projection.pages.map(page => [page.id, page])))));
+      const ready = saved.items.filter(item => item.status === 'ready' && item.result && visible.has(item.id));
+      assert(ready.length > 0, 'Convert at least one icon in the current view before arming this observer.');
+      assert(ready.length <= 500, 'This bounded observer supports at most 500 ready icons. Filter the view before retrying.');
+      assert(ready.reduce((sum, item) => sum + item.result!.outputBytes, 0) <= maximumBytes, 'The current view exceeds the 128 MiB download-observation budget. Filter it before retrying.');
+      let total = 0;
+      for (const item of ready) {
+        const blob = await store.getOutput(item.id, item.revision);
+        assert(blob, `${item.name} changed while the observer was being armed. Retry after conversion finishes.`);
+        total += blob.size;
+        assert(total <= maximumBytes, 'Saved outputs exceed the 128 MiB observation budget.');
+        assert(!expected.has(item.filename), 'Two saved results have the same download filename.');
+        expected.set(item.filename, {id: item.id, revision: item.revision, blob});
+      }
+    } finally {store.close();}
+    const prototype = realm.HTMLAnchorElement.prototype;
+    const originalClick = prototype.click;
+    let timer = 0;
+    let consumed = false;
+    let originalClickInvoked = false;
+    const sameOriginBlob = (url: string): boolean => {
+      try {return url.startsWith('blob:') && new URL(url).origin === realm.location.origin && realm.location.origin === window.location.origin;} catch {return false;}
+    };
+    const restore = () => {
+      if (prototype.click === observedClick) prototype.click = originalClick;
+      window.clearTimeout(timer);
+    };
+    const inspect = async (url: string, filename: string) => {
+      try {
+        assert(sameOriginBlob(url), 'The observer can read only an app-created same-origin Blob URL.');
+        const response = await fetch(url);
+        assert(response.ok, `The app download Blob could not be read (${response.status}).`);
+        const blob = await response.blob();
+        assert(blob.size <= maximumBytes + 2 * 1024 * 1024, 'The app download exceeds the bounded payload budget.');
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        if (/\.zip$/i.test(filename)) {
+          assert(filename === 'folio-icons.zip', `Unexpected icon ZIP filename: ${filename}.`);
+          const zip = await JSZip.loadAsync(bytes);
+          const names = Object.keys(zip.files).filter(name => !zip.files[name].dir);
+          assert(names.length === expected.size, `Expected ${expected.size} ready SVG entries, received ${names.length}.`);
+          const entries: {filename: string; bytes: number; id: string; revision: number}[] = [];
+          for (const name of names) {
+            const saved = expected.get(name);
+            assert(saved, `Unexpected or unsafe ZIP member: ${name}.`);
+            const actual = await zip.files[name].async('uint8array');
+            await equalBlob(new Blob([actual]), saved.blob, `ZIP member ${name} differs from its exact saved SVG Blob.`);
+            entries.push({filename: name, bytes: actual.byteLength, id: saved.id, revision: saved.revision});
+          }
+          observe({action: 'actual-app ZIP download payload', status: 'pass', filename, bytes: bytes.byteLength, entries, exactSavedOutputBytes: true, originalAnchorClickInvoked: originalClickInvoked, browserOrOsFileDelivery: 'not observed'});
+        } else {
+          const saved = expected.get(filename);
+          assert(saved, `The SVG filename ${filename} is not allocated to a ready result in the current view.`);
+          await equalBlob(new Blob([bytes]), saved.blob, 'The downloaded SVG differs from its exact saved output Blob.');
+          observe({action: 'actual-app SVG download payload', status: 'pass', filename, bytes: bytes.byteLength, id: saved.id, revision: saved.revision, exactSavedOutputBytes: true, originalAnchorClickInvoked: originalClickInvoked, browserOrOsFileDelivery: 'not observed'});
+        }
+        status.textContent = `${filename}: actual download filename and bytes match the ready saved SVG output${/\.zip$/i.test(filename) ? 's' : ''}. Original anchor click preserved; OS delivery unobserved. Observer restored.`;
+      } catch (error) {
+        status.textContent = `Download observation failed: ${explain(error)}`;
+        observe({action: 'actual-app download payload', status: 'fail', filename, error: explain(error), originalAnchorClickInvoked: originalClickInvoked, browserOrOsFileDelivery: 'not observed'});
+      }
+    };
+    function observedClick(this: HTMLAnchorElement): void {
+      const url = this.href;
+      const filename = this.download;
+      if (consumed || !sameOriginBlob(url) || !/\.(svg|zip)$/i.test(filename)) {originalClick.call(this); return;}
+      consumed = true; restore();
+      // Begin reading before the app's normal cleanup can revoke the Blob URL.
+      void inspect(url, filename);
+      originalClickInvoked = true;
+      originalClick.call(this);
+    }
+    replaceRestore(restore);
+    prototype.click = observedClick;
+    timer = window.setTimeout(() => {
+      restore();
+      if (!consumed) {
+        status.textContent = 'Download observation expired after 60 seconds. Original anchor behavior restored.';
+        observe({action: 'download observer expired', expiresAfterMs: 60_000, originalBehaviorRestored: true});
+      }
+    }, 60_000);
+    observe({action: 'download observer armed', readyResults: expected.size, query, favoritesOnly, maximumBytes, expiresAfterMs: 60_000, boundary: 'One same-origin app Blob download only; byte equality is checked against saved output Blobs, not OS delivery.'});
+    status.textContent = `Armed for one SVG/ZIP download with ${expected.size} ready result${expected.size === 1 ? '' : 's'} in this view. Click the real app download control within 60 seconds; its original anchor click will run.`;
+  }));
 }
 
 type CollectionStore = Awaited<ReturnType<typeof openIconCollection>>;
