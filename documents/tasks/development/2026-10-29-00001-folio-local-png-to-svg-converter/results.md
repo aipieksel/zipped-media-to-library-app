@@ -126,3 +126,25 @@ Exact fit-curve0.2.0 installed (one dependency), full MIT notice appended withou
 ### WebP implementation and renderer checkpoint
 
 SameIcons pipeline now accepts staticWebP, inspectsactualRIFFbytes beforedecode, preservesnativeRGBA andoriginalMIME/bytes, carriesformatmetadata throughsavedresults and keepsoldPNGrecordscompatible. Source-reviewedappintegration passedfullNode/privacy and21actualWebPbrowserchecks aftertwoQAcontrolcorrections; see revision-7-verification.md. No usermedia was used. Mixed-formatproductionUI/persistence/export andpublication remain pending.
+
+### Revision7 production verification and private version11 release
+
+All new runtime gates completed against the exact native production package. Mixed PNG/WebP folder and loose imports automatically converted; all six static pixel results had zero native differences, nested/empty folders persisted, duplicate stems received unique SVG names, and animated WebP remained an explicit durable error. All three smooth routes executed from packaged local assets. Embedded WebP, reload persistence and actual SVG/ZIP payload equality passed. The production resampled PNG uses the corrected continuous cubic contour (one2,326-byte compound path,1,289/9,216 strict native differences), with round rings observed at400%. Full details, including the optional mobile-click browser disconnection and inherited unchanged-sidebar evidence, are in `artifacts/revision-7-verification.md`.
+
+Independent source, test, documentation and package reviews are recorded in revision7 artifacts. Root full suite passed252 application checks before the portability-only split; the same coverage is now250 default checks plus two required encoded-fixture checks, with all four privacy checks and only the existing optional Library skip. Focused contour33/33, WebP structural23/23, encoded2/2, native PNG31/31 and native WebP21/21 passed. TypeScript, production build and whitespace checks passed. The review's stale PNG-only README limits block was corrected without changing numeric limits.
+
+Frequent durable GitHub checkpoints after prior remote4192e0b:
+
+| Milestone | Local commit | Pushed feature commit |
+| --- | --- | --- |
+| Reviewed contour and WebP plan | 1ff7335ed4d7c684cb8a73c9bbe230d7b28d4f28 | 66390107058b36683f0ab3141f2a2bc80108e46e |
+| Continuous native-alpha cubic contour implementation | 42513ebb1aad706db715f95a88691cb983bfe908 | 812a8e1662e82fcb3e8cfede5b08a26f78fedefa |
+| Shared static WebP workflow | 322b63f7c076485e6bfee5f70a56ac1f6acb64ae | 516efcfe44b3ba2ebe21915153e6c2e723b041f4 |
+
+Each remote tree matched its corresponding local Git tree. The final verification/documentation checkpoint follows these implementation milestones; the final main update is performed with a fresh expected-head lease and no force.
+
+Native Site source: `1e84baac2023be4a53c0eaabdb9e036c544bb688`; all69 runtime files match the GitHub implementation. Native publication succeeded at2026-10-29T17:30:10.060311+00:00 on the existing owner-private project `appgprj_6adf889bceb8819185995cc72b70be04`, version11, deployment `appgdep_6ae3828d5ee48191ab6b623ed984a853`. Existing R2/backend, environment revision2 and audience are preserved. URL: https://folio-html-workspace.byronjacobs.chatgpt.site
+
+The supported connected-browser check reloaded only the persistent newer Site tab, preserving the original version9 transient-input tab. The existing Library and saved icons remained present. The actual saved96px monochrome icon now uses profile3 native-alpha contours (onepath,about4.8KB,769/9,216 native differences), with a visibly smooth enlarged outline. Two prior PNG-decoder failures proved to contain staticWebP despite their PNG-like filenames; both converted on retry without re-import. One recovered300x300WebP then passed exact pixel mode with0/90,000 differences,1,547 shapes andabout90.1KB in Chrome156/macOS. Private filenames, source bytes, catalogue contents and screenshots are excluded from GitHub.
+
+Remaining product limits are deliberate and visible: pixel geometry enlarges as a grid; smooth curves approximate arbitrary rasters; animated formats are rejected; fidelity is checked against the current browser's decoded sRGB RGBA8, including already-lossy WebP; browser storage is device/profile local and subject to quota/eviction. Physical OS drag and OS file delivery are outside the observed automation boundary. A final test-browser transport loss does not invalidate the earlier completed production jobs, but its interrupted mobile toggle is not claimed as passed.

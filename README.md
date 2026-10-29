@@ -97,7 +97,7 @@ Queued work resumes automatically while the app is open. Interrupted processing 
 
 | Boundary | Limit |
 | --- | --- |
-| Source PNG | 20 MiB per file |
+| Source PNG or WebP | 20 MiB per file |
 | Native dimensions | 4096 px per side and 4,194,304 total pixels |
 | Pixel vector complexity | 150,000 merged rectangles |
 | Smooth input | 1024 px per side and 262,144 total pixels |
@@ -105,11 +105,11 @@ Queued work resumes automatically while the app is open. Interrupted processing 
 | ImageTracer palette | Up to 64 RGBA colors |
 | Smooth worker operation | 45 seconds per engine attempt, with cancellation |
 | Individual SVG | 24 MiB |
-| One import | 100 PNGs and 100 MiB of accepted source bytes |
-| Folder traversal | 5,000 entries, including folders/non-PNG files, and 32 path levels |
+| One import | 100 supported images and 100 MiB of accepted source bytes |
+| Folder traversal | 5,000 entries, including folders/unsupported files, and 32 path levels |
 | One ZIP export | 128 MiB of generated SVG input bytes |
 
-Static PNGs only; animated PNGs are rejected. Invalid, oversized or excessively complex files produce actionable errors without silent downscaling. The 100-file limit applies to each import, not the saved collection's lifetime. Total saved data is limited by browser storage quota, shared with the site's other local data. Clearing site data or browser eviction can remove local icons; keep your originals and useful exports.
+Static PNGs and WebPs are supported; animated PNGs and animated WebPs are rejected explicitly. Invalid, oversized or excessively complex files produce actionable errors without silent downscaling. The 100-file limit applies to each import, not the saved collection's lifetime. Total saved data is limited by browser storage quota, shared with the site's other local data. Clearing site data or browser eviction can remove local icons; keep your originals and useful exports.
 
 ## Storage and import limits
 

@@ -105,3 +105,30 @@ Root's integration files were read at **2026-10-29T16:58:58.430918Z**; the copy 
 ### Remaining verification boundary
 
 The coordinator subsequently reported a 31/31 actual contour/native run and an enlarged visual inspection with round contours. Those are coordinator observations, not executions performed by this reviewer. This source verdict does not invent a fresh WebP browser pass, mixed-format persistence/export result, production asset proof or publication result. Those must be recorded by their actual verification owner before release. No tests, builds or browsers were run during this review, and only this artifact was changed.
+
+## Part 3 — documentation and WebP test readback, 2026-10-29 17:18 UTC
+
+**Test coverage and measurement/provenance wording: accepted. One small README consistency correction is outstanding in this snapshot.** Previously reviewed runtime/package/notice hashes remain unchanged; no source approval is reopened by the test reorganization.
+
+README's 76.2% and 85.5% enlarged alpha-MAE improvements correctly round the recorded 76.2070% and 85.4928% observer results. It identifies the two procedural inputs, independent analytic targets, Chrome 155 and native errors of 397/9,216 and 1,289/9,216. It keeps approximate smooth output separate from the strict zero-only badge, describes the actual profile-3 method, and disclaims arbitrary-artwork, browser/profile and precompression recovery guarantees. The documented source-pixel checkbox affects only the original image. The limits for exact/native/SVG/ZIP operations otherwise match the reviewed source.
+
+**D1 — low, open:** README's Icons limit table still says `Source PNG`, `100 PNGs` and `folders/non-PNG files`, followed by `Static PNGs only; animated PNGs are rejected.` These stale lines contradict the surrounding WebP support documentation. Replace them with PNG/WebP source wording, supported-image import wording, unsupported-file traversal wording, and explicit static PNG/WebP support with both animated formats rejected. No numeric limit or runtime change is needed. The coordinator has been notified.
+
+The 25 WebP Node checks remain present as 23 self-contained structural tests and two explicitly required encoded-fixture checks. The latter use direct reads and assertions, so missing manifest/files fail; neither file nor the browser harness adds a skip. README documents the preparation step and separate `node --import tsx tests/webp-encoded.check.ts` invocation. The default `*.test.ts` suite intentionally excludes the fixture-dependent `.check.ts`; it must not be reported as having executed those two tests. The verification record makes that distinction and attributes the reported 23/23 and 2/2 reruns correctly.
+
+The browser harness retains a separate SVG rasterization and manual RGBA recount, native zero-positive checks, original embedded bytes/MIME, renamed-source and PNG compatibility cases, profile-3 routing, predecode versus decoder-stage failures, cancellation and the one-pixel negative control. Its 21/21 pass is recorded as the coordinator's actual Chrome observation, not a reviewer execution. The source-image reference intentionally remains that browser's decoded file.
+
+Both prior failures are preserved: the fixture URL returned HTML, and the original header-only VP8L negative unexpectedly decoded in Chrome. Correcting the QA URL and selecting a VP8 payload actually rejected by the tested browser did not change runtime acceptance code or weaken the error assertion. The generator records the earlier decoder disagreement; the final negative's hash and browser failure stage are retained. This is adequate evidence for that branch in the recorded browser, not universal compressed-stream rejection.
+
+Reviewed documentation/test snapshot:
+
+| File | SHA-256 |
+| --- | --- |
+| README before D1 repair | `d8e3eea1562acf240fd6d5a57310fa856ca064d2330eb6315cf872e5d89c5bfd` |
+| `tests/webp-input.test.ts` | `46c0c449dd38c1cae845aab616cee1281d3611c82247c6d4424c3b91cc585ac3` |
+| `tests/webp-encoded.check.ts` | `fc83424a9a4b74f43f15fe2f8e7a55dfa1bc89933b07228c986caf24abdcf973` |
+| `tests/webp-browser-check.ts` | `f06c147033872f502c86c93f6e8a6d815ddf9d35ab77a3ddced3262c0cfc4ba6` |
+| `scripts/prepare-webp-fixtures.py` | `55386e49aa76eb17ee29ca729f596e4009470dc30621ffaa56cac3d5bafe2890` |
+| `artifacts/revision-7-verification.md` at readback | `102304627b5db1244d0017d24b9e5e1d5e56108f1e68d1b8d290059ffd11a0e5` |
+
+This was a bounded read-only review. No tests, generator, build or browser were run and no source/documentation fix was made by the reviewer. Final package and mixed-format production UI evidence remain separately owned; this readback does not duplicate their audit.

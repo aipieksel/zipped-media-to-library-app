@@ -211,4 +211,3 @@ test('generic PNG embedding preserves the established PNG implementation exactly
   assert.equal(createEmbeddedRasterSvg(fixture.bytes, fixture.width, fixture.height),
     createEmbeddedPngSvg(fixture.bytes, fixture.width, fixture.height));
 });
-
