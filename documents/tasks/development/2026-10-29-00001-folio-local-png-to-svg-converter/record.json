@@ -5,12 +5,12 @@
   "title": "Folio local PNG to SVG converter",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
-  "status": "draft",
-  "readiness": "not_ready",
+  "status": "executing",
+  "readiness": "ready",
   "blockers": [],
-  "planRevision": 3,
-  "critiqueOutcome": "ready",
-  "reviewedPlanRevision": 2,
+  "planRevision": 4,
+  "critiqueOutcome": "revised",
+  "reviewedPlanRevision": 4,
   "sourceBaseline": {
     "description": "Revision 2 complete, GitHub main and published Site version 9 confirmed. New source-only revision3 assessment records are dirty.",
     "revision": "b66763e4be353bb17827e7da27b4ebf9783e15b5",
@@ -46,7 +46,8 @@
   ],
   "requestHashes": {
     "S1": "f8d247c5ffb4b9570ca8bcdef14cedcbcf695b5f914180eda290dac85f3b41c0",
-    "CA1": "2c2c3a9b1a35f91c614909e50fda8bc973409b2d8420ec0186e072f0ce4c6139"
+    "CA1": "2c2c3a9b1a35f91c614909e50fda8bc973409b2d8420ec0186e072f0ce4c6139",
+    "S2": "e716595ea1378a39f7257bf18ecdc9137d038f22b1a102807e5ac2a2a8222a0a"
   },
   "requirements": [
     {
@@ -424,8 +425,8 @@
         "R20",
         "R23"
       ],
-      "method": "Test collection transaction/revision/path contracts; browser folder + loose imports, duplicate names, reload with completed/pending/failed records, removal during conversion and Library switching.",
-      "expected": "One durable Uncategorized; nested names/empty folders preserved, safe collisions; source saved before queue; results survive reload; stale job never resurrects removed item; no cloud writes.",
+      "method": "Test collection transaction/revision/path contracts; browser folder + loose imports, duplicate names, reload with completed/pending/failed records, removal during conversion and Library switching. Use two database connections/tab owners to prove live-claim non-stealing, expired-claim recovery and old-owner completion rejection; inject source and result transaction aborts; inspect saved verification time/browser/engine after reload.",
+      "expected": "One durable Uncategorized; nested names/empty folders preserved, safe collisions; source saved before queue; results survive reload; stale job never resurrects removed item; no cloud writes. A failed source transaction leaves no partial metadata/Blob/folder import; failed result transaction leaves prior state recoverable with no ready badge. Cancel/delete/retry invalidate claims; reopened saved check is explicitly historical.",
       "boundary": "Synthetic inputs in dedicated development origin; no production collection mutation."
     },
     {
@@ -465,7 +466,7 @@
         "R22"
       ],
       "method": "Audit exact pinned tracer source/license/output; bounded browser comparison on known circle, ring hole, tiny detail, multicolor and partial alpha/gradient fixtures; inspect actual curves and independent4x known-shape reference.",
-      "expected": "Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen tracer proven better on relevant synthetic contour than pixel geometry at4x, otherwise retain an honest measured option and report limitation.",
+      "expected": "Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen smooth route must improve the independently measured4x antialiased96px silhouette/curved-hole/thin-detail oracle over pixel geometry while retaining hole/topology/detail. A failed candidate is revised or rejected, never accepted just because its error is disclosed. Silhouette classifier negative cases cover multicolor, soft alpha fields and arbitrary translucent interiors.",
       "boundary": "Does not establish universal recovery or accuracy on unavailable user originals."
     },
     {
@@ -479,8 +480,8 @@
         "R22",
         "R23"
       ],
-      "method": "Independent review of app/storage/worker/cancel/quota/failure/keyboard/privacy; npm test, tsc and production build, repository privacy index check.",
-      "expected": "No unresolved high severity findings; positive and failure evidence; no runtime conversion uploads or CDN fetches; existing suite passes.",
+      "method": "Independent review of app/storage/worker/cancel/quota/failure/keyboard/privacy; npm test, tsc and production build, repository privacy index check. Run an actual smooth conversion from the final production asset layout for each retained engine, verifying its identity and bundled local worker/WASM loading, after the build.",
+      "expected": "No unresolved high severity findings; positive and failure evidence; no runtime conversion uploads or CDN fetches; existing suite passes. Retained production tracer must execute successfully; dev-only results do not meet the asset gate.",
       "boundary": "Local test and built source."
     },
     {
@@ -498,12 +499,12 @@
     }
   ],
   "planHashes": {
-    "checklist.md": "5510d6f7e89b1464163e952a68f8725775ea61c7373c441dca1ea8f51987a2d8",
-    "fix-plan.md": "fd205b99cecb257852dc792097d70094f1eae5ff80a7b88df656e6599029b643",
-    "test-plan.md": "ada1ee5b281f6c2347c2ee81c9b8cfd7a4b3496870fd604a3b859acf66780e7a"
+    "checklist.md": "7d2dc27b4f15a7307b19418a9555496e0b89157a7b99a07e3fb8b5896e92860c",
+    "fix-plan.md": "6b9cacc1007c26d7315bc2e616f7e68efd026b07f6af29e0345df3d8cd0292e2",
+    "test-plan.md": "bb721f23d9c4d02d218aab9f3a6d4af1c1e52d7501e10bfd12680b7e7c28f1b5"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-29T14:18:05.169867+00:00",
+  "updatedAt": "2026-10-29T14:41:48.446078+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",
@@ -511,6 +512,6 @@
     "critique.md",
     "results.md"
   ],
-  "definitionHash": "fa44970035069d984226620adc82ab737b35b38d27e7fc9093e296a76c5399c0",
-  "critiqueHash": "c97c7c231a6ad489350ce4b91927370330e0986c69bfd2d77e973223ce7edfc2"
+  "definitionHash": "0d51a14475f320d7a34d17f758519211529c1d7633f7f31a8210ba847588f444",
+  "critiqueHash": "41e4e86efab46fd365ede01318416a8fc7250c65261a73079dd118bcf812f35b"
 }

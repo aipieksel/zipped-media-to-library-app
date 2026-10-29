@@ -1,4 +1,4 @@
-# Implementation plan — revision 3
+# Implementation plan — revision 4
 
 ## Authority, history and corrected outcome
 
@@ -41,3 +41,7 @@ Push assessment/review before implementation, storage and engine milestones, UI 
 ## Non-goals
 
 No cloud icon upload, cloud schema change, new Site, audience change, general Library directory-import rewrite, arbitrary asset editor, palette hand-tuning UI, telemetry, third-party conversion endpoint, or universal pixel/smooth guarantee. Browser-specific and quota limits remain explicit. Synthetic QA media stays ignored.
+
+## Revision 4 — independent GPR corrections F4–F7
+
+F4 removes the permissive smooth-quality fallback: an accepted route must improve the synthetic96px antialiased silhouette with curved hole and thin detail against an independent4x oracle; preserve topology/detail and disclose strict native differences. Reject/revise a failing candidate. F5 requires actual multi-owner live/expired claims, stale completion after cancel/delete/retry, source/result transaction-abort atomicity and saved-check provenance assertions. F6 requires actual smooth conversion using the final production worker/WASM asset layout for every retained engine. F7 bounds total discovered entries/depth as well as accepted PNGs, and documents that file-only directory pickers cannot report empty folders. All corrections strengthen authorized verification; no new product scope. Revision3 review remains historical.

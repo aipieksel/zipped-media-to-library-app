@@ -1,4 +1,4 @@
-# Test plan — revision 3
+# Test plan — revision 4
 
 ## T1 — R2, R3, R4, R9, R10
 
@@ -10,9 +10,9 @@ Boundary: Recorded browser and sRGB8 only.
 
 ## T2 — R5, R8, R17, R18, R19, R20, R23
 
-Procedure: Test collection transaction/revision/path contracts; browser folder + loose imports, duplicate names, reload with completed/pending/failed records, removal during conversion and Library switching.
+Procedure: Test collection transaction/revision/path contracts; browser folder + loose imports, duplicate names, reload with completed/pending/failed records, removal during conversion and Library switching. Use two database connections/tab owners to prove live-claim non-stealing, expired-claim recovery and old-owner completion rejection; inject source and result transaction aborts; inspect saved verification time/browser/engine after reload.
 
-Expected: One durable Uncategorized; nested names/empty folders preserved, safe collisions; source saved before queue; results survive reload; stale job never resurrects removed item; no cloud writes.
+Expected: One durable Uncategorized; nested names/empty folders preserved, safe collisions; source saved before queue; results survive reload; stale job never resurrects removed item; no cloud writes. A failed source transaction leaves no partial metadata/Blob/folder import; failed result transaction leaves prior state recoverable with no ready badge. Cancel/delete/retry invalidate claims; reopened saved check is explicitly historical.
 
 Boundary: Synthetic inputs in dedicated development origin; no production collection mutation.
 
@@ -36,15 +36,15 @@ Boundary: Blob anchor and ZIP content; do not claim unobserved OS delivery.
 
 Procedure: Audit exact pinned tracer source/license/output; bounded browser comparison on known circle, ring hole, tiny detail, multicolor and partial alpha/gradient fixtures; inspect actual curves and independent4x known-shape reference.
 
-Expected: Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen tracer proven better on relevant synthetic contour than pixel geometry at4x, otherwise retain an honest measured option and report limitation.
+Expected: Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen smooth route must improve the independently measured4x antialiased96px silhouette/curved-hole/thin-detail oracle over pixel geometry while retaining hole/topology/detail. A failed candidate is revised or rejected, never accepted just because its error is disclosed. Silhouette classifier negative cases cover multicolor, soft alpha fields and arbitrary translucent interiors.
 
 Boundary: Does not establish universal recovery or accuracy on unavailable user originals.
 
 ## T6 — R5, R8, R12, R19, R20, R22, R23
 
-Procedure: Independent review of app/storage/worker/cancel/quota/failure/keyboard/privacy; npm test, tsc and production build, repository privacy index check.
+Procedure: Independent review of app/storage/worker/cancel/quota/failure/keyboard/privacy; npm test, tsc and production build, repository privacy index check. Run an actual smooth conversion from the final production asset layout for each retained engine, verifying its identity and bundled local worker/WASM loading, after the build.
 
-Expected: No unresolved high severity findings; positive and failure evidence; no runtime conversion uploads or CDN fetches; existing suite passes.
+Expected: No unresolved high severity findings; positive and failure evidence; no runtime conversion uploads or CDN fetches; existing suite passes. Retained production tracer must execute successfully; dev-only results do not meet the asset gate.
 
 Boundary: Local test and built source.
 

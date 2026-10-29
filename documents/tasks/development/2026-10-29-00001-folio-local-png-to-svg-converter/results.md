@@ -55,3 +55,7 @@ Revision 2 admitted by resolve_plan_record --execution --require-critique, exit 
 ## Revision 3 — user correction and reopened execution
 
 Revision2 completion is retained in artifacts/revision-2-complete, with its original review hashes. New S2 supersedes the separate/sidebar/transient design. BaselineGitHub b66763e, Site7011456/version9 confirmed. Independent assessment, actual live preview diagnosis and current primary-source research are in progress. No application mutation has occurred before revision3 review. Root is the record and execution coordinator; disjoint source ownership will start only after admission.
+
+## Revision4 execution admission — 2026-10-29T14:41:48.446078+00:00
+
+Root is sole integration/Git/build/package owner; disjoint delegated source owners named in plan. No other active executor. Criticized finalization and resolve --execution --require-critique both passed, exit0. Admitted revision4 definition `0d51a14475f320d7a34d17f758519211529c1d7633f7f31a8210ba847588f444`, critique `41e4e86efab46fd365ede01318416a8fc7250c65261a73079dd118bcf812f35b`, original plan hashes `{"checklist.md": "7d2dc27b4f15a7307b19418a9555496e0b89157a7b99a07e3fb8b5896e92860c", "fix-plan.md": "6b9cacc1007c26d7315bc2e616f7e68efd026b07f6af29e0345df3d8cd0292e2", "test-plan.md": "bb721f23d9c4d02d218aab9f3a6d4af1c1e52d7501e10bfd12680b7e7c28f1b5"}`. GitHub source remains b667; doc-only99f1d4a/f0f67c7 checkpoint drift is expected and reviewed. No private inputs in repository.

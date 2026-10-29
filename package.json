@@ -12,18 +12,20 @@
     "pretest": "npm run check:privacy && node --test tests/repository-privacy.test.mjs"
   },
   "dependencies": {
+    "es-module-lexer": "1.7.0",
+    "html-to-image": "1.11.13",
+    "idb": "8.0.3",
+    "imagetracerjs": "1.2.6",
+    "jszip": "3.10.1",
+    "lucide-react": "0.468.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "jszip": "3.10.1",
-    "idb": "8.0.3",
-    "html-to-image": "1.11.13",
-    "es-module-lexer": "1.7.0",
-    "lucide-react": "0.468.0"
+    "vtracer-browser": "0.0.3"
   },
   "devDependencies": {
+    "@types/node": "22.15.30",
     "@types/react": "19.1.10",
     "@types/react-dom": "19.1.9",
-    "@types/node": "22.15.30",
     "@vitejs/plugin-react": "4.5.2",
     "esbuild": "0.25.5",
     "tsx": "4.20.3",
