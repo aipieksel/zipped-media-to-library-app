@@ -57,3 +57,21 @@ Disposition: covered by P2/P3 and T5/T6; verify affected browser journeys, no ad
 | src/db.ts | `e1d19e823913b2913c7a7f48f47098066b9e6ea957c8168b933d06a2bd494770` |
 
 This is plan-review evidence only. It establishes neither successful tests nor deployed behavior. Root must reconcile F1 before finalizing criticized readiness and applying the execution gate.
+
+## Focused readback — revision 2
+
+Reviewer: `/root/fidelity_research`. Verdict: **ready / approved for execution** under the existing user authorization and remaining execution gate.
+
+F1 is resolved. The revision-2 T4 expected result now explicitly requires zero native visible differences for every positive representative PNG category, including real indexed PLTE+tRNS and partial alpha, plus a partial-alpha embedded-original-bytes SVG. The deliberately altered pixel must independently produce count 1 and no verified badge. Unsupported/profile exceptions remain honestly reported and cannot replace passing positive cases. Both test-plan.md and record.json map T4 to R3/R4/R9/R10/R11.
+
+The source request and checklist are unchanged. Relevant application source hashes match the reviewed baseline. No additional material scope or implementation concerns were identified in this bounded revision. F2/F3 remain already-covered implementation/verification reminders, not readiness blockers. Parent may stamp criticized metadata and current hashes, then apply the documented execution gate; old planHashes in metadata must be refreshed by that finalizer rather than treated as current.
+
+| Revision-2 file | SHA-256 |
+| --- | --- |
+| request.md | `23edc6e4cbb23c7feb8aaf26ac1b28c1bebc4f54040502ba65be7f4ee2b2af6d` |
+| fix-plan.md | `fd205b99cecb257852dc792097d70094f1eae5ff80a7b88df656e6599029b643` |
+| test-plan.md | `ada1ee5b281f6c2347c2ee81c9b8cfd7a4b3496870fd604a3b859acf66780e7a` |
+| checklist.md | `5510d6f7e89b1464163e952a68f8725775ea61c7373c441dca1ea8f51987a2d8` |
+| record.json before criticized finalization | `00cbf49d843144c62af562914d0125cae17f8d33f3d45c0ec2bc6a0b15fe77b8` |
+
+This ready verdict approves the plan's adequacy; implementation and actual tests are still pending.

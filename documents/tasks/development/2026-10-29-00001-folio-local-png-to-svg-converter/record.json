@@ -5,12 +5,12 @@
   "title": "Folio local PNG to SVG converter",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
-  "status": "planned",
+  "status": "executing",
   "readiness": "ready",
   "blockers": [],
   "planRevision": 2,
-  "critiqueOutcome": "not_requested",
-  "reviewedPlanRevision": null,
+  "critiqueOutcome": "ready",
+  "reviewedPlanRevision": 2,
   "sourceBaseline": {
     "description": "GitHub main matches published Site app source; source-only record work is current dirty state",
     "revision": "2dc43cb0a91981514243b4ce5fed014ea0de59c0",
@@ -368,11 +368,11 @@
   ],
   "planHashes": {
     "checklist.md": "5510d6f7e89b1464163e952a68f8725775ea61c7373c441dca1ea8f51987a2d8",
-    "fix-plan.md": "1a11fa4302f042da0e6758f87b00729628e04c3f57633e52d670d6d38bcda10e",
-    "test-plan.md": "cd9eeaa2ea728505f049a1965ce70cd2e251b4deb6748d62b46c05ccab29d5fe"
+    "fix-plan.md": "fd205b99cecb257852dc792097d70094f1eae5ff80a7b88df656e6599029b643",
+    "test-plan.md": "ada1ee5b281f6c2347c2ee81c9b8cfd7a4b3496870fd604a3b859acf66780e7a"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-29T12:52:19.983906+00:00",
+  "updatedAt": "2026-10-29T13:05:48.940245+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",
@@ -380,5 +380,6 @@
     "critique.md",
     "results.md"
   ],
-  "definitionHash": "a32e1b722f4411a3f52fee20e91eea47f47ec914ecadf6b09b87e4966da3ab9b"
+  "definitionHash": "fa44970035069d984226620adc82ab737b35b38d27e7fc9093e296a76c5399c0",
+  "critiqueHash": "c97c7c231a6ad489350ce4b91927370330e0986c69bfd2d77e973223ce7edfc2"
 }
