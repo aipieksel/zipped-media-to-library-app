@@ -57,6 +57,40 @@ The final development engine run completed at **2026-10-29T15:15:14.816Z**. All 
 
 The initial directory harness used an expando on a native DataTransferItem wrapper that was not retained when reread by the iframe. That test-helper failure was corrected with a bounded iframe-prototype bridge and an explicit captured-root receipt. A second helper-only issue used `crypto.randomUUID` on the HTTP preview origin; it now uses the existing HTTP-compatible identity helper. No production drop code was changed to satisfy either harness correction.
 
-## Remaining runtime gates
+## Keyboard and deletion completion
 
-Complete batch/remove keyboard focus journeys and actual conversion through the final production asset layout for every retained engine. Then verify the existing private Site after publication. These are not inferred from development tests.
+Actual keyboard focus was placed on the batch Stop button with 15 items pending. After automatic completion removed it, focus was on the persistent Conversion mode select. A second keyboard Stop invocation left 52 ready outputs and 21 cancelled records out of 73 originals; cancelled inputs remained saved. A browser input timeout was followed by fresh state observation rather than a duplicate action.
+
+Folder-removal Cancel returned focus to its original Remove QA Icons (3) button. Confirming removal of that procedural folder closed the dialog and returned focus to the Icons tab. Removing the only selected search result likewise returned focus to Icons (69 records); the removed invoker was disabled, and no dialog remained. These are observed normal and disabled-invoker branches, not a claim about every hypothetical keyboard combination.
+
+## Exact production asset execution
+
+The managed preview was switched from Vite to a self-contained QA server serving the exact packaged frontend manifest bytes. The separate procedural harness was prebundled outside the production asset inventory. The application document visibly loaded `/assets/index-D8MZ5ixK.js`. The first shim launch failed because an absolute sibling-checkout path was not mounted in the managed preview; a self-contained shim resolved that environment issue without changing application code or preview permissions.
+
+Actual saved conversions through the production UI:
+
+| Input / route | Actual engine | Result |
+| --- | --- | --- |
+| Opaque 16 × 12, Smooth | VTracer 1.0.0-alpha.4 / browser 0.0.3 / profile 1 | 3 paths; 0 / 192 different |
+| Partial alpha 10 × 6, Smooth | ImageTracer 1.2.6 / RGBA profile 1 | 49 paths; 54 / 60 different, explicitly approximate |
+| Analytic silhouette 96 × 96, Smooth | ImageTracer silhouette profile 1 | 2 paths; 716 bytes; 424 / 9,216 different |
+| Same silhouette, Pixels | Exact pixel rectangles 1 | 462 rectangles; 0 / 9,216 different |
+| Saved alpha sweep 256 × 10, Pixels | Exact pixel rectangles 1 | 2,550 rectangles; 230,944 bytes; 0 / 2,560 different |
+
+At 200%, both silhouette previews measured 192 × 192. At Fit, both measured 96 × 96. In the 390-pixel viewport at 400%, both surfaces measured 343 × 270 with a 416 × 416 scrollable stage. Keyboard PageDown in the original surface moved both scrollTop values to the same nonzero value (9 at the observation), demonstrating the scroll synchronization path.
+
+### Interrupted queue recovery — failed mixed-client trial retained, isolated trial passed
+
+The first production reload trial on the shared development origin ended with 5 ready and 19 worker-start errors from a new 24-file alpha-sweep batch. Every original remained saved. The generic message is emitted only by the pixel Worker `onerror` path. Independent source diagnosis found no inconsistent production asset path or deterministic geometry failure. Older development app tabs/frames were still open on the same origin and could claim jobs using their retained Vite worker URLs after the origin switched to production assets. This is a supported hypothesis, not a proven failing-URL capture; no worker error URL was captured from that trial.
+
+All other agent-owned development tabs/frames were then closed. The user's separate original Site tab was not touched. Retrying the same saved failed source succeeded with zero differences. The next trial began with 93 existing records (55 ready, 18 prior errors, 20 cancelled), imported 24 new alpha-sweep files, and observed **117 saved / 23 converting** before a real iframe document reload. After reload it observed **20 converting**, without clicking Retry. The app continued while HTML/Images navigation was exercised.
+
+The final read-only saved-record receipt identified the new batch by IDs absent from the pre-import snapshot: **24 new records, all ready, all 24 with zero differing pixels**. The app held 117 original Blobs and 79 output Blobs; the prior 18 failed records and 20 cancelled records remained unchanged. This establishes automatic recovery through the actual production React app, not only the store's claim API. It does not turn the earlier mixed-client failure into a pass or claim cross-version worker compatibility.
+
+### Reverse Library import
+
+With Images selected, the procedural harness delivered a 701-byte ZIP containing one HTML page and linked CSS through the real canvas drop. The actual app persisted the HTML record, selected HTML, changed the hash to `#html`, and selected the same saved ID in the shared tree and filename toolbar. The Icons canvas was absent. The harness receipt `Library Images-to-HTML ZIP import keeps navigation coherent` passed. Combined with the earlier HTML-to-Images and delayed-import-after-Icons-navigation checks, both directions requested by the independent review are now observed.
+
+## Remaining release gate
+
+The exact production frontend and all retained engine routes have executed. Publication to the same owner-private Site and a fresh connected-browser smoke check remain pending at this checkpoint.

@@ -73,3 +73,16 @@ Remote branch `feat/unified-icon-library` receives equivalent-tree commits throu
 | One sidebar, top navigation, toolbar and persistent UI | 7ecc78b | 8493abbed8390da096c36a965a7f808e616904ee |
 
 Actual Chrome 155 IndexedDB suite passed 13/13. Initial updated engine suite passed 27/28 and correctly rejected the VTracer silhouette quality candidate. The measured ImageTracer silhouette route improved the independent 4× reference and was selected for the targeted correction; the unchanged gate will run again. See `artifacts/revision-4-browser-verification.md`. No production publication or complete claim is made at this checkpoint.
+
+
+## Revision 4 release verification checkpoint
+
+- Measured silhouette selection and independent source review: local 63d428b, remote 728324708a8b4a12b6711bfa37592fb3a71c8459, tree c09e4fdae534c2a472ff7bc416caf4521f7d769b.
+- Native/browser/download evidence: local 02dd2ab, remote 6c8fe8edda9e3d67c27028012c5d90583aae24ba, tree b0d9a25b2329163e87efaebccb44fc809ba9cefb.
+- Full suite: 202 application tests passed, one existing optional real-Library-fixture skip; all 4 privacy tests passed. TypeScript and the final harness-only typecheck passed. The unchanged exact-engine cases remain strict; no validator or quality threshold was weakened.
+- Actual browser: 13 native IndexedDB checks and 28 converter checks passed after the measured silhouette correction. Production VTracer, RGBA ImageTracer, silhouette ImageTracer and pixel geometry all executed through the exact built asset paths. Actual interrupted 24-file production batch reopened and completed all 24 automatically with zero differences. Shared folders, file modes, previews, keyboard/mobile behavior, source/result aborts and exact download payloads are detailed in artifacts/revision-4-browser-verification.md.
+- Independent final coverage audit identified three unrecorded journeys (app-level pending reload, preview pan/Fit/200%, Images-to-HTML import); all three were executed and passed before release.
+- The first Site package exposed a stale previous server bundle as a thirteenth frontend asset. Root corrected the packager to exclude the reserved root server directory. The corrected Site build has exactly 12 frontend assets, identical to the production-preview manifest; the prior package was not deployed. Site source commit 89fbdce1e3ec5701f0db0f49d879e462d258c9d4 is pushed and packaged in folio-icons-revision4.tar.gz. Existing Worker/R2/project/private audience remain unchanged.
+- Mixed development/production clients caused a failed initial queue trial; the precise stale-worker cause remains an inference. The isolated production retry and fresh interrupted batch both passed. Failed evidence is retained rather than erased; see browser report.
+- Browser shared-file exports did not materialize in the executor filesystem despite write receipts. Therefore no raw browser JSON artifact or downloadable screenshot is claimed. These Markdown reports contain the coordinator's direct DOM/receipt observations. No private user icon bytes were exported or committed.
+- Same-Site publication and final connected-browser smoke remain pending at this checkpoint.

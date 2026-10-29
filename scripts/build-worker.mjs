@@ -5,7 +5,9 @@ const assets = {};
 const mimes = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.wasm': 'application/wasm', '.txt': 'text/plain; charset=utf-8' };
 async function collect(directory, base = '') {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (entry.name === '.openai') continue;
+    // A previous Worker build may remain in the output directory. It is server
+    // code, never a public frontend asset (and must not recursively embed itself).
+    if (entry.name === '.openai' || (base === '' && entry.name === 'server')) continue;
     const relative = `${base}/${entry.name}`, local = path.join(directory, entry.name);
     if (entry.isDirectory()) await collect(local, relative);
     else assets[relative] = { mime: mimes[path.extname(entry.name)] ?? 'application/octet-stream', body: (await readFile(local)).toString('base64') };
