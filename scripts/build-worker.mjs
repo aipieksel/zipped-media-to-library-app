@@ -2,7 +2,7 @@ import { readFile, writeFile, readdir, mkdir, rm, copyFile } from 'node:fs/promi
 import path from 'node:path';
 import { build } from 'esbuild';
 const assets = {};
-const mimes = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };
+const mimes = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.wasm': 'application/wasm', '.txt': 'text/plain; charset=utf-8' };
 async function collect(directory, base = '') {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     if (entry.name === '.openai') continue;

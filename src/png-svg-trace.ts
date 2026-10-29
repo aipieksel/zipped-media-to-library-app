@@ -20,8 +20,7 @@ export interface PngSvgEngine {
 export const TRACE_ENGINES = Object.freeze({
   vtracer: { id: 'vtracer', name: 'VTracer', version: '1.0.0-alpha.4 / browser 0.0.3 / profile 1' },
   imagetracer: { id: 'imagetracer', name: 'ImageTracer', version: '1.2.6 / RGBA profile 1' },
-  silhouette: { id: 'silhouette', name: 'VTracer · silhouette contours', version: '1.0.0-alpha.4 / browser 0.0.3 / silhouette profile 1' },
-  silhouetteFallback: { id: 'silhouette', name: 'ImageTracer · silhouette contours', version: '1.2.6 / silhouette profile 1' },
+  silhouette: { id: 'silhouette', name: 'ImageTracer · silhouette contours', version: '1.2.6 / silhouette profile 1' },
 } satisfies Record<string, PngSvgEngine>);
 
 export function validateTraceInput(pixels: Uint8Array | Uint8ClampedArray, width: number, height: number): void {

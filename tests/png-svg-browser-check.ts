@@ -101,8 +101,8 @@ async function rasterSvgAtSize(svg: string, width: number, height: number): Prom
   }
 }
 
-/** Fail only the pinned local VTracer worker; the real fallback worker still runs. */
-async function convertWithVTracerStartupFailure(file: File): Promise<{ result: PngSvgResult; failedStarts: number }> {
+/** Block only the pinned local VTracer worker; real ImageTracer workers still run. */
+async function convertWithVTracerUnavailable(file: File, expectedStarts: 0 | 1): Promise<{ result: PngSvgResult; failedStarts: number }> {
   const originalWorker = window.Worker;
   let failedStarts = 0;
   const interceptedWorker = new Proxy(originalWorker, {
@@ -118,17 +118,17 @@ async function convertWithVTracerStartupFailure(file: File): Promise<{ result: P
   window.Worker = interceptedWorker;
   try {
     const result = await convertPng(file, { mode: 'smooth' });
-    assert(failedStarts === 1, `Expected one deliberately failed VTracer startup; observed ${failedStarts}.`);
+    assert(failedStarts === expectedStarts, `Expected ${expectedStarts} deliberately failed VTracer startups; observed ${failedStarts}.`);
     assert(result.engine.name.startsWith('ImageTracer') && result.engine.version.startsWith('1.2.6'),
-      `The actual fallback engine was not reported: ${JSON.stringify(result.engine)}.`);
-    assert(result.warnings.some(warning => warning.startsWith('VTracer could not complete')),
-      'The VTracer failure and fallback were not disclosed.');
-    assert((result.pathCount ?? 0) > 0 && !result.svg.includes('<image'), 'The fallback did not produce editable geometry.');
+      `The actual ImageTracer engine was not reported: ${JSON.stringify(result.engine)}.`);
+    const hasFallbackWarning = result.warnings.some(warning => warning.startsWith('VTracer could not complete'));
+    assert(hasFallbackWarning === (expectedStarts === 1), 'The fallback warning does not describe the actual route.');
+    assert((result.pathCount ?? 0) > 0 && !result.svg.includes('<image'), 'ImageTracer did not produce editable geometry.');
     const source = await decodePngPixels(file);
     const comparison = await verifySvgPixels(result.svg, source.pixels, source.metadata.width, source.metadata.height);
     assert(comparison.status !== 'unavailable' && comparison.status === result.fidelity.status &&
       comparison.differingPixels === result.fidelity.differingPixels,
-    'Fallback fidelity does not match a fresh rendering of its downloadable SVG.');
+    'Reported fidelity does not match a fresh rendering of the downloadable SVG.');
     return { result, failedStarts };
   } finally {
     window.Worker = originalWorker;
@@ -382,6 +382,7 @@ function setupPixelChecks(content: HTMLElement): void {
         verified(pixelResult.fidelity);
         const smoothResult = await convertPng(file, { mode: 'smooth' });
         assert(smoothResult.engine.id === 'silhouette', `Expected the conservative silhouette route; got ${JSON.stringify(smoothResult.engine)}.`);
+        assert(smoothResult.engine.name.startsWith('ImageTracer'), `The accepted silhouette engine must execute: ${JSON.stringify(smoothResult.engine)}.`);
         assert((smoothResult.pathCount ?? 0) > 0 && !smoothResult.svg.includes('<image'), 'Smooth output must contain editable geometry.');
         const size = 96 * fixture.referenceScale;
         const pixelRender = await rasterSvgAtSize(pixelResult.svg, size, size);
@@ -434,7 +435,7 @@ function setupPixelChecks(content: HTMLElement): void {
       await check('Forced VTracer startup failure: opaque ImageTracer fallback runs and reports actual native differences', async () => {
         const fixture = fixtures.find(item => item.category === 'opaque')!;
         const originalWorker = window.Worker;
-        const { result, failedStarts } = await convertWithVTracerStartupFailure(pngFile(fixture));
+        const { result, failedStarts } = await convertWithVTracerUnavailable(pngFile(fixture), 1);
         assert(window.Worker === originalWorker, 'The Worker constructor was not restored after the failure injection.');
         assert(result.engine.id === 'imagetracer', 'Opaque fallback reported the wrong route.');
         const svg = new DOMParser().parseFromString(result.svg, 'image/svg+xml');
@@ -443,13 +444,13 @@ function setupPixelChecks(content: HTMLElement): void {
         return { failedStarts, workerRestored: true, distinctFills: [...fills], result: resultDetails(result) };
       });
 
-      await check('Forced VTracer startup failure: silhouette fallback improves the independent 4× reference and preserves details', async () => {
+      await check('Silhouette tracing with VTracer blocked: independent ImageTracer route improves the 4× reference and preserves details', async () => {
         const fixture = createCurveReferenceFixture();
         const file = new File([fixture.bytes], fixture.name, { type: 'image/png' });
         const originalWorker = window.Worker;
-        const { result, failedStarts } = await convertWithVTracerStartupFailure(file);
+        const { result, failedStarts } = await convertWithVTracerUnavailable(file, 0);
         assert(window.Worker === originalWorker, 'The Worker constructor was not restored after the failure injection.');
-        assert(result.engine.id === 'silhouette', 'Silhouette fallback reported the wrong route.');
+        assert(result.engine.id === 'silhouette', 'Silhouette tracing reported the wrong route.');
         const pixelResult = await convertPng(file, { mode: 'pixels' });
         verified(pixelResult.fidelity);
         const size = fixture.width * fixture.referenceScale;
@@ -460,10 +461,10 @@ function setupPixelChecks(content: HTMLElement): void {
         const expectedTopology = alphaTopology(fixture.reference, size, size);
         const actualTopology = alphaTopology(smoothRender, size, size);
         const evidence = { failedStarts, workerRestored: true, pixelError, smoothError, expectedTopology, actualTopology, result: resultDetails(result) };
-        assert(smoothError < pixelError, `Fallback contour must improve the independent oracle: ${JSON.stringify(evidence)}.`);
+        assert(smoothError < pixelError, `Silhouette contour must improve the independent oracle: ${JSON.stringify(evidence)}.`);
         assert(actualTopology.components === expectedTopology.components && actualTopology.holes === expectedTopology.holes,
-          `Fallback contour lost topology/details: ${JSON.stringify(evidence)}.`);
-        assert(smoothRender[(79 * 4 * size + 81 * 4) * 4 + 3] >= 128, 'The fallback lost the thin stroke endpoint.');
+          `Silhouette contour lost topology/details: ${JSON.stringify(evidence)}.`);
+        assert(smoothRender[(79 * 4 * size + 81 * 4) * 4 + 3] >= 128, 'The silhouette route lost the thin stroke endpoint.');
         return evidence;
       });
 

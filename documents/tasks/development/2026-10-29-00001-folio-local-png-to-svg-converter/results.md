@@ -1,6 +1,6 @@
 # Results and continuation
 
-Execution coordinator: /root. Current status: complete. Approved revision 2 implemented and verified; GitHub main updated; existing private Site version 9 published.
+Execution coordinator: /root. Current status: executing revision 4 after the user's UI and quality correction. The historical revision-2 completion below is retained; the current revision is not yet published.
 
 - Baseline GitHub main 2dc43cb; Site source 05766c8; app/CSS/worker source equal.
 - Actual delegated assessment: /root/codebase_assessment; actual fidelity research: /root/fidelity_research. Artifacts read and integrated.
@@ -59,3 +59,17 @@ Revision2 completion is retained in artifacts/revision-2-complete, with its orig
 ## Revision4 execution admission — 2026-10-29T14:41:48.446078+00:00
 
 Root is sole integration/Git/build/package owner; disjoint delegated source owners named in plan. No other active executor. Criticized finalization and resolve --execution --require-critique both passed, exit0. Admitted revision4 definition `0d51a14475f320d7a34d17f758519211529c1d7633f7f31a8210ba847588f444`, critique `41e4e86efab46fd365ede01318416a8fc7250c65261a73079dd118bcf812f35b`, original plan hashes `{"checklist.md": "7d2dc27b4f15a7307b19418a9555496e0b89157a7b99a07e3fb8b5896e92860c", "fix-plan.md": "6b9cacc1007c26d7315bc2e616f7e68efd026b07f6af29e0345df3d8cd0292e2", "test-plan.md": "bb721f23d9c4d02d218aab9f3a6d4af1c1e52d7501e10bfd12680b7e7c28f1b5"}`. GitHub source remains b667; doc-only99f1d4a/f0f67c7 checkpoint drift is expected and reviewed. No private inputs in repository.
+
+## Revision 4 implementation checkpoints
+
+Remote branch `feat/unified-icon-library` receives equivalent-tree commits through the authenticated GitHub connector. Every tree is checked against the local committed tree before a non-forced leased ref update.
+
+| Milestone | Local commit | Remote commit |
+| --- | --- | --- |
+| Reopened correction and reviewed requirements | 99f1d4a | f0f67c708e34308a08509b22142b0301edae47cc |
+| Reviewed plan and pinned local tracer assets | 6c137ba | d1737479c82056daa0ace87f3c833f6f6d3aed0c |
+| Durable folder collection and job ownership | b34dd63 | edf27c769f69a52e7dc305e4e710471af00534d8 |
+| Real local curve engines and Unicode source identity | 61e0219 | 61b3a8e6b2778bcaac0585392f3afc9e17604300 |
+| One sidebar, top navigation, toolbar and persistent UI | 7ecc78b | 8493abbed8390da096c36a965a7f808e616904ee |
+
+Actual Chrome 155 IndexedDB suite passed 13/13. Initial updated engine suite passed 27/28 and correctly rejected the VTracer silhouette quality candidate. The measured ImageTracer silhouette route improved the independent 4× reference and was selected for the targeted correction; the unchanged gate will run again. See `artifacts/revision-4-browser-verification.md`. No production publication or complete claim is made at this checkpoint.

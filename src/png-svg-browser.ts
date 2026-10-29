@@ -1,6 +1,6 @@
 import { compareVisiblePixels, createEmbeddedPngSvg, inspectPng, PNG_SVG_LIMITS, PngSvgError } from './png-svg';
 import type { ConversionMode, PixelSvgOutput, PngMetadata, PngSvgErrorCode } from './png-svg';
-import { createSilhouetteMask, detectSilhouette, isFullyOpaque, normalizeTracedSvg, PNG_SVG_TRACE_LIMITS, TRACE_ENGINES, validateTraceInput } from './png-svg-trace';
+import { detectSilhouette, isFullyOpaque, normalizeTracedSvg, PNG_SVG_TRACE_LIMITS, TRACE_ENGINES, validateTraceInput } from './png-svg-trace';
 import type { PngSvgEngine, TraceColor } from './png-svg-trace';
 import type { VTracer, VTracerPixelsOptions } from 'vtracer-browser';
 
@@ -249,7 +249,7 @@ const VTRACER_OPTIONS: VTracerPixelsOptions = {
 };
 
 /** Load the pinned local package entry without bundler relocation of its worker/WASM URLs. */
-function traceWithVTracer(pixels: Uint8ClampedArray, width: number, height: number, silhouette: boolean, options: ConvertPngOptions): Promise<string> {
+function traceWithVTracer(pixels: Uint8ClampedArray, width: number, height: number, options: ConvertPngOptions): Promise<string> {
   checkAbort(options.signal);
   return new Promise((resolve, reject) => {
     let tracer: VTracer | undefined;
@@ -275,15 +275,13 @@ function traceWithVTracer(pixels: Uint8ClampedArray, width: number, height: numb
       // An import cannot be interrupted, but it must never start a worker after cancellation.
       if (settled || options.signal?.aborted) return;
       tracer = runtime.createVTracer();
-      const tracePixels = silhouette ? createSilhouetteMask(pixels, true) : pixels;
-      const svg = await tracer.convertPixels(tracePixels, width, height, {
+      const svg = await tracer.convertPixels(pixels, width, height, {
         ...VTRACER_OPTIONS,
-        ...(silhouette ? { clustering: 'binary', binaryThreshold: 128, cornerThreshold: 90, lengthThreshold: 3 } as const : {}),
         onProgress: progress => {
           if (settled) return;
           const offset = progress.phase === 'segment' ? 0 : progress.phase === 'compose' ? 75 : 90;
           const extent = progress.phase === 'segment' ? 75 : progress.phase === 'compose' ? 15 : 10;
-          options.onProgress?.({ stage: 'converting', message: silhouette ? 'Fitting smooth silhouette contours…' : 'Tracing local color regions…', percent: Math.round(offset + Math.max(0, Math.min(1, progress.fraction)) * extent) });
+          options.onProgress?.({ stage: 'converting', message: 'Tracing local color regions…', percent: Math.round(offset + Math.max(0, Math.min(1, progress.fraction)) * extent) });
         },
       });
       if (settled) return;
@@ -325,7 +323,7 @@ function traceWithImageTracer(pixels: Uint8ClampedArray, width: number, height: 
       if (options.signal?.aborted) { onAbort(); return; }
       const message = event.data;
       if (message?.type === 'progress') {
-        options.onProgress?.({ stage: 'converting', message: 'Tracing color and transparency layers…', percent: message.percent });
+        options.onProgress?.({ stage: 'converting', message: silhouette ? 'Fitting smooth silhouette contours…' : 'Tracing color and transparency layers…', percent: message.percent });
       } else if (message?.type === 'error') {
         fail(message.code ? new PngSvgError(message.message, message.code as PngSvgErrorCode) : new Error(message.message || 'Smooth tracing failed.'));
       } else if (message?.type === 'result') {
@@ -353,11 +351,12 @@ async function generateSmoothSvg(pixels: Uint8ClampedArray, width: number, heigh
     foreground = silhouette.color;
     warnings.push('A single opaque foreground with antialiased edges was detected. Its half-alpha contour was fitted and the foreground color restored; native edge coverage changes.');
   }
-  if (silhouette || isFullyOpaque(pixels)) {
+  // The measured silhouette profile uses ImageTracer; RGB-only VTracer handles opaque sources.
+  if (!silhouette && isFullyOpaque(pixels)) {
     try {
-      const raw = await traceWithVTracer(pixels, width, height, !!silhouette, options);
+      const raw = await traceWithVTracer(pixels, width, height, options);
       checkAbort(options.signal);
-      return { ...normalizeTracedSvg(raw, width, height, foreground), engine: silhouette ? TRACE_ENGINES.silhouette : TRACE_ENGINES.vtracer, warnings };
+      return { ...normalizeTracedSvg(raw, width, height), engine: TRACE_ENGINES.vtracer, warnings };
     } catch (error) {
       checkAbort(options.signal);
       if (error instanceof PngSvgError && (error.code === 'trace-limit' || error.code === 'svg-limit')) throw error;
@@ -366,7 +365,7 @@ async function generateSmoothSvg(pixels: Uint8ClampedArray, width: number, heigh
   }
   const raw = await traceWithImageTracer(pixels, width, height, !!silhouette, options);
   checkAbort(options.signal);
-  return { ...normalizeTracedSvg(raw, width, height, foreground), engine: silhouette ? TRACE_ENGINES.silhouetteFallback : TRACE_ENGINES.imagetracer, warnings };
+  return { ...normalizeTracedSvg(raw, width, height, foreground), engine: silhouette ? TRACE_ENGINES.silhouette : TRACE_ENGINES.imagetracer, warnings };
 }
 
 /** Verify the exact downloadable SVG string, never a reconstruction of its geometry. */
