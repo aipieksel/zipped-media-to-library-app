@@ -1,0 +1,15 @@
+# Authoritative request
+
+[https://github.com/aipieksel/zipped-media-to-library-app](https://github.com/aipieksel/zipped-media-to-library-app) [$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) [https://folio-html-workspace.byronjacobs.chatgpt.site/](https://folio-html-workspace.byronjacobs.chatgpt.site/) "**Build a standalone, local PNG-to-SVG icon converter.** Prioritize an exact visual match at the PNG’s original dimensions.
+
+**Default mode — pixel vectors:** Decode each PNG to RGBA pixels and generate real SVG geometry for the visible pixels. Merge adjacent pixels of identical color and opacity to reduce file size. Preserve dimensions, transparency, and antialiased edge pixels. This mode should produce editable SVG fills, while keeping the original pixel-grid appearance.
+
+**Second mode — embedded PNG:** Place the original PNG bytes inside an SVG for cases where pixel vectors become impractically large. Label this clearly as a bitmap inside an SVG, not editable vector artwork.
+
+**Interface:** Make it a standalone local tool with drag-and-drop batch import, original and SVG previews, individual downloads, and a ZIP download. Preserve source filenames where possible and resolve collisions safely. Files must never leave the device.
+
+**Fidelity check:** Render each generated SVG at its native dimensions and compare its RGBA pixels with the decoded source PNG. Show “pixel match verified” only when there are zero visible differences; otherwise show the differing-pixel count. Test opaque, transparent, partially transparent, antialiased, palette-based, and multicolor PNGs.
+
+**Be honest about the limit:** Pixel-exact SVG geometry will still look pixelated when enlarged. Smooth, editable curves cannot generally be recovered exactly from arbitrary PNGs. Do not claim universal pixel accuracy across browsers or color profiles without testing it."
+
+Okay, so you'll see that I've added a repository, one ChatGPT site, a brief, and the AI development workflow. Now, I want you to modify our app on our repository that we have and add what the brief says to our existing repository application that we already have, right? So instead of making it a standalone where it's just that, build it into our current one that we have. Obviously you will need to be sure that there is proper navigation and that the UI makes sense. The UI already works great. So it's the perfect UI. But obviously now because we're adding a new feature, we need to extend it a bit to make it a bit more improved, right? So please do that. And then what I want you to do is choose the best— sorry, choose from the AI development workflow the relative phases and agents and tools that you need and plan it accordingly in order to do this as accurately and as good and as successfully as you can, please. And then do it from start to finish, all in one go. But it's very important that after each step or each phase or each milestone or each big piece of code, that you commit to the repository constantly, so that when something does crash on ChatGPT and it does stop working or you time out, that work is not lost, please.

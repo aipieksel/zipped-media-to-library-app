@@ -1,0 +1,384 @@
+{
+  "schema": "project-development-plan/v1",
+  "contractVersion": 2,
+  "workflowPreset": "GAS",
+  "title": "Folio local PNG to SVG converter",
+  "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
+  "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
+  "status": "planned",
+  "readiness": "ready",
+  "blockers": [],
+  "planRevision": 2,
+  "critiqueOutcome": "not_requested",
+  "reviewedPlanRevision": null,
+  "sourceBaseline": {
+    "description": "GitHub main matches published Site app source; source-only record work is current dirty state",
+    "revision": "2dc43cb0a91981514243b4ce5fed014ea0de59c0",
+    "dirtyPaths": []
+  },
+  "scope": {
+    "in": [
+      "Integrated local PNG-to-SVG tool, scoped navigation, conversion/verification/downloads, tests/docs, checkpoint pushes and same-site private publication"
+    ],
+    "out": [
+      "Curve tracing, DB/cloud data changes, private media commits, new Site/audience, unrelated UI redesign"
+    ]
+  },
+  "requestSources": [
+    {
+      "id": "S1",
+      "role": "user",
+      "origin": "Current user message, 29 October 2026; repository/site links, quoted brief and integrated implementation/checkpoint instructions",
+      "text": "[https://github.com/aipieksel/zipped-media-to-library-app](https://github.com/aipieksel/zipped-media-to-library-app) [$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) [https://folio-html-workspace.byronjacobs.chatgpt.site/](https://folio-html-workspace.byronjacobs.chatgpt.site/) \"**Build a standalone, local PNG-to-SVG icon converter.** Prioritize an exact visual match at the PNG’s original dimensions.\n\n**Default mode — pixel vectors:** Decode each PNG to RGBA pixels and generate real SVG geometry for the visible pixels. Merge adjacent pixels of identical color and opacity to reduce file size. Preserve dimensions, transparency, and antialiased edge pixels. This mode should produce editable SVG fills, while keeping the original pixel-grid appearance.\n\n**Second mode — embedded PNG:** Place the original PNG bytes inside an SVG for cases where pixel vectors become impractically large. Label this clearly as a bitmap inside an SVG, not editable vector artwork.\n\n**Interface:** Make it a standalone local tool with drag-and-drop batch import, original and SVG previews, individual downloads, and a ZIP download. Preserve source filenames where possible and resolve collisions safely. Files must never leave the device.\n\n**Fidelity check:** Render each generated SVG at its native dimensions and compare its RGBA pixels with the decoded source PNG. Show “pixel match verified” only when there are zero visible differences; otherwise show the differing-pixel count. Test opaque, transparent, partially transparent, antialiased, palette-based, and multicolor PNGs.\n\n**Be honest about the limit:** Pixel-exact SVG geometry will still look pixelated when enlarged. Smooth, editable curves cannot generally be recovered exactly from arbitrary PNGs. Do not claim universal pixel accuracy across browsers or color profiles without testing it.\"\n\nOkay, so you'll see that I've added a repository, one ChatGPT site, a brief, and the AI development workflow. Now, I want you to modify our app on our repository that we have and add what the brief says to our existing repository application that we already have, right? So instead of making it a standalone where it's just that, build it into our current one that we have. Obviously you will need to be sure that there is proper navigation and that the UI makes sense. The UI already works great. So it's the perfect UI. But obviously now because we're adding a new feature, we need to extend it a bit to make it a bit more improved, right? So please do that. And then what I want you to do is choose the best— sorry, choose from the AI development workflow the relative phases and agents and tools that you need and plan it accordingly in order to do this as accurately and as good and as successfully as you can, please. And then do it from start to finish, all in one go. But it's very important that after each step or each phase or each milestone or each big piece of code, that you commit to the repository constantly, so that when something does crash on ChatGPT and it does stop working or you time out, that work is not lost, please."
+    },
+    {
+      "id": "CA1",
+      "role": "context",
+      "origin": "artifacts/assessment.md by /root/codebase_assessment",
+      "text": "Independent assessment C1–C13: React/TS/Vite; preserve ItemKind/database/collection state, local converter isolation, reusable compact design, Worker deployment and source privacy."
+    }
+  ],
+  "requestHashes": {
+    "S1": "f8d247c5ffb4b9570ca8bcdef14cedcbcf695b5f914180eda290dac85f3b41c0",
+    "CA1": "2c2c3a9b1a35f91c614909e50fda8bc973409b2d8420ec0186e072f0ce4c6139"
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "Integrate the converter with clear navigation and preserve the library UI and state.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R2",
+      "text": "Generate editable pixel geometry and merge identical adjacent pixels.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R3",
+      "text": "Preserve native dimensions, transparency and antialiased edge pixels.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R4",
+      "text": "Add clearly labeled embedded-PNG mode using the original bytes.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R5",
+      "text": "Support responsive drag-and-drop batch processing with useful error states.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R6",
+      "text": "Show original and SVG previews, including native-size viewing.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R7",
+      "text": "Provide individual and ZIP downloads with safe, collision-free filenames.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R8",
+      "text": "Keep conversion files on the device and out of the source repository.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R9",
+      "text": "Verify the rendered SVG and show either zero differences or the differing-pixel count.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R10",
+      "text": "Test opaque, transparent, partial-alpha, antialiased, palette and multicolor PNGs.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R11",
+      "text": "Explain pixel-grid scaling and the limits of browser and color-profile verification.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R12",
+      "text": "Complete the reviewed plan and independent verification.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R13",
+      "text": "Commit and push meaningful milestones.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R14",
+      "text": "Publish the verified app to the existing private site.",
+      "sources": [
+        "S1"
+      ],
+      "kind": "necessary",
+      "justification": "The user identifies the existing app Site and requests the feature end to end; publishing to the same private app makes the integrated change usable. Sites skill defaults publication without audience changes."
+    }
+  ],
+  "steps": [
+    {
+      "id": "P1",
+      "requirements": [
+        "R12",
+        "R13"
+      ],
+      "paths": [
+        "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter"
+      ],
+      "change": "Capture assessment, research and UI plan, get independent critique, checkpoint",
+      "dependsOn": []
+    },
+    {
+      "id": "P2",
+      "requirements": [
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R7",
+        "R8",
+        "R9",
+        "R10",
+        "R11"
+      ],
+      "paths": [
+        "src/png-svg.ts",
+        "src/png-svg.worker.ts",
+        "src/png-svg-browser.ts",
+        "src/png-svg-download.ts"
+      ],
+      "change": "Implement bounded native-size RGBA conversion, local worker, original-byte embedding, actual SVG render check and filename/export helper",
+      "dependsOn": [
+        "P1"
+      ]
+    },
+    {
+      "id": "P3",
+      "requirements": [
+        "R1",
+        "R4",
+        "R5",
+        "R6",
+        "R7",
+        "R8",
+        "R9",
+        "R11"
+      ],
+      "paths": [
+        "src/App.tsx",
+        "src/components/PngSvgWorkspace.tsx",
+        "src/components/png-svg.css",
+        "src/styles.css"
+      ],
+      "change": "Add compact workspace navigation and local converter queue/previews/downloads with independent state and handlers",
+      "dependsOn": [
+        "P1",
+        "P2"
+      ]
+    },
+    {
+      "id": "P4",
+      "requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7",
+        "R8",
+        "R9",
+        "R10",
+        "R11",
+        "R12"
+      ],
+      "paths": [
+        "tests/png-svg.test.ts",
+        "tests/png-svg-components.test.ts",
+        "tests/png-fixture-generator.ts"
+      ],
+      "change": "Generate synthetic PNG cases; unit/byte/ZIP and actual browser verification; independent review",
+      "dependsOn": [
+        "P2",
+        "P3"
+      ]
+    },
+    {
+      "id": "P5",
+      "requirements": [
+        "R8",
+        "R11",
+        "R12",
+        "R13",
+        "R14"
+      ],
+      "paths": [
+        "README.md",
+        "PRIVACY.md",
+        "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter"
+      ],
+      "change": "Document, test/build/privacy gate, checkpoint pushes, reconcile main and publish existing private Site",
+      "dependsOn": [
+        "P4"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "T1",
+      "requirements": [
+        "R2",
+        "R3",
+        "R9"
+      ],
+      "method": "Node core tests with independent rectangle raster reconstruction and negative comparator cases",
+      "expected": "Identical RGBA and coverage, no overlaps, exact differences, no tolerance",
+      "boundary": "Pure logic; browser pixels separate"
+    },
+    {
+      "id": "T2",
+      "requirements": [
+        "R4",
+        "R7"
+      ],
+      "method": "Embedded byte decode and JSZip readback with duplicate/Unicode/path/reserved names",
+      "expected": "Original PNG bytes unchanged and every output unique/safe",
+      "boundary": "Node bytes/ZIP tests"
+    },
+    {
+      "id": "T3",
+      "requirements": [
+        "R5",
+        "R8"
+      ],
+      "method": "Malformed PNG/bounds/animation/cancel/session budget cases plus converter dependency and network review",
+      "expected": "Useful errors, no stale success, bounded allocations, no file requests/storage",
+      "boundary": "Unit/component and actual browser checks"
+    },
+    {
+      "id": "T4",
+      "requirements": [
+        "R3",
+        "R4",
+        "R9",
+        "R10",
+        "R11"
+      ],
+      "method": "Actual browser native decode→SVG raster comparison for six required PNG classes and deliberate single-pixel mismatch",
+      "expected": "All six representative standard PNG categories and partial-alpha embedded SVG have zero native visible differences; intentional one-pixel mutation counts 1; unsupported/error cases never claim verified.",
+      "boundary": "Record actual browser/version/sRGB; no other engines certified"
+    },
+    {
+      "id": "T5",
+      "requirements": [
+        "R1",
+        "R5",
+        "R6",
+        "R7"
+      ],
+      "method": "Browser library→converter→batch→previews→mode retry→SVG/ZIP downloads→library",
+      "expected": "Inputs/results independent, navigation preserved, bytes/names reconcile and controls operate",
+      "boundary": "Development browser, existing production collection separate"
+    },
+    {
+      "id": "T6",
+      "requirements": [
+        "R1",
+        "R5",
+        "R6",
+        "R12"
+      ],
+      "method": "Desktop/mobile layout and keyboard/a11y, independent code/privacy review",
+      "expected": "No clipped primary actions/overflow, scoped shortcuts, focus/labels/status correct, no unresolved high findings",
+      "boundary": "Observed viewports and static review"
+    },
+    {
+      "id": "T7",
+      "requirements": [
+        "R1",
+        "R8",
+        "R12"
+      ],
+      "method": "npm test; tsc build; npm run build; npm run check:privacy",
+      "expected": "Existing suite and final app/Worker package pass, no private payloads staged",
+      "boundary": "Source/build, not live rendering"
+    },
+    {
+      "id": "T8",
+      "requirements": [
+        "R11",
+        "R12"
+      ],
+      "method": "README/PRIVACY and recorded outcomes checked against actual code/test results",
+      "expected": "Accurate limitation, data lifetime and browser coverage claims",
+      "boundary": "Documentation and independent review"
+    },
+    {
+      "id": "T9",
+      "requirements": [
+        "R13",
+        "R14"
+      ],
+      "method": "Git remote refs/commit checkpoints and Sites source/save/deploy status",
+      "expected": "Significant source milestones pushed; main final state and existing private Site published",
+      "boundary": "Remote and native deployment evidence"
+    }
+  ],
+  "planHashes": {
+    "checklist.md": "5510d6f7e89b1464163e952a68f8725775ea61c7373c441dca1ea8f51987a2d8",
+    "fix-plan.md": "1a11fa4302f042da0e6758f87b00729628e04c3f57633e52d670d6d38bcda10e",
+    "test-plan.md": "cd9eeaa2ea728505f049a1965ce70cd2e251b4deb6748d62b46c05ccab29d5fe"
+  },
+  "createdAt": "2026-10-29T20:48:01.318190+08:00",
+  "updatedAt": "2026-10-29T12:52:19.983906+00:00",
+  "files": [
+    "checklist.md",
+    "fix-plan.md",
+    "test-plan.md",
+    "critique.md",
+    "results.md"
+  ],
+  "definitionHash": "a32e1b722f4411a3f52fee20e91eea47f47ec914ecadf6b09b87e4966da3ab9b"
+}
