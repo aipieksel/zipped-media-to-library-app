@@ -1,6 +1,6 @@
 # Results and continuation
 
-Execution coordinator: /root. Current status: executing revision 4 after the user's UI and quality correction. The historical revision-2 completion below is retained; the current revision is not yet published.
+Execution coordinator: /root. Current status: revision5 corrective review before closeout. Revision4 is published as version10, but a live monochrome image exposed an unaccepted smooth-quality case. Historical evidence and failures are retained.
 
 - Baseline GitHub main 2dc43cb; Site source 05766c8; app/CSS/worker source equal.
 - Actual delegated assessment: /root/codebase_assessment; actual fidelity research: /root/fidelity_research. Artifacts read and integrated.
@@ -86,3 +86,15 @@ Actual Chrome 155 IndexedDB suite passed 13/13. Initial updated engine suite pas
 - Mixed development/production clients caused a failed initial queue trial; the precise stale-worker cause remains an inference. The isolated production retry and fresh interrupted batch both passed. Failed evidence is retained rather than erased; see browser report.
 - Browser shared-file exports did not materialize in the executor filesystem despite write receipts. Therefore no raw browser JSON artifact or downloadable screenshot is claimed. These Markdown reports contain the coordinator's direct DOM/receipt observations. No private user icon bytes were exported or committed.
 - Same-Site publication and final connected-browser smoke remain pending at this checkpoint.
+
+
+## Revision 5 corrective review opened
+
+Version10 native deployment succeeded at2026-10-29T15:54:20.209613+00:00, deployment appgdep_6ae36c1a2cc0819199dc70f6f1ac75f5, source89fbdce1e3ec5701f0db0f49d879e462d258c9d4. GitHubmain and feature branch now4c4966012679012ca5915c090d27e334f0d4dab3 (local7ea954a; matching tree ded5e2d27866b3141e679e53c2d619eb73c17de4). Connected-browser calls initially timed out; separate bounded calls then succeeded. Live app showed HTML/Images/Icons navigation, nonempty existing HTML/Image Library counts, the canonical sidebar and Uncategorized, canvas mode/zoom/background toolbar and device-local saved state. No existing collection contents are copied into this record.
+
+A later supported screenshot/read-only observation showed a user-supplied96×96 monochrome line icon had been imported locally and selected Smooth curves; the agent did not supply it. General RGBA tracing produced604 paths, about55.5KB and1,010 native differences with visibly fragmented edges. This is an actual motivating-class miss despite the earlier synthetic gate passing. The current radius1 eligibility guard may be too narrow for resampled antialiasing; the specific failed predicate is not measured. No private source pixels are exported, and no screenshot/artwork is committed. Root reopened R22 and related verification for the bounded revision5 plan above before any corrective source mutation.
+
+Revision4 original admission hashes remain in this file and the archived core record; no source/history hash is reset. Root owns the continuing attempt. Revision5 implementation must receive independent critique/finalization/admission before source edits.
+
+
+Revision5 execution admission passed criticized finalization --resume and resolve --execution --require-critique --resume, exit0, at 2026-10-29T16:11:34.001948+00:00. Root is continuing sole coordinator. Definition 129ad05dcbe55c7c98b8b0cfa08b066e2d38f5ed1d281ceafafc66e95e28f4af; critique 61100af6e59e3e2e518c63e3feeca9340cae79f674ff543a48b0448b3451d203; admitted plan hashes {"checklist.md": "efc17110f52d0998ce4a7b1a9a91a5c897a224747731a59844b39d8827efc60c", "fix-plan.md": "d38d1b06f1abc6506b1e63bd2990c6323267b4b2395bafd8f104e19da1d52ebe", "test-plan.md": "c6d4485fb466088c98094825be0d31467a202504a1454e7d1176128cef871711"}. Test owner freezes independent resampled fixture and old-predicate failure before engine owner changes classification. No private source extraction.

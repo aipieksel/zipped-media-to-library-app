@@ -8,12 +8,12 @@
   "status": "executing",
   "readiness": "ready",
   "blockers": [],
-  "planRevision": 4,
+  "planRevision": 5,
   "critiqueOutcome": "revised",
-  "reviewedPlanRevision": 4,
+  "reviewedPlanRevision": 5,
   "sourceBaseline": {
-    "description": "Revision 2 complete, GitHub main and published Site version 9 confirmed. New source-only revision3 assessment records are dirty.",
-    "revision": "b66763e4be353bb17827e7da27b4ebf9783e15b5",
+    "description": "Revision4 shared UI/persistence and production engines published as Site version10; final live observation reopened R22 for resampled monochrome fringe routing. Local7ea954a and remote main4c496601 have identical tree ded5e2d27866b3141e679e53c2d619eb73c17de4.",
+    "revision": "7ea954a95a2bb0164ea8bb15910bcc1111c120e3",
     "dirtyPaths": []
   },
   "scope": {
@@ -306,9 +306,11 @@
         "package.json",
         "package-lock.json",
         "tests/png-svg.test.ts",
-        "tests/png-svg-browser-check.ts"
+        "tests/png-svg-browser-check.ts",
+        "tests/png-fixture-generator.ts",
+        "tests/png-svg-trace.test.ts"
       ],
-      "change": "Preserve exact modes; bounded source-reviewed tracer spike and adopt the supported local combination. Add explicit smooth mode, actual tracer identity, strict SVG validation and native pixel comparison. Retain cancellation/time/output bounds and truthful errors.",
+      "change": "Preserve exact modes; bounded source-reviewed tracer spike and adopt the supported local combination. Add explicit smooth mode, actual tracer identity, strict SVG validation and native pixel comparison. Retain cancellation/time/output bounds and truthful errors. Revision5: widen only narrow silhouette fringe eligibility with capped radius3 monotone-alpha distance maps; keep foreground/color/threshold/curve/native comparison unchanged; bump actual profile identity. Report a concise device-local eligibility reason through existing Smooth warnings when the general RGBA route is chosen, so the unavailable private source can be diagnosed without export.",
       "dependsOn": [
         "P1"
       ]
@@ -372,7 +374,7 @@
         "scripts/prepare-png-svg-check.mjs",
         "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter/artifacts"
       ],
-      "change": "Run decisive unit/browser/persistence/folder/reload/native-render/curve/preview checks; independent code, privacy and accessibility review; repair admitted findings; final build and privacy gate.",
+      "change": "Run decisive unit/browser/persistence/folder/reload/native-render/curve/preview checks; independent code, privacy and accessibility review; repair admitted findings; final build and privacy gate. Revision5 adds independent resampled96px line-art gate and soft-field/translucent-interior/island/angular-detail regressions; preserve original gates.",
       "dependsOn": [
         "P2",
         "P3",
@@ -465,8 +467,8 @@
         "R21",
         "R22"
       ],
-      "method": "Audit exact pinned tracer source/license/output; bounded browser comparison on known circle, ring hole, tiny detail, multicolor and partial alpha/gradient fixtures; inspect actual curves and independent4x known-shape reference.",
-      "expected": "Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen smooth route must improve the independently measured4x antialiased96px silhouette/curved-hole/thin-detail oracle over pixel geometry while retaining hole/topology/detail. A failed candidate is revised or rejected, never accepted just because its error is disclosed. Silhouette classifier negative cases cover multicolor, soft alpha fields and arbitrary translucent interiors.",
+      "method": "Audit exact pinned tracer source/license/output; bounded browser comparison on known circle, ring hole, tiny detail, multicolor and partial alpha/gradient fixtures; inspect actual curves and independent4x known-shape reference. Revision5: freeze resampled96px rings/angled-stroke/island input with independent4x oracle and old-predicate failure; test radius3 monotone support and new translucent-island/interior/broad-fade negatives.",
+      "expected": "Smooth output uses editable paths without bitmap/external resources, keeps dimensions and holes; shows real differences; no flattening transparency; chosen smooth route must improve the independently measured4x antialiased96px silhouette/curved-hole/thin-detail oracle over pixel geometry while retaining hole/topology/detail. A failed candidate is revised or rejected, never accepted just because its error is disclosed. Silhouette classifier negative cases cover multicolor, soft alpha fields and arbitrary translucent interiors. New fixture must preserve4components/2holes and endpoint/joint probes, use \u226416 paths, improve4x alpha MAE over pixel geometry, and report a fresh strict native recount. No curve/profile tolerance weakening.",
       "boundary": "Does not establish universal recovery or accuracy on unavailable user originals."
     },
     {
@@ -499,12 +501,12 @@
     }
   ],
   "planHashes": {
-    "checklist.md": "7d2dc27b4f15a7307b19418a9555496e0b89157a7b99a07e3fb8b5896e92860c",
-    "fix-plan.md": "6b9cacc1007c26d7315bc2e616f7e68efd026b07f6af29e0345df3d8cd0292e2",
-    "test-plan.md": "bb721f23d9c4d02d218aab9f3a6d4af1c1e52d7501e10bfd12680b7e7c28f1b5"
+    "checklist.md": "efc17110f52d0998ce4a7b1a9a91a5c897a224747731a59844b39d8827efc60c",
+    "fix-plan.md": "d38d1b06f1abc6506b1e63bd2990c6323267b4b2395bafd8f104e19da1d52ebe",
+    "test-plan.md": "c6d4485fb466088c98094825be0d31467a202504a1454e7d1176128cef871711"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-29T14:41:48.446078+00:00",
+  "updatedAt": "2026-10-29T16:11:34.001948+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",
@@ -512,6 +514,6 @@
     "critique.md",
     "results.md"
   ],
-  "definitionHash": "0d51a14475f320d7a34d17f758519211529c1d7633f7f31a8210ba847588f444",
-  "critiqueHash": "41e4e86efab46fd365ede01318416a8fc7250c65261a73079dd118bcf812f35b"
+  "definitionHash": "129ad05dcbe55c7c98b8b0cfa08b066e2d38f5ed1d281ceafafc66e95e28f4af",
+  "critiqueHash": "61100af6e59e3e2e518c63e3feeca9340cae79f674ff543a48b0448b3451d203"
 }

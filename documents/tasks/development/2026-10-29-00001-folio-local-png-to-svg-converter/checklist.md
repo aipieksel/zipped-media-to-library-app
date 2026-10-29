@@ -1,4 +1,4 @@
-# Folio icon library — revision 4 acceptance checklist
+# Folio icon library — revision 5 acceptance checklist
 
 Revision 2 is preserved in artifacts/revision-2-complete. R2–R4 retain prior verified exact-engine evidence and will also receive regression checks. Affected outcomes are reopened.
 

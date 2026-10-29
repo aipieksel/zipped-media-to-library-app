@@ -1,4 +1,4 @@
-# Test plan — revision 4
+# Test plan — revision 5
 
 ## T1 — R2, R3, R4, R9, R10
 
@@ -55,3 +55,14 @@ Procedure: Check docs/research against sources and implementation; remote checkp
 Expected: Frequent durable commits, final main/current source and successful private publication; evidence and limits match actual execution.
 
 Boundary: Deployment response plus supported UI smoke.
+
+
+## Revision 5 — focused T5/T6 extension
+
+Freeze an additional procedural96×96 fixture containing two separated annuli, a separated round-cap two-segment angled stroke and a small disk island. Produce native alpha with8× analytic samples and a fixed separable tent filter of radius1.25 native pixels; compute a384×384 hard-geometry reference independently with4×4 samples per reference pixel. Expected topology:4components and2holes. Verify that the input contains0,255 and partial alpha pixels that fail the old immediate-neighbor condition. Do not derive the reference from the traced SVG or resize the input into the oracle.
+
+Positive gates: exact mode still has zero native differences; smooth uses the bumped silhouette profile with editable curved geometry and ≤16 paths; fresh native recount equals reported differing pixels; native error is never replaced with a tolerance. At4×, alpha MAE must be lower than the pixel-geometry baseline, with topology, ring-hole interiors, island and stroke endpoint/joint probes retained. The original narrow-fringe fixture's current improvement gate stays unchanged.
+
+Negative gates: existing uniform-translucency, distinct-color, broad-gradient and partial-alpha fixtures remain rejected by silhouette detection; add a broad same-color fade with an opaque anchor, an alpha128 pocket inside an opaque body, and a detached translucent island near but separated from the opaque shape. The latter cannot gain eligibility across alpha0. A sharp right-angle/45-degree procedural case retains corner/line probes; curve parameters are not loosened. Failures require correction rather than reducing the gate.
+
+Run the focused and full Node suites, TypeScript, native browser tests for the added shape and retained exact/smooth cases, an independent diff/privacy review, then build. Verify the changed silhouette route executes from final production assets. Reuse byte-identical unrelated runtime evidence, not inferred new behavior. Preserve earlier failed trials. Publish same private Site and inspect the actual saved live result on device if available; report any remaining classification limit without claiming a private source diagnosis that was never observed.
