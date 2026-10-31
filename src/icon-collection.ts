@@ -1,31 +1,36 @@
-import {rasterMimeHint} from './raster-input';
+import {createEmbeddedRasterSvg, inspectRaster, rasterMimeHint} from './raster-input';
 import {openDB} from 'idb';
 import type {DBSchema, IDBPDatabase, IDBPTransaction} from 'idb';
 import {uniqueId} from './identity';
 import {allocateSvgFilename, PNG_SVG_LIMITS} from './png-svg';
 import type {ConversionMode} from './png-svg';
-import type {PngSvgResult} from './png-svg-browser';
+import type {PngSvgFidelity, PngSvgResult} from './png-svg-browser';
+import {recolorSvg, sanitizeSvg} from './saved-svg';
 import {ICON_IMPORT_LIMITS, isIconRasterInput, normalizeIconPath} from './icon-drop';
-import type {IconClaim, IconCollectionSnapshot, IconFolder, IconImportBatch, IconImportFile, IconImportReport, IconJob, IconPreferences, IconRecord, IconTreeProjection} from './icon-types';
+import type {IconClaim, IconCollectionSnapshot, IconFolder, IconImportBatch, IconImportFile, IconImportReport, IconJob, IconPreferences, IconRecord, IconTreeProjection, SaveArtworkInput, SavedIconRecord, SavedIconSource, SavedIconVerification} from './icon-types';
 import type {HtmlPage, TreeNode} from './types';
 
 export type * from './icon-types';
 export const ICON_DB_NAME = 'folio-icons';
-export const ICON_DB_VERSION = 1;
+export const ICON_DB_VERSION = 2;
 export const UNCATEGORIZED_ICON_FOLDER_ID = 'icon-folder-uncategorized';
 export const ICON_LEASE_MS = 30_000;
 export const ICON_HEARTBEAT_MS = 8_000;
 
 interface IconSource {id: string; blob: Blob}
 interface IconOutput {id: string; revision: number; blob: Blob}
+interface SavedSvg {id: string; revision: number; base: Blob; output: Blob}
 interface IconSchema extends DBSchema {
   icons: {key: string; value: IconRecord; indexes: {byFolder: string; byStatus: string}};
   folders: {key: string; value: IconFolder};
   sources: {key: string; value: IconSource};
   outputs: {key: string; value: IconOutput};
+  savedIcons: {key: string; value: SavedIconRecord; indexes: {byFolder: string}};
+  savedSvg: {key: string; value: SavedSvg};
+  savedSources: {key: string; value: IconSource};
   prefs: {key: string; value: {key: string; value: IconPreferences}};
 }
-type StoreName = 'icons' | 'folders' | 'sources' | 'outputs' | 'prefs';
+type StoreName = 'icons' | 'folders' | 'sources' | 'outputs' | 'prefs' | 'savedIcons' | 'savedSvg' | 'savedSources';
 type WriteTransaction = IDBPTransaction<IconSchema, StoreName[], 'readwrite'>;
 const natural = new Intl.Collator('en', {numeric: true, sensitivity: 'base'});
 const nameKey = (name: string) => name.normalize('NFC').toLowerCase();
@@ -36,7 +41,9 @@ export function normalizeIconPreferences(value?: Partial<IconPreferences>): Icon
   const sort = value?.order?.sort;
   const group = value?.order?.group;
   return {
+    view: value?.view === 'saved' ? 'saved' : 'convert',
     selectedId: typeof value?.selectedId === 'string' && value.selectedId.length <= 256 ? value.selectedId : null,
+    savedSelectedId: typeof value?.savedSelectedId === 'string' && value.savedSelectedId.length <= 256 ? value.savedSelectedId : null,
     expanded: Array.isArray(value?.expanded) ? [...new Set(value.expanded.filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 256))].slice(0, 50_000) : [UNCATEGORIZED_ICON_FOLDER_ID],
     order: {sort: sort && ['name-asc', 'name-desc', 'newest', 'oldest', 'largest', 'smallest'].includes(sort) ? sort : 'name-asc', group: group && ['folders', 'month', 'all'].includes(group) ? group : 'folders'},
     defaultMode: modeNames.includes(value?.defaultMode ?? '') ? value!.defaultMode! : 'pixels',
@@ -45,7 +52,7 @@ export function normalizeIconPreferences(value?: Partial<IconPreferences>): Icon
   };
 }
 
-export const emptyIconSnapshot = (): IconCollectionSnapshot => ({items: [], folders: [], preferences: normalizeIconPreferences()});
+export const emptyIconSnapshot = (): IconCollectionSnapshot => ({items: [], saved: [], folders: [], preferences: normalizeIconPreferences()});
 
 function assertMode(mode: ConversionMode): void {
   if (!modeNames.includes(mode)) throw new Error('Choose a supported icon conversion mode.');
@@ -136,6 +143,44 @@ function resultBlob(result: PngSvgResult): Blob {
   return blob;
 }
 
+const unchecked = (width: number, height: number, reason = 'This SVG has not been checked at native dimensions.'): PngSvgFidelity => ({status: 'unavailable', differingPixels: null, totalPixels: width * height, reason});
+function savedCheck(fidelity: PngSvgFidelity | undefined, verification: SavedIconVerification | undefined, width: number, height: number): {fidelity: PngSvgFidelity; verification?: SavedIconVerification} {
+  if (!fidelity) return {fidelity: unchecked(width, height)};
+  if (fidelity.totalPixels !== width * height || !['verified', 'different', 'unavailable'].includes(fidelity.status) ||
+    (fidelity.status === 'unavailable' ? fidelity.differingPixels !== null : !Number.isSafeInteger(fidelity.differingPixels) || fidelity.differingPixels! < 0 || fidelity.differingPixels! > fidelity.totalPixels || (fidelity.status === 'verified') !== (fidelity.differingPixels === 0))) throw new Error('The saved artwork pixel-check metadata is inconsistent.');
+  if (fidelity.status !== 'unavailable' && !verification) throw new Error('A saved pixel check requires its actual browser and check time.');
+  if (verification && (typeof verification.checkedAt !== 'string' || !Number.isFinite(Date.parse(verification.checkedAt)) || typeof verification.browser !== 'string' || !verification.browser || verification.browser.length > 1000 || verification.colorSpace !== 'srgb' || verification.pixelFormat !== 'rgba8')) throw new Error('The saved artwork verification provenance is invalid.');
+  return {fidelity: {...fidelity, ...(fidelity.reason ? {reason: String(fidelity.reason).slice(0, 2000)} : {})}, ...(verification ? {verification: {...verification}} : {})};
+}
+function checkSavedRevision(revision: number): void {if (!Number.isSafeInteger(revision) || revision < 1) throw new Error('Choose a current saved artwork revision.');}
+async function sourceSnapshot(source: SaveArtworkInput['source'], width: number, height: number): Promise<{metadata: SavedIconSource; blob: Blob}> {
+  if (!source || !['icons', 'images'].includes(source.kind) || typeof source.id !== 'string' || !source.id || source.id.length > 256 || typeof source.name !== 'string' || !source.name || source.name.length > 2000 || !['image/png', 'image/webp', 'image/jpeg'].includes(source.mime) || !(source.blob instanceof Blob) || !source.blob.size || source.blob.size > PNG_SVG_LIMITS.maxInputBytes) throw new Error('The saved artwork requires a supported original image snapshot of up to 20 MiB.');
+  if (source.revision !== undefined) checkSavedRevision(source.revision);
+  const bytes = new Uint8Array(await source.blob.arrayBuffer());
+  if (source.mime === 'image/jpeg') {
+    if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) throw new Error('The saved JPEG source signature is invalid.');
+  } else {
+    const metadata = inspectRaster(bytes);
+    if (metadata.mime !== source.mime || metadata.width !== width || metadata.height !== height) throw new Error('The saved source format or dimensions do not match the artwork.');
+  }
+  return {metadata: {kind: source.kind, id: source.id, ...(source.revision !== undefined ? {revision: source.revision} : {}), name: source.name, mime: source.mime, size: source.blob.size}, blob: source.blob.slice(0, source.blob.size, source.mime)};
+}
+interface PreparedArtwork {
+  name: string;
+  folderId?: string;
+  source: SavedIconSource;
+  sourceBlob: Blob;
+  base: Blob;
+  width: number;
+  height: number;
+  provenance: SavedIconRecord['provenance'];
+  recolorable: boolean;
+  fidelity: PngSvgFidelity;
+  verification?: SavedIconVerification;
+  /** A local source may change while parsing; the final atomic write checks it again. */
+  currentIcon?: {id: string; revision: number; requireReady: boolean};
+}
+
 /** Local-only storage. This module has no Library database or network dependency. */
 export class IconCollectionStore {
   private readonly listeners = new Set<() => void>();
@@ -169,12 +214,13 @@ export class IconCollectionStore {
   }
 
   async snapshot(): Promise<IconCollectionSnapshot> {
-    const tx = this.db.transaction(['icons', 'folders', 'prefs'], 'readonly');
-    const [items, folders, prefs] = await Promise.all([tx.objectStore('icons').getAll(), tx.objectStore('folders').getAll(), tx.objectStore('prefs').get('workspace')]);
+    const tx = this.db.transaction(['icons', 'savedIcons', 'folders', 'prefs'], 'readonly');
+    const [items, saved, folders, prefs] = await Promise.all([tx.objectStore('icons').getAll(), tx.objectStore('savedIcons').getAll(), tx.objectStore('folders').getAll(), tx.objectStore('prefs').get('workspace')]);
     await tx.done;
     items.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
     folders.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
-    return {items, folders, preferences: normalizeIconPreferences(prefs?.value)};
+    saved.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
+    return {items, saved, folders, preferences: normalizeIconPreferences(prefs?.value)};
   }
 
   async getSource(id: string): Promise<Blob | undefined> {
@@ -189,6 +235,145 @@ export class IconCollectionStore {
     const [item, output] = await Promise.all([tx.objectStore('icons').get(id), tx.objectStore('outputs').get(id)]);
     await tx.done;
     return item?.status === 'ready' && item.result && output?.revision === item.revision && (revision === undefined || revision === item.revision) ? output.blob : undefined;
+  }
+
+  async getSavedOutput(id: string, revision?: number): Promise<Blob | undefined> {
+    const tx = this.db.transaction(['savedIcons', 'savedSvg'], 'readonly');
+    const [item, svg] = await Promise.all([tx.objectStore('savedIcons').get(id), tx.objectStore('savedSvg').get(id)]);
+    await tx.done;
+    return item && svg?.revision === item.revision && (revision === undefined || revision === item.revision) ? svg.output : undefined;
+  }
+
+  async getSavedSource(id: string): Promise<Blob | undefined> {
+    const tx = this.db.transaction(['savedIcons', 'savedSources'], 'readonly');
+    const [item, source] = await Promise.all([tx.objectStore('savedIcons').getKey(id), tx.objectStore('savedSources').get(id)]);
+    await tx.done;
+    return item ? source?.blob : undefined;
+  }
+
+  private async commitArtwork(input: PreparedArtwork): Promise<SavedIconRecord> {
+    return this.write(['icons', 'sources', 'outputs', 'folders', 'savedIcons', 'savedSvg', 'savedSources', 'prefs'], async tx => {
+      if (input.currentIcon) {
+        const current = await tx.objectStore('icons').get(input.currentIcon.id);
+        if (!current || current.revision !== input.currentIcon.revision || input.currentIcon.requireReady && (current.status !== 'ready' || !current.result || !await tx.objectStore('outputs').getKey(current.id)) || !await tx.objectStore('sources').getKey(current.id)) throw new Error('The original icon changed or was removed before saving. Review the current result and try again.');
+      }
+      const folderId = input.folderId ?? UNCATEGORIZED_ICON_FOLDER_ID;
+      if (!await tx.objectStore('folders').getKey(folderId)) throw new Error('The destination folder was removed. Choose another folder.');
+      const existing = await tx.objectStore('savedIcons').getAll();
+      const filename = allocateSvgFilename(input.name.replace(/\.(?:svg|jpe?g)$/i, ''), new Set(existing.map(item => item.filename)));
+      const names = new Set(existing.filter(item => item.folderId === folderId).map(item => item.name));
+      for (const folder of await tx.objectStore('folders').getAll()) if (folder.parentId === folderId) names.add(folder.name);
+      const now = Date.now(), id = `saved-icon-${uniqueId()}`;
+      const item: SavedIconRecord = {id, folderId, name: allocateIconName(filename, names, true), filename, createdAt: now, updatedAt: now, favorite: false, revision: 1, width: input.width, height: input.height, outputBytes: input.base.size, baseOutputBytes: input.base.size, source: input.source, provenance: input.provenance, recolorable: input.recolorable, color: null, fidelity: input.fidelity, verification: input.verification, baseFidelity: input.fidelity, baseVerification: input.verification};
+      await tx.objectStore('savedSources').add({id, blob: input.sourceBlob});
+      await tx.objectStore('savedSvg').add({id, revision: 1, base: input.base, output: input.base});
+      await tx.objectStore('savedIcons').add(item);
+      const preferences = normalizeIconPreferences((await tx.objectStore('prefs').get('workspace'))?.value);
+      await tx.objectStore('prefs').put({key: 'workspace', value: {...preferences, savedSelectedId: id, expanded: [...new Set([...preferences.expanded, folderId])]}});
+      return item;
+    });
+  }
+
+  /** Only a current successful local conversion may save its trusted embedded bitmap wrapper. */
+  async saveConverted(id: string, expectedRevision: number): Promise<SavedIconRecord> {
+    checkSavedRevision(expectedRevision);
+    const tx = this.db.transaction(['icons', 'sources', 'outputs'], 'readonly');
+    const [item, source, output] = await Promise.all([tx.objectStore('icons').get(id), tx.objectStore('sources').get(id), tx.objectStore('outputs').get(id)]);
+    await tx.done;
+    if (!item || item.revision !== expectedRevision || item.status !== 'ready' || !item.result || !source || output?.revision !== expectedRevision) throw new Error('Choose a current successful conversion before saving.');
+    if (output.blob.size > PNG_SVG_LIMITS.maxSvgBytes) throw new Error('The saved SVG exceeds the output limit.');
+    const svg = await output.blob.text(), result = item.result;
+    resultBlob({...result, svg});
+    const mime = result.sourceFormat === 'webp' || item.sourceMime === 'image/webp' ? 'image/webp' : 'image/png';
+    const captured = await sourceSnapshot({kind: 'icons', id, revision: expectedRevision, name: item.sourceName, mime, blob: source.blob}, result.width, result.height);
+    if (item.mode === 'embedded') {
+      const expected = createEmbeddedRasterSvg(new Uint8Array(await captured.blob.arrayBuffer()), result.width, result.height);
+      if (svg !== expected) throw new Error('The embedded SVG does not contain the exact saved original bytes.');
+    } else sanitizeSvg(svg, {width: result.width, height: result.height, profile: 'local-vector'});
+    // Keep the already-verified converter string exactly, even if canonical attribute order would differ.
+    return this.commitArtwork({name: item.filename, folderId: item.folderId, source: captured.metadata, sourceBlob: captured.blob, base: new Blob([svg], {type: 'image/svg+xml;charset=utf-8'}), width: result.width, height: result.height, provenance: {kind: 'conversion', mode: item.mode, engine: {...result.engine}}, recolorable: item.mode !== 'embedded', ...savedCheck(result.fidelity, result.verification, result.width, result.height), currentIcon: {id, revision: expectedRevision, requireReady: true}});
+  }
+
+  /** Generic/AI artwork accepts vector geometry only; it cannot opt into trusted embedded content. */
+  async saveArtwork(input: SaveArtworkInput): Promise<SavedIconRecord> {
+    if (!input || typeof input.name !== 'string' || !input.name || input.name.length > 2000 || input.provenance?.kind !== 'ai' || typeof input.provenance.provider !== 'string' || !input.provenance.provider || input.provenance.provider.length > 100 || typeof input.provenance.model !== 'string' || !input.provenance.model || input.provenance.model.length > 200 || input.provenance.generatedAt !== undefined && (!Number.isFinite(Date.parse(input.provenance.generatedAt)))) throw new Error('The AI artwork metadata is invalid.');
+    const result = sanitizeSvg(input.svg, {width: input.width, height: input.height, profile: 'ai'});
+    let source = input.source, currentIcon: PreparedArtwork['currentIcon'];
+    if (source?.kind === 'icons') {
+      if (source.revision === undefined) throw new Error('The source conversion revision is required.');
+      const tx = this.db.transaction(['icons', 'sources'], 'readonly');
+      const [item, original] = await Promise.all([tx.objectStore('icons').get(source.id), tx.objectStore('sources').get(source.id)]);
+      await tx.done;
+      if (!item || item.revision !== source.revision || !original) throw new Error('The original icon changed or was removed.');
+      source = {...source, name: item.sourceName, mime: item.sourceMime ?? 'image/png', blob: original.blob};
+      currentIcon = {id: item.id, revision: item.revision, requireReady: false};
+    }
+    const captured = await sourceSnapshot(source, input.width, input.height);
+    const check = result.svg === input.svg ? savedCheck(input.fidelity, input.verification, input.width, input.height) : {fidelity: unchecked(input.width, input.height, 'The SVG was normalized. A fresh native pixel check is required.')};
+    return this.commitArtwork({name: input.name, folderId: input.folderId, source: captured.metadata, sourceBlob: captured.blob, base: new Blob([result.svg], {type: 'image/svg+xml;charset=utf-8'}), width: input.width, height: input.height, provenance: {...input.provenance}, recolorable: true, ...check, currentIcon});
+  }
+
+  async recolorSaved(id: string, color: string | null, expectedRevision: number): Promise<SavedIconRecord> {
+    checkSavedRevision(expectedRevision);
+    const tx = this.db.transaction(['savedIcons', 'savedSvg'], 'readonly');
+    const [item, svg] = await Promise.all([tx.objectStore('savedIcons').get(id), tx.objectStore('savedSvg').get(id)]);
+    await tx.done;
+    if (!item || !svg || item.revision !== expectedRevision || svg.revision !== expectedRevision) throw new Error('The saved artwork changed. Reload its current version and try again.');
+    if (!item.recolorable && color !== null) throw new Error('This SVG contains an embedded bitmap. Only vector artwork can be recolored.');
+    const normalizedColor = color === null ? null : typeof color === 'string' && /^#[\da-f]{6}$/i.test(color) ? color.toLowerCase() : undefined;
+    if (normalizedColor === undefined) throw new Error('Choose a six-digit hex color.');
+    if (item.color === normalizedColor) return item;
+    const output = normalizedColor === null ? svg.base : new Blob([recolorSvg(await svg.base.text(), normalizedColor, {width: item.width, height: item.height, profile: item.provenance.kind === 'ai' ? 'ai' : 'local-vector'}).svg], {type: 'image/svg+xml;charset=utf-8'});
+    return this.write(['savedIcons', 'savedSvg'], async write => {
+      const current = await write.objectStore('savedIcons').get(id);
+      if (!current || current.revision !== expectedRevision) throw new Error('The saved artwork changed while preparing its color. Try again.');
+      const next: SavedIconRecord = {...current, revision: current.revision + 1, color: normalizedColor, outputBytes: output.size, updatedAt: Date.now(), fidelity: normalizedColor === null ? current.baseFidelity : unchecked(current.width, current.height, 'Color changed. This variant has not been checked against its original image.'), verification: normalizedColor === null ? current.baseVerification : undefined};
+      await write.objectStore('savedSvg').put({...svg, revision: next.revision, output});
+      await write.objectStore('savedIcons').put(next);
+      return next;
+    });
+  }
+
+  /** A native browser check may only stamp the exact saved content revision it rendered. */
+  async recordSavedVerification(id: string, expectedRevision: number, fidelity: PngSvgFidelity, verification: SavedIconVerification): Promise<boolean> {
+    checkSavedRevision(expectedRevision);
+    return this.write(['savedIcons', 'savedSvg'], async tx => {
+      const item = await tx.objectStore('savedIcons').get(id), svg = await tx.objectStore('savedSvg').get(id);
+      if (!item || item.revision !== expectedRevision || svg?.revision !== expectedRevision) return false;
+      const check = savedCheck(fidelity, verification, item.width, item.height);
+      await tx.objectStore('savedIcons').put({...item, ...check, ...(item.color === null ? {baseFidelity: check.fidelity, baseVerification: check.verification} : {})});
+      return true;
+    });
+  }
+
+  async removeSaved(id: string): Promise<void> {
+    await this.write(['savedIcons', 'savedSvg', 'savedSources', 'prefs'], async tx => {
+      await tx.objectStore('savedIcons').delete(id); await tx.objectStore('savedSvg').delete(id); await tx.objectStore('savedSources').delete(id);
+      const preferences = normalizeIconPreferences((await tx.objectStore('prefs').get('workspace'))?.value);
+      if (preferences.savedSelectedId === id) await tx.objectStore('prefs').put({key: 'workspace', value: {...preferences, savedSelectedId: null}});
+    });
+  }
+
+  async moveSaved(id: string, folderId: string): Promise<SavedIconRecord> {
+    return this.write(['savedIcons', 'folders'], async tx => {
+      const item = await tx.objectStore('savedIcons').get(id);
+      if (!item) throw new Error('This saved artwork was removed.');
+      if (!await tx.objectStore('folders').getKey(folderId)) throw new Error('Choose an existing icon folder.');
+      if (item.folderId === folderId) return item;
+      const names = new Set((await tx.objectStore('savedIcons').index('byFolder').getAll(folderId)).map(other => other.name));
+      for (const folder of await tx.objectStore('folders').getAll()) if (folder.parentId === folderId) names.add(folder.name);
+      const next = {...item, folderId, name: allocateIconName(item.name, names, true), updatedAt: Date.now()};
+      await tx.objectStore('savedIcons').put(next); return next;
+    });
+  }
+
+  async setSavedFavorite(id: string, favorite: boolean): Promise<void> {
+    if (typeof favorite !== 'boolean') throw new Error('Invalid artwork favorite.');
+    await this.write(['savedIcons'], async tx => {
+      const item = await tx.objectStore('savedIcons').get(id);
+      if (!item) throw new Error('This saved artwork was removed.');
+      await tx.objectStore('savedIcons').put({...item, favorite});
+    });
   }
 
   async importEntries(batch: IconImportBatch, mode: ConversionMode = 'pixels'): Promise<IconImportReport> {
@@ -352,7 +537,7 @@ export class IconCollectionStore {
 
   async removeFolder(id: string): Promise<void> {
     if (id === UNCATEGORIZED_ICON_FOLDER_ID) throw new Error('Uncategorized is the permanent destination for loose icons. Remove its icons individually.');
-    await this.write(['icons', 'folders', 'sources', 'outputs', 'prefs'], async tx => {
+    await this.write(['icons', 'folders', 'sources', 'outputs', 'savedIcons', 'prefs'], async tx => {
       const folders = await tx.objectStore('folders').getAll();
       const removed = new Set<string>([id]);
       let changed = true;
@@ -361,6 +546,11 @@ export class IconCollectionStore {
       for (const item of await tx.objectStore('icons').getAll()) if (removed.has(item.folderId)) {
         deletedItems.add(item.id); await tx.objectStore('icons').delete(item.id); await tx.objectStore('sources').delete(item.id); await tx.objectStore('outputs').delete(item.id);
       }
+      // A conversion-folder removal never deletes deliberately saved artwork or its source snapshot.
+      const saved = await tx.objectStore('savedIcons').getAll();
+      const names = new Set(saved.filter(item => item.folderId === UNCATEGORIZED_ICON_FOLDER_ID).map(item => item.name));
+      for (const folder of folders) if (folder.parentId === UNCATEGORIZED_ICON_FOLDER_ID && !removed.has(folder.id)) names.add(folder.name);
+      for (const item of saved) if (removed.has(item.folderId)) await tx.objectStore('savedIcons').put({...item, folderId: UNCATEGORIZED_ICON_FOLDER_ID, name: allocateIconName(item.name, names, true), updatedAt: Date.now()});
       for (const folderId of removed) await tx.objectStore('folders').delete(folderId);
       const prefs = normalizeIconPreferences((await tx.objectStore('prefs').get('workspace'))?.value);
       await tx.objectStore('prefs').put({key: 'workspace', value: {...prefs, selectedId: prefs.selectedId && deletedItems.has(prefs.selectedId) ? null : prefs.selectedId, expanded: prefs.expanded.filter(folderId => !removed.has(folderId))}});
@@ -370,7 +560,7 @@ export class IconCollectionStore {
   async createFolder(name: string, parentId: string | null = null): Promise<IconFolder> {
     if (!name.trim()) throw new Error('Enter a folder name.');
     if (name.length > 150) throw new Error('Use a folder name of 150 characters or fewer.');
-    return this.write(['folders', 'icons'], async tx => {
+    return this.write(['folders', 'icons', 'savedIcons'], async tx => {
       if (parentId !== null && !await tx.objectStore('folders').getKey(parentId)) throw new Error('Choose an existing parent folder.');
       const folders = await tx.objectStore('folders').getAll();
       const folderMap = new Map(folders.map(folder => [folder.id, folder]));
@@ -382,6 +572,7 @@ export class IconCollectionStore {
       }
       const names = new Set(folders.filter(folder => folder.parentId === parentId).map(folder => folder.name));
       if (parentId) for (const item of await tx.objectStore('icons').index('byFolder').getAll(parentId)) names.add(item.name);
+      if (parentId) for (const item of await tx.objectStore('savedIcons').index('byFolder').getAll(parentId)) names.add(item.name);
       const folder: IconFolder = {id: `icon-folder-${uniqueId()}`, parentId, name: allocateIconName(name, names), createdAt: Date.now(), favorite: false};
       await tx.objectStore('folders').add(folder);
       return folder;
@@ -437,13 +628,21 @@ export async function openIconCollection(name = ICON_DB_NAME): Promise<IconColle
   if (!name || name.length > 180) throw new Error('Invalid local Icons database name.');
   let db: IDBPDatabase<IconSchema>;
   db = await openDB<IconSchema>(name, ICON_DB_VERSION, {
-    upgrade(database) {
-      const icons = database.createObjectStore('icons', {keyPath: 'id'});
-      icons.createIndex('byFolder', 'folderId'); icons.createIndex('byStatus', 'status');
-      database.createObjectStore('folders', {keyPath: 'id'});
-      database.createObjectStore('sources', {keyPath: 'id'});
-      database.createObjectStore('outputs', {keyPath: 'id'});
-      database.createObjectStore('prefs', {keyPath: 'key'});
+    upgrade(database, oldVersion) {
+      if (oldVersion < 1) {
+        const icons = database.createObjectStore('icons', {keyPath: 'id'});
+        icons.createIndex('byFolder', 'folderId'); icons.createIndex('byStatus', 'status');
+        database.createObjectStore('folders', {keyPath: 'id'});
+        database.createObjectStore('sources', {keyPath: 'id'});
+        database.createObjectStore('outputs', {keyPath: 'id'});
+        database.createObjectStore('prefs', {keyPath: 'key'});
+      }
+      if (oldVersion < 2) {
+        const saved = database.createObjectStore('savedIcons', {keyPath: 'id'});
+        saved.createIndex('byFolder', 'folderId');
+        database.createObjectStore('savedSvg', {keyPath: 'id'});
+        database.createObjectStore('savedSources', {keyPath: 'id'});
+      }
     },
     blocking() {db?.close();},
   });
@@ -460,7 +659,17 @@ export async function openIconCollection(name = ICON_DB_NAME): Promise<IconColle
 
 /** Presentation-only adapters never enter the Library archive/file persistence APIs. */
 export function projectIconCollection(snapshot: IconCollectionSnapshot, favoritesOnly = false): IconTreeProjection {
-  const folders = new Map(snapshot.folders.map(folder => [folder.id, folder]));
+  return projectCollectionTree(snapshot.folders, snapshot.items.map(item => ({...item, mime: item.sourceMime ?? 'image/png'})), favoritesOnly);
+}
+
+/** The Saved view uses the same folder identities and ArchiveTree presentation as conversions. */
+export function projectSavedIconCollection(snapshot: IconCollectionSnapshot, favoritesOnly = false): IconTreeProjection {
+  return projectCollectionTree(snapshot.folders, snapshot.saved.map(item => ({id: item.id, folderId: item.folderId, name: item.name, size: item.outputBytes, mime: 'image/svg+xml', createdAt: item.createdAt, lastModified: 0, favorite: item.favorite})), favoritesOnly);
+}
+
+interface CollectionTreeItem {id: string; folderId: string; name: string; size: number; mime: string; createdAt: number; lastModified: number; favorite: boolean}
+function projectCollectionTree(collectionFolders: IconFolder[], items: CollectionTreeItem[], favoritesOnly: boolean): IconTreeProjection {
+  const folders = new Map(collectionFolders.map(folder => [folder.id, folder]));
   const nodes = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
   const folderPath = (id: string): string[] => {
@@ -476,22 +685,22 @@ export function projectIconCollection(snapshot: IconCollectionSnapshot, favorite
     while (folder?.parentId && folders.has(folder.parentId) && !seen.has(folder.id)) {seen.add(folder.id); folder = folders.get(folder.parentId);}
     return folder?.id ?? UNCATEGORIZED_ICON_FOLDER_ID;
   };
-  for (const folder of snapshot.folders) nodes.set(folder.id, {id: folder.id, folderId: folder.id, archiveId: rootOf(folder.id), label: folder.name, kind: 'collection', children: [], pageCount: 0});
-  for (const folder of snapshot.folders) {
+  for (const folder of collectionFolders) nodes.set(folder.id, {id: folder.id, folderId: folder.id, archiveId: rootOf(folder.id), label: folder.name, kind: 'collection', children: [], pageCount: 0});
+  for (const folder of collectionFolders) {
     const node = nodes.get(folder.id)!;
     const parent = folder.parentId ? nodes.get(folder.parentId) : undefined;
     if (parent && parent !== node) parent.children.push(node); else roots.push(node);
   }
   const pages: HtmlPage[] = [];
-  for (const item of snapshot.items) {
+  for (const item of items) {
     const parent = nodes.get(item.folderId);
     if (!parent) continue;
     const rootId = rootOf(item.folderId);
-    pages.push({id: item.id, archiveId: rootId, rootId, path: [...folderPath(item.folderId), item.name].join('/'), label: item.name, isIndex: false, kind: 'image', size: item.size, mime: item.sourceMime ?? 'image/png', addedAt: item.createdAt, ...(item.lastModified > 0 ? {modifiedAt: item.lastModified, dateSource: 'file' as const} : {})});
+    pages.push({id: item.id, archiveId: rootId, rootId, path: [...folderPath(item.folderId), item.name].join('/'), label: item.name, isIndex: false, kind: 'image', size: item.size, mime: item.mime, addedAt: item.createdAt, ...(item.lastModified > 0 ? {modifiedAt: item.lastModified, dateSource: 'file' as const} : {})});
     parent.children.push({id: item.id, pageId: item.id, archiveId: rootId, label: item.name, kind: 'page', children: [], pageCount: 1});
   }
-  const directFavorites = new Set(snapshot.items.filter(item => item.favorite).map(item => item.id));
-  const favoriteFolders = new Set(snapshot.folders.filter(folder => folder.favorite).map(folder => folder.id));
+  const directFavorites = new Set(items.filter(item => item.favorite).map(item => item.id));
+  const favoriteFolders = new Set(collectionFolders.filter(folder => folder.favorite).map(folder => folder.id));
   const visit = (node: TreeNode, inherited = false, path = new Set<string>()): TreeNode | undefined => {
     if (path.has(node.id)) return undefined;
     const starred = inherited || favoriteFolders.has(node.id);
@@ -506,9 +715,9 @@ export function projectIconCollection(snapshot: IconCollectionSnapshot, favorite
   tree.sort((a, b) => a.id === UNCATEGORIZED_ICON_FOLDER_ID ? -1 : b.id === UNCATEGORIZED_ICON_FOLDER_ID ? 1 : natural.compare(a.label, b.label) || a.id.localeCompare(b.id));
   const rootCounts = new Map<string, {count: number; bytes: number}>();
   for (const page of pages) {const counts = rootCounts.get(page.rootId) ?? {count: 0, bytes: 0}; counts.count++; counts.bytes += page.size; rootCounts.set(page.rootId, counts);}
-  const archives = snapshot.folders.filter(folder => !folder.parentId).map(folder => {
+  const archives = collectionFolders.filter(folder => !folder.parentId).map(folder => {
     const counts = rootCounts.get(folder.id) ?? {count: 0, bytes: 0};
     return {id: folder.id, rootId: folder.id, parentId: null, mountPath: '', name: folder.name, createdAt: folder.createdAt, fileCount: counts.count, pageCount: 0, imageCount: counts.count, byteSize: counts.bytes, warnings: []};
   });
-  return {tree, pages, archives, folders: snapshot.folders.map(folder => ({id: folder.id, name: folderPath(folder.id).join(' / '), createdAt: folder.createdAt})), organization: new Map(snapshot.items.map(item => [item.id, {id: item.id, favorite: item.favorite, folderId: item.folderId}])), favoriteFolders};
+  return {tree, pages, archives, folders: collectionFolders.map(folder => ({id: folder.id, name: folderPath(folder.id).join(' / '), createdAt: folder.createdAt})), organization: new Map(items.map(item => [item.id, {id: item.id, favorite: item.favorite, folderId: item.folderId}])), favoriteFolders};
 }

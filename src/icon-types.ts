@@ -1,6 +1,6 @@
 import type {RasterMime} from './raster-input';
 import type {ConversionMode} from './png-svg';
-import type {PngSvgProgress, PngSvgResult} from './png-svg-browser';
+import type {PngSvgFidelity, PngSvgProgress, PngSvgResult} from './png-svg-browser';
 import type {ViewOrder} from './order';
 import type {ArchiveMeta, HtmlPage, ItemOrganization, TreeNode, WorkspaceFolder} from './types';
 
@@ -45,7 +45,9 @@ export interface IconFolder {
 }
 
 export interface IconPreferences {
+  view: 'convert' | 'saved';
   selectedId: string | null;
+  savedSelectedId: string | null;
   expanded: string[];
   order: ViewOrder;
   /** The default for new imports; existing records retain their own mode. */
@@ -56,8 +58,60 @@ export interface IconPreferences {
 
 export interface IconCollectionSnapshot {
   items: IconRecord[];
+  saved: SavedIconRecord[];
   folders: IconFolder[];
   preferences: IconPreferences;
+}
+
+/** Browser-native verification belongs to the exact SVG bytes that were checked. */
+export type SavedIconVerification = PngSvgResult['verification'];
+export interface SavedIconSource {
+  kind: 'icons' | 'images';
+  id: string;
+  revision?: number;
+  name: string;
+  mime: 'image/png' | 'image/webp' | 'image/jpeg';
+  size: number;
+}
+export type SavedIconProvenance =
+  | {kind: 'conversion'; mode: ConversionMode; engine: PngSvgResult['engine']}
+  | {kind: 'ai'; provider: string; model: string; generatedAt?: string};
+
+/** Curated artwork has its own identity and immutable source/base, independent of conversion retries. */
+export interface SavedIconRecord {
+  id: string;
+  folderId: string;
+  name: string;
+  filename: string;
+  createdAt: number;
+  updatedAt: number;
+  favorite: boolean;
+  revision: number;
+  width: number;
+  height: number;
+  outputBytes: number;
+  baseOutputBytes: number;
+  source: SavedIconSource;
+  provenance: SavedIconProvenance;
+  recolorable: boolean;
+  color: string | null;
+  fidelity: PngSvgFidelity;
+  verification?: SavedIconVerification;
+  baseFidelity: PngSvgFidelity;
+  baseVerification?: SavedIconVerification;
+}
+
+/** The source Blob is copied into the saved transaction; it is never a preview URL or thumbnail. */
+export interface SaveArtworkInput {
+  name: string;
+  folderId?: string;
+  svg: string;
+  width: number;
+  height: number;
+  source: Omit<SavedIconSource, 'size'> & {blob: Blob};
+  provenance: Extract<SavedIconProvenance, {kind: 'ai'}>;
+  fidelity?: PngSvgFidelity;
+  verification?: SavedIconVerification;
 }
 
 export interface IconImportFile {

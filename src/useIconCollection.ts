@@ -2,11 +2,12 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {uniqueId} from './identity';
 import {convertRaster} from './png-svg-browser';
 import type {ConversionMode} from './png-svg';
+import type {PngSvgFidelity} from './png-svg-browser';
 import {emptyIconSnapshot, ICON_DB_NAME, ICON_HEARTBEAT_MS, isCurrentIconClaim, openIconCollection} from './icon-collection';
 import type {IconCollectionStore} from './icon-collection';
 import {captureIconDrop, iconEntriesFromFiles, readIconDrop} from './icon-drop';
 import type {CapturedIconDrop} from './icon-drop';
-import type {IconCollectionSnapshot, IconFolder, IconImportBatch, IconImportReport, IconJob, IconJobProgress, IconPreferences} from './icon-types';
+import type {IconCollectionSnapshot, IconFolder, IconImportBatch, IconImportReport, IconJob, IconJobProgress, IconPreferences, SaveArtworkInput, SavedIconVerification} from './icon-types';
 
 interface ActiveJob {
   claim: IconJob;
@@ -242,14 +243,29 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
 
   const getSource = useCallback((id: string) => requireStore().getSource(id), [requireStore]);
   const getOutput = useCallback((id: string, revision?: number) => requireStore().getOutput(id, revision), [requireStore]);
+  // Saving is an explicit user action: propagate failed commits so the UI cannot report false success.
+  const changeSaved = useCallback(async <T,>(action: (store: IconCollectionStore) => Promise<T>): Promise<T> => {
+    try {const value = await action(requireStore()); if (mounted.current) setError(''); await refresh(); return value;}
+    catch (failure) {if (mounted.current) setError(messageOf(failure, 'The saved artwork change could not be committed.')); throw failure;}
+  }, [refresh, requireStore]);
+  const saveConverted = useCallback((id: string, expectedRevision: number) => changeSaved(store => store.saveConverted(id, expectedRevision)), [changeSaved]);
+  const saveArtwork = useCallback((input: SaveArtworkInput) => changeSaved(store => store.saveArtwork(input)), [changeSaved]);
+  const recolorSaved = useCallback((id: string, color: string | null, expectedRevision: number) => changeSaved(store => store.recolorSaved(id, color, expectedRevision)), [changeSaved]);
+  const recordSavedVerification = useCallback((id: string, expectedRevision: number, fidelity: PngSvgFidelity, verification: SavedIconVerification) => changeSaved(store => store.recordSavedVerification(id, expectedRevision, fidelity, verification)), [changeSaved]);
+  const removeSaved = useCallback((id: string) => changeSaved(store => store.removeSaved(id)), [changeSaved]);
+  const moveSaved = useCallback((id: string, folderId: string) => changeSaved(store => store.moveSaved(id, folderId)), [changeSaved]);
+  const setSavedFavorite = useCallback((id: string, favorite: boolean) => changeSaved(store => store.setSavedFavorite(id, favorite)), [changeSaved]);
+  const getSavedOutput = useCallback((id: string, revision?: number) => requireStore().getSavedOutput(id, revision), [requireStore]);
+  const getSavedSource = useCallback((id: string) => requireStore().getSavedSource(id), [requireStore]);
   const dismissNotice = useCallback(() => setNotice(''), []);
 
   return {
-    snapshot, items: snapshot.items, folders: snapshot.folders, preferences: snapshot.preferences,
+    snapshot, items: snapshot.items, saved: snapshot.saved, folders: snapshot.folders, preferences: snapshot.preferences,
     loaded, error: error || preferencesError, storageError: error || preferencesError, importing, busy: importing || snapshot.items.some(item => item.status === 'processing'), notice, progress,
     refresh, importEntries, importFiles, importDrop, importCapturedDrop, setPreferences,
     createFolder, moveItem, toggleFavorite, toggleFolderFavorite, retry, cancel, cancelAll, removeItem, removeFolder,
     getSource, getOutput, dismissNotice,
+    saveConverted, saveArtwork, recolorSaved, recordSavedVerification, removeSaved, moveSaved, setSavedFavorite, getSavedOutput, getSavedSource,
   };
 }
 
