@@ -167,3 +167,31 @@ S4 supersedes only affected prior outcomes. Baseline ca95e01 clean. Read-only ag
 Owner /root coordinates disjoint companion and saved-data executors. Independent reviewer /root/ai_package_audit approved revision9. Resolver --execution --require-critique exit0. Original admission: {"planRevision": 9, "definitionHash": "1cada159b1e2a4d36291ca3d5aebd5ff92497a0df06a6721c8209d0278c68019", "critiqueHash": "97a0b6af0680ff1249d8677ceefc549b6ea8abb9fd3c8e0fdc75abbbbb44b42f", "planHashes": {"checklist.md": "7c92251f1e31272cd28dbde63bd390254aac239a32efa4c773ab9829cc948780", "fix-plan.md": "785a316c3aad2420eaafd2ae656bed1ac9222e3c29ddba51a6b4f97d0ec09085", "test-plan.md": "22a181b962ae10d9ef5acea1dbaf9723754432aee85b67be0584055e3eec9bb7"}}
 
 Source checkpoint939688e0a514cd2aa03c8b06af8daf06cf3a7d6d pushed viaGitHubconnector; identical tree to local first commit7d1cefb, local branch reconciled without changing pending source. Normal execution will not restamp admission hashes.
+
+
+## Revision 9 implementation and verification — 2026-10-31
+
+Pushed milestone7510a43 contains reviewed plan/account code;687fa55 contains
+independent Saved artwork/color storage;59b60c9 contains shared AI/companion and
+same-page SVG studio. Exact remote/local trees matched at every milestone.
+
+Root native browser checks passed6/6 Saved persistence/transaction/export cases
+and2/2 misdeclared-WebP source normalization cases. Actual app journeys with
+explicit QA fixture (zero provider calls) passed candidate preview/save, cancel,
+unsafe SVG rejection, selected Images entry, recolor/reload and documented
+keyboard/narrow layout checks. See artifacts/revision-9-e2e-verification.md and
+revision-9-browser-ui-observations.json. Individual OS download delivery timed out
+and remains unverified; payload equality is independently established.
+
+Complete npm test exited0: privacy4passed plus289passed/1optional skip in the
+main suite; zero failures. Independent companion review closedC1–C4; application
+review closedF12–F15. Source-only accessibility follow-up found low advisoryF16
+for focus during model discovery; no material release blocker. Final root build
+after dialog/model corrections passed TypeScript/Vite/Worker and privacy. Later
+in-app Help wording (D1) receives the final Site build.
+
+README/privacy/setup/license notices and all review evidence are retained.
+Actual user-account image inference R29 is not run. Live signed-in Profile/sign-out
+R34/R35 are not run because the connected browser is at the Site sign-in wall.
+R12 overall completion remains open. R14 publication follows the final checkpoint.
+The existing reviewed plan/provenance/admission hashes are unchanged.

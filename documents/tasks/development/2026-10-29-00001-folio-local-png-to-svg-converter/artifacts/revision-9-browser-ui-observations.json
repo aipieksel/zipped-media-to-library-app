@@ -1,0 +1,251 @@
+{
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "observations": [
+    {
+      "observedAt": "2026-10-31T16:21:15.445Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "fixture enabled",
+        "interceptedOrigin": "http://127.0.0.1:8798",
+        "paths": "/v1/*",
+        "authentication": "not checked; fixture only"
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:21:27.755Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "status response",
+        "authentication": "not checked; fixture only"
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:21:33.645Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "validated text test request",
+        "requestId": "eeef2ae2-ef1d-496d-929c-7f035dfd6b9b",
+        "mode": "success"
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:22:23.509Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "validated SVG request",
+        "requestId": "1818d955-bc0f-4928-9001-77ef43141b9f",
+        "mode": "success",
+        "operation": "recreate-svg",
+        "attachmentBytes": 155,
+        "dimensions": [
+          16,
+          12
+        ],
+        "instructionsLength": 57,
+        "instructionsSchemaValid": true,
+        "currentSvgIncluded": true,
+        "requestIdSchemaValid": true,
+        "boundary": "Only metadata recorded; attachment bytes, source filename, SVG and instruction text are omitted."
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:22:23.511Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "procedural SVG returned",
+        "requestId": "1818d955-bc0f-4928-9001-77ef43141b9f"
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:22:56.918Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "action": "fixture response selected",
+        "mode": "held",
+        "providerRequests": 0
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:00.925Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "validated SVG request",
+        "requestId": "eb3acbed-88cc-4b61-bee4-481a41921444",
+        "mode": "held",
+        "operation": "clean-svg",
+        "attachmentBytes": 155,
+        "dimensions": [
+          16,
+          12
+        ],
+        "instructionsLength": 57,
+        "instructionsSchemaValid": true,
+        "currentSvgIncluded": true,
+        "requestIdSchemaValid": true,
+        "boundary": "Only metadata recorded; attachment bytes, source filename, SVG and instruction text are omitted."
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:00.925Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "request held until AbortSignal or cancel endpoint",
+        "requestId": "eb3acbed-88cc-4b61-bee4-481a41921444"
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:09.038Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "held request cancelled",
+        "requestId": "eb3acbed-88cc-4b61-bee4-481a41921444"
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:09.039Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "cancel acknowledgement",
+        "requestId": "eb3acbed-88cc-4b61-bee4-481a41921444",
+        "knownRequest": true
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:15.854Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "action": "fixture response selected",
+        "mode": "unsafe",
+        "providerRequests": 0
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:16.804Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "validated SVG request",
+        "requestId": "63362889-868c-45e3-982f-30f1b747fa37",
+        "mode": "unsafe",
+        "operation": "clean-svg",
+        "attachmentBytes": 155,
+        "dimensions": [
+          16,
+          12
+        ],
+        "instructionsLength": 57,
+        "instructionsSchemaValid": true,
+        "currentSvgIncluded": true,
+        "requestIdSchemaValid": true,
+        "boundary": "Only metadata recorded; attachment bytes, source filename, SVG and instruction text are omitted."
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:16.805Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "unsafe SVG returned for sanitizer rejection",
+        "requestId": "63362889-868c-45e3-982f-30f1b747fa37"
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:36.284Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "action": "fixture response selected",
+        "mode": "success",
+        "providerRequests": 0
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:45.966Z",
+      "value": {
+        "action": "Library opaque PNG import keeps navigation coherent",
+        "status": "pass",
+        "filename": "qa-library-opaque-1793463825828-1.png",
+        "target": "canvas",
+        "beforeTab": "Images",
+        "afterTab": "Images",
+        "hash": "#images",
+        "savedItem": {
+          "id": "a67550bb-2ab0-45df-a3ab-74ecf79d8c67/qa-library-opaque-1793463825828-1.png",
+          "archiveId": "a67550bb-2ab0-45df-a3ab-74ecf79d8c67",
+          "rootId": "a67550bb-2ab0-45df-a3ab-74ecf79d8c67",
+          "path": "qa-library-opaque-1793463825828-1.png",
+          "label": "qa-library-opaque-1793463825828-1.png",
+          "isIndex": false,
+          "size": 848,
+          "kind": "image",
+          "addedAt": 1793463825836,
+          "modifiedAt": 1700000000000,
+          "dateSource": "file"
+        },
+        "selectedAfter": "a67550bb-2ab0-45df-a3ab-74ecf79d8c67/qa-library-opaque-1793463825828-1.png",
+        "selectedIconAtSwitch": null,
+        "activeElement": {
+          "tag": "body",
+          "id": null,
+          "role": null,
+          "ariaLabel": null,
+          "text": "HTML0Images1Icons9Images1/FavoritesSortCollection unavailable · RetryImage upload1qa-library-opaque-1793463825828-1.pngDrop ZIPs or images here1 / 1qa-library-o",
+          "tabIndex": -1,
+          "disabled": false,
+          "connected": true,
+          "visible": true,
+          "pageId": null,
+          "treeNode": null,
+          "documentHasFocus": false
+        },
+        "boundary": "Real app drop and IDB save; delayed case holds a bounded native transaction without modifying stored data."
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:56.425Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "validated SVG request",
+        "requestId": "2e830049-5480-40a4-af83-f3a8df6345ec",
+        "mode": "success",
+        "operation": "recreate-svg",
+        "attachmentBytes": 155,
+        "dimensions": [
+          16,
+          12
+        ],
+        "instructionsLength": 0,
+        "instructionsSchemaValid": true,
+        "currentSvgIncluded": false,
+        "requestIdSchemaValid": true,
+        "boundary": "Only metadata recorded; attachment bytes, source filename, SVG and instruction text are omitted."
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:23:56.425Z",
+      "value": {
+        "scope": "QA fixture · no provider",
+        "providerRequests": 0,
+        "action": "procedural SVG returned",
+        "requestId": "2e830049-5480-40a4-af83-f3a8df6345ec"
+      }
+    },
+    {
+      "observedAt": "2026-10-31T16:24:30.301Z",
+      "value": {
+        "action": "viewport",
+        "width": 390,
+        "height": 844
+      }
+    }
+  ]
+}

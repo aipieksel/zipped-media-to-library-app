@@ -72,3 +72,4 @@ console.log('Prepared ignored .qa/icon-collection-check.html and .qa/icon-librar
 console.log('Run with the existing tsx loader; open these pages on a dedicated development origin.');
 console.log('Storage checks use unique QA databases. Interactive checks append procedural files to that development origin only.');
 console.log('Synthetic directory-entry events test the app drop API; file-only folder choosers cannot report empty folders.');
+console.log('Optional AI UI fixture: intercepted responses only inside the app iframe; no provider or account test. Public test code: 43 A characters, port 8798.');

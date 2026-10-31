@@ -14,6 +14,7 @@ import type { IconCollectionSnapshot, IconImportBatch, IconRecord } from '../src
 import { convertPng } from '../src/png-svg-browser';
 import type { PngSvgResult } from '../src/png-svg-browser';
 import { uniqueId } from '../src/identity';
+import { AI_UI_FIXTURE_LABEL, AI_UI_FIXTURE_TOKEN, installAiUiFixture, type AiUiFixtureMode } from './ai-ui-fixture';
 
 if (!import.meta.env.DEV) throw new Error('Icon collection checks are available only in the development server.');
 
@@ -359,6 +360,16 @@ function setupInteractive(content: HTMLElement): void {
       <button id="delayed-library">Delay Library import, then click Icons</button>
       <button id="observe-download">Arm next app SVG/ZIP download observation</button>
     </div>
+    <h3>AI UI fixture · no provider</h3>
+    <p class="boundary">Optional simulated responses for the real Settings and AI panel. No CLI, account or AI provider is contacted.
+    Enable this fixture, then connect in the app's AI settings using port <code>8798</code> and this public test pairing code:
+    <code>${AI_UI_FIXTURE_TOKEN}</code>. Use procedural inputs only. Held requests wait for Cancel; unsafe SVG must be rejected.
+    The response is selected when a request starts. Reloading the iframe disables this fixture; enable it again before reconnecting.</p>
+    <div class="controls">
+      <button id="enable-ai-fixture">Enable AI UI fixture</button>
+      <label>AI fixture response <select id="ai-fixture-response"><option value="success">Success · QA fixture · no provider</option><option value="held">Held until cancelled · QA fixture · no provider</option><option value="unsafe">Unsafe SVG · QA fixture · no provider</option></select></label>
+    </div>
+    <p id="ai-fixture-status" class="status" role="status">QA fixture · no provider: disabled.</p>
     <div class="controls">
       <button id="reload-app">Reload app iframe</button>
       <button id="mobile-width">390px viewport</button>
@@ -380,6 +391,7 @@ function setupInteractive(content: HTMLElement): void {
   let restoreAbort: (() => void) | undefined;
   let restoreDownload: (() => void) | undefined;
   let releaseLibraryDelay: (() => void) | undefined;
+  let aiFixture: ReturnType<typeof installAiUiFixture> | undefined;
   let librarySequence = 0;
 
   const observe = (value: unknown) => {
@@ -399,6 +411,28 @@ function setupInteractive(content: HTMLElement): void {
       observe({ error: status.textContent });
     } finally { busy = false; }
   };
+  const fixtureButton = content.querySelector<HTMLButtonElement>('#enable-ai-fixture')!;
+  const fixtureResponse = content.querySelector<HTMLSelectElement>('#ai-fixture-response')!;
+  const fixtureStatus = content.querySelector<HTMLElement>('#ai-fixture-status')!;
+  const disableAiFixture = () => {
+    aiFixture?.dispose(); aiFixture = undefined;
+    fixtureButton.disabled = false;
+    fixtureStatus.textContent = `${AI_UI_FIXTURE_LABEL}: disabled. Enable before the next fixture connection.`;
+  };
+  fixtureButton.addEventListener('click', () => void run(async () => {
+    await appDocument();
+    const realm = frame.contentWindow as (Window & typeof globalThis) | null;
+    assert(realm && realm.location.origin === window.location.origin, 'The AI fixture requires the same-origin development iframe.');
+    aiFixture?.dispose();
+    aiFixture = installAiUiFixture(realm, () => fixtureResponse.value as AiUiFixtureMode, observe);
+    fixtureButton.disabled = true;
+    fixtureStatus.textContent = `${AI_UI_FIXTURE_LABEL}: enabled only for this iframe's exact 127.0.0.1:8798/v1/ endpoints. Open app Settings and use the displayed test code.`;
+  }));
+  fixtureResponse.addEventListener('change', () => {
+    observe({scope: AI_UI_FIXTURE_LABEL, action: 'fixture response selected', mode: fixtureResponse.value, providerRequests: 0});
+    fixtureStatus.textContent = `${AI_UI_FIXTURE_LABEL}: ${fixtureResponse.value} selected for the next request. An existing held request still needs Cancel.`;
+  });
+  frame.addEventListener('load', () => {if (aiFixture) disableAiFixture();});
   const showIcons = async () => {
     const document = await appDocument();
     const button = Array.from(document.querySelectorAll<HTMLButtonElement>('.workspace-navigation button,button[aria-label="Icons"]')).find(element =>
@@ -608,6 +642,7 @@ function setupInteractive(content: HTMLElement): void {
     restoreAbort?.();
     restoreDownload?.();
     releaseLibraryDelay?.();
+    disableAiFixture();
     const before = frame.contentDocument;
     frame.contentWindow!.location.reload();
     await waitUntil(() => frame.contentDocument !== before && frame.contentDocument?.querySelector('.folio-app') ? frame.contentDocument : undefined,
@@ -624,7 +659,7 @@ function setupInteractive(content: HTMLElement): void {
     replaceAbortRestore: restore => { restoreAbort?.(); restoreAbort = restore; } });
   wireInteractiveDownloads({content, frame, status, observe, run, appDocument,
     replaceRestore: restore => {restoreDownload?.(); restoreDownload = restore;}});
-  window.addEventListener('pagehide', () => {restoreAbort?.(); restoreDownload?.(); releaseLibraryDelay?.();}, { once: true });
+  window.addEventListener('pagehide', () => {restoreAbort?.(); restoreDownload?.(); releaseLibraryDelay?.(); disableAiFixture();}, { once: true });
   void appDocument().then(() => { status.textContent = 'The real app is ready. Select Icons or drop procedural inputs.'; })
     .catch(error => { status.textContent = explain(error); });
 }
