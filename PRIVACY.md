@@ -66,8 +66,9 @@ Google Drive imports download only the requested remote file before shared savin
 Downloads occur on request. Embedded-bitmap SVG contains original PNG/WebP bytes,
 including source metadata; treat it as a copy when sharing. Original data, SVGs,
 ZIPs, captures and operational inventories never belong in GitHub or build/CI artifacts.
-Procedural fixtures are generated from source code in ignored `.qa/`; do not replace
-them with real media. The repository privacy gate remains required.
+Procedural media fixtures are generated from source code in ignored `.qa/`;
+development harness HTML also includes ignored `tests/shared-client-*.html` files.
+Do not replace these fixtures with real media. The repository privacy gate remains required.
 
 ## Explicit AI actions
 
@@ -77,8 +78,10 @@ companion data route requires the exact configured site Origin/Host and a random
 per-run bearer code. The code stays in the browser tab's memory; nonsecret
 provider/model/reasoning/port preferences are saved locally.
 
-Generate sends only the selected original image (normalized locally to native-size
-PNG), bounded current SVG and requested instructions through the CLI to OpenAI.
+Generate sends the selected original image (normalized locally to native-size
+PNG), its sanitized source filename, bounded current SVG and requested instructions
+through the CLI to OpenAI. Image preparation includes the basename, not the full
+filesystem path.
 Test AI connection sends a small text request. These are explicit AI-provider requests, separate from shared workspace storage. Credentials remain in the CLI's own
 account store; they are not sent to Folio's Site backend, kept in app storage,
 included in output errors or committed to Git. API-key authentication is rejected.
@@ -95,7 +98,12 @@ Candidates are displayed as Blob-backed images after strict XML geometry
 validation. User-approved saved artwork contains independent original, base and
 current SVG Blobs in the shared workspace; changing color preserves the immutable base.
 Deleting a source conversion does not cascade into these saved records. Explicitly
-deleting a saved icon removes its own snapshots. Saved icons are shared after server acknowledgement; existing unmigrated browser-only artwork remains local until explicitly transferred.
+deleting a saved icon removes its active artwork and snapshot references from the
+shared workspace. This version does not delete immutable server chunks when an
+item is removed, so removing an entry does not guarantee erasure of previously
+uploaded bytes. Previously downloaded copies also remain outside app control.
+Saved icons are shared after server acknowledgement; existing unmigrated
+browser-only artwork remains local until explicitly transferred.
 
 ## Folio accounts and hosting access
 

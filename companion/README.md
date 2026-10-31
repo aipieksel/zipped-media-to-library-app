@@ -60,8 +60,9 @@ results after a job. Codex owns sign-in and account usage policies. Files are
 deleted only after the subprocess exits. Results are saved in Folio only when you
 choose Save. Other imported files are not uploaded by this workflow.
 
-The app's identity is managed separately by its hosting platform. Profile and
-password controls do not change the Codex account on this computer.
+Folio's email/password account, private Site hosting access and this computer's
+Codex sign-in are separate identities. Folio Profile and password controls update
+the Folio account; they do not change hosting permissions or the Codex account.
 
 Automated tests exercise the process and HTTP behavior using deterministic local
 CLI fixtures. They are not a successful test of your real OpenAI account. Complete

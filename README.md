@@ -53,7 +53,7 @@ Directory drops preserve empty folders when the browser exposes directory entrie
 
 Select an icon in the shared tree to compare the saved original and generated SVG. The previews use a common scale and synchronized scrolling. Choose **Fit**, **100% · native**, **200%** or **400%**, and checkerboard, light or dark transparency backgrounds. **Show source pixels** enables nearest-neighbor inspection of the original bitmap; it does not change the SVG or the native fidelity check.
 
-The mode selector applies to the selected icon immediately and becomes the saved default for new imports. Existing icons retain their own mode until reconverted. **Stop this icon** cancels one job; **Stop (n)** cancels pending work without removing completed results. Stopped or failed entries retain their original image for **Convert again**. Removing an icon or folder removes its saved local copies after confirmation; files on disk are unaffected.
+The mode selector applies to the selected icon immediately and becomes the saved default for new imports. Existing icons retain their own mode until reconverted. **Stop this icon** cancels one job; **Stop (n)** cancels pending work without removing completed results. Stopped or failed entries retain their original image for **Convert again**. In the authenticated app, removing an icon or folder removes its conversion entries and original-image references from the shared workspace for every member after confirmation. Independently saved artwork, original files on disk and preserved browser-only copies remain intact.
 
 - **Pixel vectors · exact grid** is the default. Browser-decoded RGBA pixels become editable SVG rectangles. Adjacent pixels with identical color and opacity merge into non-overlapping shapes. Dimensions, transparency and antialiased edge opacity are retained without tracing, resizing or color quantization. These shapes preserve the pixel grid and still look pixelated when enlarged.
 - **Smooth curves · approximate** fits editable paths to the decoded image. Shapes, colors, edge coverage or small details may change. The result shows the actual tracing engine and native differing-pixel count; it does not promise exact recovery of an original drawing. Smooth mode has a smaller workload budget and never silently reduces the source dimensions.
@@ -93,7 +93,7 @@ Each result saves the check timestamp, browser, engine/version and native **sRGB
 
 Original PNG/WebP files, completed SVGs, nested folders and favorites are shared through authenticated D1 metadata and immutable R2 chunks. The browser keeps a separate shared cache; existing **`folio-icons`** records are preserved for deliberate migration. Worker claims, view preferences and AI pairing remain device-local. Startup reads metadata and source/output bytes load as needed.
 
-Queued work resumes automatically while the app is open. Interrupted processing can resume after its prior claim expires; a second tab does not take over a live job. Explicitly stopped and failed jobs stay stopped until **Convert again**. Claims and revision checks prevent an old conversion from restoring a deleted or superseded result. Storage or quota failures are shown instead of reporting an unsaved result as ready. See the [collection storage](src/icon-collection.ts) and [queue controller](src/useIconCollection.ts).
+The importing browser resumes queued work automatically while the app is open. Another device can see the pending originals and take over with **Convert again**. Interrupted processing can resume after its prior claim expires; a second tab does not take over a live job. Explicitly stopped and failed jobs stay stopped until **Convert again**. Claims and revision checks prevent an old conversion from restoring a deleted or superseded result. Storage or quota failures are shown instead of reporting an unsaved result as ready. See the [collection storage](src/icon-collection.ts) and [queue controller](src/useIconCollection.ts).
 
 | Boundary | Limit |
 | --- | --- |
@@ -171,10 +171,13 @@ adapter. Ordinary PNG/WebP conversion does not need an AI-provider connection. T
 
 AI accepts static PNG, WebP and JPEG originals up to 8 MiB, 4096 pixels per side
 and 4,194,304 pixels. It prepares a native-size PNG attachment without silently
-resizing. Existing SVG context and returned artwork are limited to 2 MiB. Very
+resizing. That normalized PNG must also fit 8 MiB, so a compressed JPEG or WebP
+within the original-file limit can still be rejected after preparation.
+Existing SVG context and returned artwork are limited to 2 MiB. Very
 large pixel-vector output can use **Recreate from the image** without sending the
-oversized SVG. Only the explicitly selected source, bounded SVG and instructions
-are sent through the paired CLI to the chosen provider.
+oversized SVG. The explicitly selected source image, its sanitized source filename,
+bounded SVG and requested instructions are sent through the paired CLI to the
+chosen provider. The full filesystem path is not included.
 
 ### Save, recolor and export
 
@@ -188,7 +191,8 @@ In **Saved**, use the color picker or enter a six-digit hex value, then **Apply
 color**. It changes vector fills/strokes while retaining transparency, clears the
 old fidelity badge, and checks the actual color variant against the saved source.
 An intentional color change normally has a nonzero difference count. **Original
-colors** restores the exact immutable base bytes and their saved check. Individual
+colors** restores the exact immutable base bytes. Folio checks the restored shared
+SVG against its retained source in this browser. Individual
 SVG and ZIP downloads use the current saved color. Embedded-bitmap conversions
 can also be saved with their exact source bytes, but are clearly non-recolorable.
 
@@ -250,7 +254,8 @@ active membership. Logout unmounts private views and their object URLs.
 The existing curated catalogue is reused without reuploading its original files.
 New imports and shared organization use an additive overlay. View selection,
 scroll/expansion, disposable thumbnails, worker claims and companion pairing stay
-local. The old Library/Icon databases remain untouched until deliberate migration.
+local. The old Library/Icon databases remain untouched through deliberate migration;
+the transfer copies their records into the shared workspace.
 
 Additive IndexedDB upgrades preserve existing HTML identifiers, screenshots and resource Blobs. Version 2 indexes imported images; version 3 adds a separate automatic-thumbnail cache. User folders contain organization metadata; original archive paths and linked assets never move.
 
@@ -264,7 +269,7 @@ Additive IndexedDB upgrades preserve existing HTML identifiers, screenshots and 
 | Nested ZIP depth | 8 levels beneath the outer ZIP |
 | Direct image batch | 20,000 files, 768 MiB total, 128 MiB per image |
 
-Shared metadata uses one atomic revisioned index (at most 1 MiB) and, for larger collections, a checksummed metadata manifest (at most 64 MiB). Small files share immutable chunk packs; larger files use chunks of at most 8 MiB. A dataset can reference at most 10,000 distinct chunks. This preserves the existing 20,000-entry import capability without sending every record inside the index. Reaching a shared-storage bound produces an explicit error and retains the staged change for review or retry. Available browser cache capacity also applies. Password-protected, split, ZIP64 and unsupported-compression archives are rejected. Server applications and native image conversions such as HEIC or TIFF are outside the supported scope.
+Shared metadata uses one atomic revisioned index (at most 1 MiB) and, for larger collections, a checksummed metadata manifest (at most 64 MiB). Small files share immutable chunk packs; larger files use chunks of at most 8 MiB. A dataset can reference at most 10,000 distinct chunks and contain at most 100,000 records in any one store, such as files or saved icons. This preserves the existing 20,000-entry per-import capability without sending every record inside the index. Reaching a shared-storage bound produces an explicit error and retains the staged change for review or retry. Available browser cache capacity also applies. Password-protected, split, ZIP64 and unsupported-compression archives are rejected. Server applications and native image conversions such as HEIC or TIFF are outside the supported scope.
 
 HTML runs in an opaque sandbox with scripts enabled. Its resource bridge is scoped to its own archive. Imported scripts cannot access the workspace's document or storage through that frame, but may still make external network requests. Preview pages are content to inspect, not trusted application code.
 
@@ -286,7 +291,7 @@ npm run build
 
 `dev` and `build` first bundle the in-frame capture bridge. The build then embeds Vite's app assets in the Worker at `dist/server/index.js`; generated frontend assets are kept in ignored `.sites-runtime/`. The Worker uses the private R2 binding declared in `.openai/hosting.json`. Runtime secrets stay in Sites environment configuration. Builds and tests first run the repository privacy check; enable the local pre-commit hook as described in [PRIVACY.md](PRIVACY.md).
 
-The [VTracer asset plugin](scripts/vtracer-assets.ts) serves and emits its pinned entry script, module worker and WASM together under `/vendor/vtracer/`, with license notices. ImageTracer and native alpha contour/cubic fitting share a local worker bundled through Vite. These are application assets from the same origin; conversion requires no remote tracing API, CDN model or image upload. Production verification must exercise the emitted worker/WASM paths as well as the development paths.
+The [VTracer asset plugin](scripts/vtracer-assets.ts) serves and emits its pinned entry script, module worker and WASM together under `/vendor/vtracer/`, with license notices. ImageTracer and native alpha contour/cubic fitting share a local worker bundled through Vite. These are application assets from the same origin; the tracing engines require no remote tracing API or CDN model. The authenticated app uploads original images and completed results to its private shared workspace for persistence. Production verification must exercise the emitted worker/WASM paths as well as the development paths.
 
 The focused tests cover archive structure, bounds, canonical identity, image classification, direct-image bytes, tree filtering, and organization projections. See [unit verification](documents/tasks/development/2026-10-26-00001-folio-html-archive-browser/artifacts/unit-verification.md). Browser migration, rendered resources, screenshot pixels, keyboard interaction, download delivery and publication require their separate checks; passing Node tests does not establish those outcomes.
 
@@ -307,6 +312,7 @@ Prepare the development-only browser checks, then start the existing dev server:
 ```sh
 node --import tsx scripts/prepare-png-svg-check.mjs
 node --import tsx scripts/prepare-icon-library-check.mjs
+node tests/shared-client-prepare.mjs
 npm run dev
 ```
 
@@ -317,15 +323,16 @@ Use a dedicated local development origin for the browser checks:
 | `/.qa/png-svg-check.html` | Native renderer checks, actual tracing engines, controlled fallback, curve-quality oracle, cancellation and downloadable report |
 | `/.qa/icon-collection-check.html` | Real IndexedDB transactions, aborts, independent job owners, recovery and exact saved provenance in uniquely named QA databases |
 | `/.qa/icon-library-check.html` | Actual shared-sidebar app, synthetic PNG/WebP/folder drops, responsive layout, reload/navigation and download-payload observations |
+| `/tests/shared-client-runner.html` | Native IndexedDB migration, shared-save recovery, queue ownership and SVG checks in an ephemeral credentialless iframe; synthetic in-memory transport |
 
-The interactive app harness adds procedural icons to that development origin. Synthetic directory-entry events test the app's import handling; they do not prove a physical operating-system drag gesture. Generated HTML, PNG and WebP fixtures stay in ignored `.qa/`; save downloaded reports there or outside the checkout. These harnesses are outside the production entry graph. Record browser/version and the executed checks with results. Download-payload equality alone does not establish that the browser or operating system delivered the file.
+The interactive app harness adds procedural icons to that development origin. Synthetic directory-entry events test the app's import handling; they do not prove a physical operating-system drag gesture. Generated media and most harness HTML stay in ignored `.qa/`; the shared runner generates ignored `tests/shared-client-*.html` files. Save downloaded reports in `.qa/` or outside the checkout. The shared runner uses the existing server origin, requires credentialless-iframe support, refuses pre-existing Folio databases in its ephemeral partition and reports whether parent database names remain unchanged. These harnesses are outside the production entry graph. Record browser/version and the executed checks with results. Download-payload equality alone does not establish that the browser or operating system delivered the file.
 
 The [revision-4 browser record](documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter/artifacts/revision-4-browser-verification.md) preserves observed passes, the initial failed silhouette candidate and remaining runtime gates. Passing Node tests or a development harness does not establish cross-browser/profile accuracy, complete UI behavior, production asset loading or publication.
 
 
 ## Published Site
 
-https://folio-html-workspace.byronjacobs.chatgpt.site — private to its owner. This repository implements cloud-backed Library resources, fast image renditions, sorting, resizable shared navigation, folder favorites, canvas grids and the persistent local Icons collection. The [task results](documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter/results.md) record implementation and publication evidence; source availability alone does not establish which revision is live.
+https://folio-html-workspace.byronjacobs.chatgpt.site — private to its owner. This repository implements cloud-backed Library resources, fast image renditions, sorting, resizable shared navigation, folder favorites, canvas grids and a shared Icons collection with local conversion. The [task results](documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter/results.md) record implementation and publication evidence; source availability alone does not establish which revision is live.
 
 ## Source synchronization
 

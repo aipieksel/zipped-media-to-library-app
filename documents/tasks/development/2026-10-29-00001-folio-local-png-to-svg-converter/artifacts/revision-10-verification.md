@@ -34,6 +34,18 @@ The development-only application entry uses the real account/shared API through 
 
 ## Environment and claim limits
 
+### Final native-dialog and short-screen checks
+
+The root then ran `tests/revision10-ui-fixture.tsx` in the same Chrome155 browser, using the actual production Modal, PopoverSelect and SettingsPage components and CSS. The fixture has no API or storage operations. These remaining checks completed without a preview interruption:
+
+- At390×360, the custom dropdown opened inside a native modal's top layer. Selecting Smooth curves changed the controlled value, kept the modal open and returned focus to the trigger. The disabled option remained disabled.
+- First Escape dismissed only the list. Tab reached the following text field. Escape from that field dismissed the native modal and returned focus to its original opener.
+- Settings with all five tabs, a long synthetic display name and a synthetic logout failure had no document horizontal overflow at320×360,390×360 or640×360.
+- At320/390px, the logout action and complete error occupied normal flow above the horizontally scrollable section navigation. Selecting the initially offscreen Accounts tab scrolled it into view and moved focus to the Accounts heading.
+- At640×360, the full-height sidebar was360px tall with435px scrollable content. Clicking Log out scrolled the sidebar75px, exposed the footer/error and incremented the fixture's action counter. The content pane scrolled separately; no footer overlap or inaccessible fixed element was observed.
+
+This fixture verifies rendered component behavior, not a production account logout or a screen-reader session. The scoped fixture TypeScript check passed. Independent documentation audit findings were corrected in README, PRIVACY, companion documentation and the relevant evidence artifacts; `revision-10-doc-review.md` records all seven closures.
+
 The environment has a single managed preview shared with another active project. It repeatedly changed from Folio to that project's server during testing. Affected reloads returned missing Folio routes, and later background requests returned404/405. Those interrupted journeys are not recorded as successful persistence or account tests. The isolated native runner completed successfully before subsequent interruption.
 
 The actual SVG download click was issued, but browser download-event delivery timed out; OS delivery is not certified. SVG/ZIP bytes and safe naming are separately covered by export and shared-data tests. Actual page zoom, assistive-technology interaction and universal browser/profile color accuracy are not claimed.

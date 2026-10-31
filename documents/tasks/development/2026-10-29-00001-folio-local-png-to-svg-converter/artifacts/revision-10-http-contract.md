@@ -15,7 +15,7 @@ Owner: `/root/r10_accounts_architecture`. This contract is for the admitted P16/
 | `/api/folio-auth/register` | POST `{email,name,password,token}` | 201 `{account}` plus cookie; recipient-bound invitation required. |
 | `/api/folio-auth/logout` | POST `{}` | 200 `{ok:true}` and expired cookie; idempotent. |
 | `/api/folio-auth/profile` | PATCH `{name}` | 200 `{account}`; email is not editable without a verified change flow. |
-| `/api/folio-auth/password` | POST `{currentPassword,newPassword}` | 200 `{ok:true}`; revokes other sessions. |
+| `/api/folio-auth/password` | POST `{currentPassword,newPassword}` | 200 `{ok:true}` plus a replacement current-browser session cookie; revokes all old sessions and pending recovery links. |
 | `/api/folio-auth/invitations` | GET | 200 `{invitations: Invitation[]}`; owner only; no raw tokens. |
 | `/api/folio-auth/invitations` | POST `{email}` | 201 `{token,email,expiresAt}`; owner only; copy-link capability returned once, no email sent. |
 | `/api/folio-auth/invitations/:id` | DELETE | 200 `{ok:true}`; owner only. |
@@ -59,7 +59,7 @@ The actual Better Auth compatibility spike and server implementation/tests are s
 
 ## Client metadata extension — revision 10
 
-The generic server document/blob contract is unchanged. The completed Library and Icons adapters may store either the inline versioned dataset or a compact index `{schema:1,kind,manifest:BlobReference}` in `data`. The index points to immutable `application/json` dataset metadata uploaded through the same authenticated chunk API. The adapter uses this form above 384 KiB of serialized metadata and bounds the expanded metadata at 64 MiB. Appearance remains its validated six-field palette directly.
+The generic server document/blob contract is unchanged. The completed Library and Icons adapters may store either the inline versioned dataset or a compact index `{schema:1,kind,manifest:BlobReference}` in `data`. The index points to immutable `application/json` dataset metadata uploaded through the same authenticated chunk API. The adapter uses this form above 384 KiB of serialized metadata and bounds the expanded metadata at 64 MiB, with at most 100,000 records in any dataset store. The existing 20,000-entry Library admission bound applies per import. Appearance remains its validated six-field palette directly.
 
 For a manifest index, the server document's `blobs` contains the exact unique union of metadata-chunk and asset-chunk hashes. Client reads verify immutable bytes and dataset schema, then require that exact reference union before installing the dataset. A single revision CAS publishes the complete index and all its references. The root request still has the same 1 MiB body and 10,000-hash limits; each immutable chunk is still at most 8 MiB.
 
