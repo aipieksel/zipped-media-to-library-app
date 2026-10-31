@@ -79,3 +79,9 @@ S5 explicitly replaces top buttons, modal settings and platform-only account han
 ## Independent review refinements (pre-admission)
 
 F-R10-01: The existing immutable media cache is incompatible with session revocation. Protected media responses, including HEAD/conditional requests, will use private,no-store; logout removes rendered content and object URLs. Original device-only imports are retained. F-R10-02: Recovery authority is an authenticated owner with current-password step-up for member resets, or the configured trusted Site owner for owner recovery. Generate a single-use recipient-bound expiring reset token, store only its hash, and revoke existing account sessions when consumed. No email or fake delivery.
+
+## Revision11 — S6 login/startup repair
+
+S6 reopens R34/R40 and publication R14. The actual owner has completed registration and has a valid hosted session, but the shared-workspace client invokes native fetch with its class instance as receiver. That fails before HTTP and is masked by arrow-based QA transports. P21 changes only that invocation and adds a normal receiver-sensitive default/injected regression. Preserve all authentication, cookie, origin, timeout, abort, response-size, storage and audience controls. Current request is a repair of existing behavior, not a new login or fallback-auth feature. Existing R29 remains a separate not_run user-local prerequisite.
+
+Decisive completion: the receiver regression fails on8fe1a89, passes after correction, the build passes, the same Site is published, and the real authenticated browser opens the workspace with native fetch. Root owns source/build/deploy. Independent reviewers report only.

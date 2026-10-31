@@ -16,6 +16,32 @@ import {resolveIconNameCollisions} from '../src/shared/icon-names';
 import {buildSvgZip} from '../src/png-svg-download';
 import type {IconRecord} from '../src/icon-types';
 
+test('default and injected browser fetch receive a valid global receiver during workspace startup', async () => {
+  const calls: string[] = [];
+  // Browser-native fetch rejects a class instance as its receiver. Arrow-based
+  // transports ignore this contract and previously hid the production failure.
+  const browserFetch = async function(this: unknown, input: RequestInfo | URL, init?: RequestInit) {
+    assert.ok(this === undefined || this === globalThis, 'fetch must not receive the shared client as its receiver');
+    assert.equal(init?.credentials, 'same-origin'); assert.equal(init?.cache, 'no-store'); assert.equal(init?.redirect, 'error');
+    assert.ok(init?.signal instanceof AbortSignal);
+    const path = String(input); calls.push(path);
+    const name = path.split('/').at(-1);
+    return Response.json({name, revision: 0, data: null, blobs: [], updatedAt: null});
+  } as typeof fetch;
+  const originalFetch = globalThis.fetch;
+  let defaultClient: SharedWorkspaceClient;
+  try {globalThis.fetch = browserFetch; defaultClient = new SharedWorkspaceClient();}
+  finally {globalThis.fetch = originalFetch;}
+  const injectedClient = new SharedWorkspaceClient(browserFetch);
+  try {
+    for (const client of [defaultClient!, injectedClient]) {
+      const documents = await Promise.all(['library', 'icons', 'appearance'].map(name => client.read(name as 'library' | 'icons' | 'appearance')));
+      assert.deepEqual(documents.map(document => document.name), ['library', 'icons', 'appearance']);
+    }
+    assert.equal(calls.length, 6);
+  } finally {defaultClient!.close(); injectedClient.close();}
+});
+
 test('two independent clients preserve exact large bytes through bounded chunks and reject stale CAS', async () => {
   const server = createSharedMemoryServer(), first = new SharedWorkspaceClient(server.fetcher), second = new SharedWorkspaceClient(server.fetcher);
   const bytes = new Uint8Array(SHARED_CHUNK_BYTES + 71); for (let i = 0; i < bytes.length; i++) bytes[i] = i % 251;

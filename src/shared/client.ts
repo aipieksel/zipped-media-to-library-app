@@ -76,7 +76,7 @@ export class SharedWorkspaceClient {
     let timedOut = false;
     const timer = setTimeout(() => {timedOut = true; controller.abort();}, 25_000);
     try {
-      const response = await this.fetcher(path, {...init, credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal});
+      const response = await this.fetcher.call(globalThis, path, {...init, credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal});
       if (!response.ok) {
         let detail: {error?: string; code?: string} = {};
         try {detail = JSON.parse(new TextDecoder().decode(await limitedBytes(response, 16 * 1024)));} catch { /* A non-JSON hosting error remains bounded. */ }

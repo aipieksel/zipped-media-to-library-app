@@ -258,3 +258,11 @@ The latest request's implemented account/shared-data/UI/appearance capabilities 
 The Tasks panel tool is unavailable. The complete final checklist is rendered in the user-facing handoff with matching IDs/states. A final documentation checkpoint records these facts without changing the deployed runtime.
 
 After the successful Site release, main advanced from `bdf7330` to the exact published-runtime checkpoint `c27d0a9` using an expected-head lease without force. Direct remote readback confirmed main and feature at that commit. The final ledger/release/goal-review checkpoint changes documentation only.
+
+## Revision11 — live failure assessment and reviewed repair
+
+User correctionS6 follows version13. Actual production logs show owner bootstrap201 and repeated login200. The connected owner browser now works: /api/account reports authenticated:true,hasAccount:true,setupRequired:false,canRecoverOwner:true. Main page shows the shared-network-interrupted alert, and no shared document request reaches the Worker. No credential values or private media were read.
+
+Two independent in-memory receiver-contract reproductions explain the problem: `this.fetcher(...)` supplies the client object to native Window fetch. The existing arrow wrappers hide this failure. P21/T32 repair the invocation with no auth change. Previous revision10 admission hashes and release receipts remain historical. R29 stays not_run; it does not block this independent correction. Root is execution owner for attempt r11-login-20261031.
+
+Revision11 admission: {"planRevision": 11, "planHashes": {"checklist.md": "73b38956b8b2a559e6f83ae324b4ba8f6bbe0dff7b0af17094fb9fab0dcca0f0", "fix-plan.md": "5d3a9834f62cf109208e948db025ab8e4b94c226727230e14ed0aaabec5c8cec", "test-plan.md": "d5bb497314c9295e46c0a3d963982e149e689ad69c82f8bd37c26ab956a70596"}, "definitionHash": "bd8c243fc880992cf950acb248ebaa88e1360b5c06fbb5e72467eaaa5f74e2e2", "critiqueHash": "49265d1ca8c3b3636fa71b68b3ea190704306ab2f94d8fe87a19644864d6a5d4"}. finalize criticized --resume and resolve --execution --require-critique --resume passed. The new default/injected receiver regression failed on the original call with the exact production shared-network error before the one-line fix.

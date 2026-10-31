@@ -65,3 +65,7 @@ Boundary: User password and unidentified teammate are not automated; actual host
 ### T27 review additions
 
 Exercise cached GET/HEAD/conditional media access after logout and confirm no immutable response caching. Test password reset authority, recipient binding, expiry, replay rejection, new-password login and old-session revocation. These use isolated test identities; no production account is created.
+
+## T32 — native transport startup regression
+
+R12/R13/R14/R34/R40: exercise three startup documents using a normal fetch function that accepts only browser-compatible receivers. Cover the default global fetch and an explicitly injected function. Preserve same-origin credentials, no-store, redirect:error and AbortSignal. Run red before changing application source, then shared/account tests and build. Finally inspect the actual owner browser after publication; its existing authenticated session must load the real workspace without a fetch wrapper. Do not read passwords, cookie values or private catalogue contents into artifacts.

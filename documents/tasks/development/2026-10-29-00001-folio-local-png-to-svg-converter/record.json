@@ -5,17 +5,15 @@
   "title": "Folio sidebar, routed settings, accounts and shared workspace",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
-  "status": "blocked",
-  "readiness": "blocked",
-  "blockers": [
-    "R29: a real image-to-SVG request through the user's locally authenticated OpenAI/Codex companion remains not_run. Revision10 application implementation and publication are complete; first production Folio credential entry belongs to the owner, and the connected owner browser was unavailable for visual setup/hosted-cookie verification."
-  ],
-  "planRevision": 10,
+  "status": "executing",
+  "readiness": "ready",
+  "blockers": [],
+  "planRevision": 11,
   "critiqueOutcome": "revised",
-  "reviewedPlanRevision": 10,
+  "reviewedPlanRevision": 11,
   "sourceBaseline": {
-    "description": "Clean GitHub main and feature branch at bdf7330; existing owner-private Site version12. Three independent current revision-10 source/research/architecture assessments. No application edits before admission.",
-    "revision": "bdf73305ff51dcd59c2b7c9a94a66501845ca560",
+    "description": "Clean8fe1a89, private Site version13. Actual owner browser reports authenticated:true and the shared-workspace network error; server receives successful bootstrap/login but no workspace reads. Two independent read-only reviews reproduce the native-fetch receiver defect.",
+    "revision": "8fe1a893ab5c7cedf47d8b2c9b84eb6003b3dbe9",
     "dirtyPaths": []
   },
   "scope": {
@@ -62,6 +60,12 @@
       "role": "user",
       "origin": "Current conversation amendment, 31 October 2026 UTC; full-height sidebar, custom dropdowns, Settings page, Folio accounts/shared data and appearance",
       "text": "[$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) Okay, so, yeah, a couple of things that we need to do. So instead of having the HTML images and the icons buttons there, let's do this. Above the search menu, sorry, above the search item in the sidebar, where it says for the sidebar top section, right? Let's add a drop-down there instead that allows me to switch between HTML images and icons, right? That would be great. Use our own custom pop-over as a drop-down, which you need to create, and always use that for all of the drop-downs that we have. You need to replace that. Then I've noticed that on the icons tab where it says convert and save, the save is going onto two lines. Fix that. Yeah. So then when you have moved those three buttons into the drop-down, you should then make the entire left sidebar from top to bottom, right, without anything on top of it. So what I mean by that is we should then get rid of that top bar, and for the settings, there should be a cogwheel button or a buttons section in the left sidebar, right, where you can click on the settings or whatever. It's standard industry practice, so I'm sure that you'll be able to find out what I mean and implement accordingly. You can look at shared CDN UI. Please do that and use that for your research. Then when I said I wanted a settings page, I didn't say I want a settings pop-up, right? When you click on settings, it should take you to a proper page with a left sidebar, with tabs and the content on the right, and a logout button. Users need to be able to log out and log in. Well, not users, but just for security. I want that, because I am going to extend this to do other features as well. So the profile that I see you have here looks like it is using my ChatGPT login details, but I want users to be able to register. Well, not users, just user accounts, right? For example, if I want my teammate to also use this. But it's not individual data for each user. I mean, it's still the exact same data. Everyone sees the exact same thing, the exact same files, but it's just a different account that can log in and out. Please. And then in the settings, I also want to be able to change the accent color and the background color and the design system colors of the build, please."
+    },
+    {
+      "id": "S6",
+      "role": "user",
+      "origin": "Current conversation, 31 October 2026; user reports failure after version13 publication",
+      "text": "logoin doesnt work"
     }
   ],
   "requestHashes": {
@@ -70,7 +74,8 @@
     "S2": "e716595ea1378a39f7257bf18ecdc9137d038f22b1a102807e5ac2a2a8222a0a",
     "S3": "3250fb3562dd3ed5afd38d277822bfd77ff3035f85c61da4ee3c5ec3aca447b6",
     "S4": "1c3f1953344f182fb38c0ba40ff019104a893815472de4f01fbdaa8ba149395a",
-    "S5": "8c3cf1c48cbe837de62917b8069f8eff333e0d82a80336eb9e3c523d8054b997"
+    "S5": "8c3cf1c48cbe837de62917b8069f8eff333e0d82a80336eb9e3c523d8054b997",
+    "S6": "fd8a89526cd589acf3c2ed381426cd3cf32a8b1506269d8567a552ff80708c9c"
   },
   "requirements": [
     {
@@ -361,7 +366,8 @@
       "text": "Provide genuine Folio account registration, login and revocable logout, separate from ChatGPT/AI provider identity.",
       "sources": [
         "S4",
-        "S5"
+        "S5",
+        "S6"
       ],
       "kind": "requested"
     },
@@ -410,7 +416,8 @@
       "id": "R40",
       "text": "Give all authorized accounts the same shared files, folders, organization and saved icons, with server-enforced access and conflict-safe durable writes.",
       "sources": [
-        "S5"
+        "S5",
+        "S6"
       ],
       "kind": "requested"
     },
@@ -981,6 +988,25 @@
       "dependsOn": [
         "P19"
       ]
+    },
+    {
+      "id": "P21",
+      "requirements": [
+        "R12",
+        "R13",
+        "R14",
+        "R34",
+        "R40"
+      ],
+      "paths": [
+        "src/shared/client.ts",
+        "tests/shared-client.test.ts",
+        "documents/tasks/development"
+      ],
+      "change": "Repair the native fetch receiver used by all shared requests; add default and injected receiver-sensitive transport regressions, verify current-user authenticated startup with native fetch, and publish the same private Site with source checkpoints.",
+      "dependsOn": [
+        "P20"
+      ]
     }
   ],
   "checks": [
@@ -1286,15 +1312,28 @@
       "method": "Remote tree/head readback after each checkpoint; native Site build/package/migration/publication receipt; hosted bootstrap state and accessible UI without creating production credentials.",
       "expected": "Source checkpointed on GitHub, same Site/project/R2/privacy, additive D1, truthful setup/teammate/AI handoff.",
       "boundary": "User password and unidentified teammate are not automated; actual hosted cookie login remains open until owner activates."
+    },
+    {
+      "id": "T32",
+      "requirements": [
+        "R12",
+        "R13",
+        "R14",
+        "R34",
+        "R40"
+      ],
+      "method": "Demonstrate regression failure before the transport fix and pass afterward; run existing shared-client and account regressions plus production build; inspect the actual owner session and workspace through unwrapped browser fetch after publication.",
+      "expected": "Login remains authenticated and the real workspace opens, with successful library/icons/appearance requests, without changing credentials, session rules, private access, storage schemas or media.",
+      "boundary": "Use existing owner session; never read or alter password/cookie values. Prior R29 remains open independently. No invented production accounts or private media in source."
     }
   ],
   "planHashes": {
-    "checklist.md": "3a263b23f4f63abae3e3a234989ba6aa7f7f6b5f60497a23387d1359c21c145d",
-    "fix-plan.md": "8d96e81a25d40d65ad87427236ed4aab457b9911865c165dc6235e9b85ade503",
-    "test-plan.md": "3c56115bba24e83b3366aad75091650218f89eeaf32891682d019fe86936cbb2"
+    "checklist.md": "73b38956b8b2a559e6f83ae324b4ba8f6bbe0dff7b0af17094fb9fab0dcca0f0",
+    "fix-plan.md": "5d3a9834f62cf109208e948db025ab8e4b94c226727230e14ed0aaabec5c8cec",
+    "test-plan.md": "d5bb497314c9295e46c0a3d963982e149e689ad69c82f8bd37c26ab956a70596"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-31T20:31:21.659354+00:00",
+  "updatedAt": "2026-10-31T20:39:24.899913+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",
@@ -1302,6 +1341,6 @@
     "critique.md",
     "results.md"
   ],
-  "definitionHash": "1142b2b9eb58135c79a023612616abf89b3bbaea748a323fa48df5c3049f0859",
-  "critiqueHash": "27dfd409330c024eba066951b6a058a0bf1570157e521ef421c2b7988279e302"
+  "definitionHash": "bd8c243fc880992cf950acb248ebaa88e1360b5c06fbb5e72467eaaa5f74e2e2",
+  "critiqueHash": "49265d1ca8c3b3636fa71b68b3ea190704306ab2f94d8fe87a19644864d6a5d4"
 }
