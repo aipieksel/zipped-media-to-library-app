@@ -5,9 +5,11 @@
   "title": "Folio sidebar, routed settings, accounts and shared workspace",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
-  "status": "executing",
-  "readiness": "ready",
-  "blockers": [],
+  "status": "blocked",
+  "readiness": "blocked",
+  "blockers": [
+    "R29: a real image-to-SVG request through the user's locally authenticated OpenAI/Codex companion remains not_run. Revision10 application implementation and publication are complete; first production Folio credential entry belongs to the owner, and the connected owner browser was unavailable for visual setup/hosted-cookie verification."
+  ],
   "planRevision": 10,
   "critiqueOutcome": "revised",
   "reviewedPlanRevision": 10,
@@ -1292,7 +1294,7 @@
     "test-plan.md": "3c56115bba24e83b3366aad75091650218f89eeaf32891682d019fe86936cbb2"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-31T18:15:29.089775+00:00",
+  "updatedAt": "2026-10-31T20:31:21.659354+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",
