@@ -45,3 +45,19 @@ test('Drive downloader rejects HTML permission pages and oversized responses',as
   await assert.rejects(fetchGoogleDriveFile(link,undefined,(async()=>new Response('<html>login</html>',{status:200,headers:{'content-type':'text/html'}})) as typeof fetch),/web page instead of the file/i);
   await assert.rejects(fetchGoogleDriveFile(link,undefined,(async()=>new Response(new Uint8Array([0x50,0x4b,0x03,0x04]),{status:200,headers:{'content-type':'application/zip','content-length':String(257*1024*1024)}})) as typeof fetch),/larger than the 256 MB/i);
 });
+
+test('ending the workspace session cancels a pending Drive import before it yields a file',async()=>{
+  const controller=new AbortController();
+  let requestSignal:AbortSignal|null|undefined;
+  const fetcher:typeof fetch=async(_input,init)=>{
+    requestSignal=init?.signal;
+    return new Promise<Response>((_resolve,reject)=>init?.signal?.addEventListener('abort',()=>reject(init.signal?.reason),{once:true}));
+  };
+  const pending=fetchGoogleDriveFile('https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz_12345/view',undefined,fetcher,controller.signal);
+  assert.equal(requestSignal,controller.signal);
+  controller.abort();
+  await assert.rejects(pending,{name:'AbortError'});
+  let requested=false;
+  await assert.rejects(fetchGoogleDriveFile('https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz_12345/view',undefined,async()=>{requested=true;return new Response();},controller.signal),{name:'AbortError'});
+  assert.equal(requested,false);
+});

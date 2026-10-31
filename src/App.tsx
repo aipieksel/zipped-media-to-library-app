@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useMemo,useRef,useState,useSyncExternalStore} from 'react';
 import type {CSSProperties} from 'react';
-import {ArrowLeft,ArrowRight,ArrowDownUp,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle,ScanLine,ShieldCheck,Sparkles,MoreHorizontal} from 'lucide-react';
+import {ArrowLeft,ArrowRight,ArrowDownUp,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle,ScanLine,Sparkles,Settings} from 'lucide-react';
 import type {ArchiveMeta,HtmlPage,ImportBundle,ItemKind,ItemOrganization,Snapshot,WorkspaceFolder} from './types';
 import {listWorkspace,saveImport,putSnapshot,deleteRoot,getPreference,setPreference,createFolder,setItemFavorite,moveItemsToFolder,syncCloudCollection,setFolderFavorite,getFile} from './db';
 import {importImages} from './archive';
@@ -37,6 +37,17 @@ import {SavedIconsWorkspace} from './components/SavedIconsWorkspace';
 import {useAiSettings} from './ai/useAiSettings';
 import type {SavedIconRecord} from './icon-types';
 import './components/ai.css';
+import {PopoverSelect,isFolioSelectEvent,isFolioSelectPopupOpen} from './components/PopoverSelect';
+import {SettingsPage} from './components/SettingsPage';
+import {AppearanceSettings} from './components/AppearanceSettings';
+import {AccountsSettings} from './components/AccountsSettings';
+import type {FolioAccountController} from './account/useFolioAccount';
+import {settingsSectionFromHash} from './settings-route';
+import {applyAppearance} from './appearance';
+import type {AppearancePalette} from './appearance';
+import {getSharedAppearance,saveSharedAppearance,subscribeSharedWorkspace,isSharedWorkspaceEnabled} from './shared/workspace';
+import {SharedWorkspaceSettings} from './components/SharedWorkspaceSettings';
+import './components/shell.css';
 
 type WorkspaceTab = ItemKind | 'icons';
 const hashTab = (): WorkspaceTab | null => window.location.hash === '#icons' || window.location.hash === '#png-to-svg' ? 'icons' : window.location.hash === '#images' ? 'image' : window.location.hash === '#html' ? 'html' : null;
@@ -48,20 +59,22 @@ const emptyQueue:QueueState={running:false,total:0,done:0,failed:0,current:''};
 const itemKind=(item:HtmlPage):ItemKind=>item.kind??'html';
 const formatBytes=(bytes:number)=>bytes>1024*1024?(bytes/1024/1024).toFixed(1)+' MB':Math.max(1,Math.round(bytes/1024))+' KB';
 
-export default function App(){
+export default function App({accountController}:{accountController:FolioAccountController}){
   const [tab,setTab]=useState<WorkspaceTab>(()=>hashTab()??'html');
   const navigationRevision=useRef(0);
   const currentTab=useRef(tab);currentTab.current=tab;
   const isIcons=tab==='icons';
   const icons=useIconCollection();
   const ai=useAiSettings();
-  const [settingsOpen,setSettingsOpen]=useState(false);
-  const [settingsTab,setSettingsTab]=useState<'ai'|'profile'>('ai');
+  const [settingsTab,setSettingsTab]=useState(()=>settingsSectionFromHash(window.location.hash));
+  const settingsOpen=settingsTab!==null;
+  const [appearance,setAppearance]=useState<AppearancePalette>(()=>getSharedAppearance());
   const [imageAiItem,setImageAiItem]=useState<HtmlPage|null>(null);
   const [iconView,setIconView]=useState<'convert'|'saved'>('convert');
   const [savedSelectedId,setSavedSelectedId]=useState<string|null>(null);
   const isSaved=isIcons&&iconView==='saved';
-  const openAiSettings=()=>{setSettingsTab('ai');setSettingsOpen(true);setPopover(null);};
+  const openSettings=(section='profile')=>{setPopover(null);setSidebarOpen(false);setImageAiItem(null);window.location.hash='settings/'+section;};
+  const openAiSettings=()=>openSettings('ai');
   const [iconSelectedId,setIconSelectedId]=useState<string|null>(null);
   const [iconExpanded,setIconExpanded]=useState<Set<string>>(new Set());
   const [iconOrder,setIconOrder]=useState<ViewOrder>({...DEFAULT_ORDER});
@@ -91,6 +104,8 @@ export default function App(){
   const [fit,setFit]=useState(true);
   const [loaded,setLoaded]=useState(false);
   const [storageError,setStorageError]=useState('');
+  const [sharedError,setSharedError]=useState('');
+  const sharedReadRevision=useRef(0);
   const [importing,setImporting]=useState(false);
   const [importProgress,setImportProgress]=useState('');
   const [importResults,setImportResults]=useState<ImportResult[]>([]);
@@ -134,6 +149,7 @@ export default function App(){
   const searchRef=useRef<HTMLInputElement>(null);
   const importLock=useRef(false);
   const captureAbort=useRef<AbortController|null>(null);
+  const appSession=useRef(new AbortController());
   const dragDepth=useRef(0);
   const toastTimer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
   const mounted=useRef(true);
@@ -155,7 +171,7 @@ export default function App(){
   const navigationLoaded=isIcons?icons.loaded:loaded;
   const navigationBusy=isIcons?icons.importing:importing;
   useEffect(()=>{
-    const change=()=>{const next=hashTab()??kind;navigationRevision.current++;currentTab.current=next;setTab(next);if(next!=='icons')setKind(next);setQuery('');setFavoritesOnly(false);setPopover(null);setSidebarOpen(false);setDragging(false);dragDepth.current=0;};
+    const change=()=>{const section=settingsSectionFromHash(window.location.hash);setSettingsTab(section);if(section){setPopover(null);setSidebarOpen(false);setDragging(false);dragDepth.current=0;return;}const next=hashTab()??kind;navigationRevision.current++;currentTab.current=next;setTab(next);if(next!=='icons')setKind(next);setQuery('');setFavoritesOnly(false);setPopover(null);setSidebarOpen(false);setDragging(false);dragDepth.current=0;};
     window.addEventListener('hashchange',change);return()=>window.removeEventListener('hashchange',change);
   },[kind]);
   useEffect(()=>{
@@ -189,12 +205,14 @@ export default function App(){
   const selectedFavorite=!!selectedId&&!!organization.get(selectedId)?.favorite;
   const selectedFolder=selectedId?organization.get(selectedId)?.folderId??null:null;
   const anyModal=settingsOpen||!!imageAiItem||helpOpen||importsOpen||captureDialog||reportOpen||!!removeId||!!folderDialog||warningsOpen||driveOpen||!!iconRemove;
-  const notify=useCallback((message:string)=>{setToast(message);clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setToast(''),6000);},[]);
+  const notify=useCallback((message:string)=>{if(!mounted.current)return;setToast(message);clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setToast(''),6000);},[]);
 
   useEffect(()=>{
+    if(appSession.current.signal.aborted)appSession.current=new AbortController();
+    const lifetime=appSession.current;
     mounted.current=true;
     void Promise.all([listWorkspace(),getPreference<Preferences>('workspace')]).then(([workspace,prefs])=>{
-      if(!mounted.current)return;
+      if(lifetime.signal.aborted)return;
       setArchives(workspace.archives);setItems(workspace.pages);setFolders(workspace.folders);setFavoriteFolders(new Set(workspace.favoriteFolders));setOrganization(new Map(workspace.organization.map(item=>[item.id,item])));
       setSnapshots(new Map(workspace.snapshots.map(item=>[item.pageId,item])));
       const initialTab=hashTab();const nextKind=initialTab&&initialTab!=='icons'?initialTab:prefs?.kind??'html';
@@ -207,8 +225,8 @@ export default function App(){
       setOrders({html:normalizeOrder(prefs?.orders?.html),image:normalizeOrder(prefs?.orders?.image)});
       setGrids({html:normalizeGrid(prefs?.grids?.html),image:normalizeGrid(prefs?.grids?.image)});setImageShape(normalizeImageShape(prefs?.imageShape));
       setSidebarPreferred(clampSidebar(prefs?.sidebarWidth??SIDEBAR_DEFAULT,Number.MAX_SAFE_INTEGER));setLoaded(true);
-    }).catch(error=>{setStorageError(error instanceof Error?error.message:'Browser storage is unavailable.');setLoaded(true);});
-    return()=>{mounted.current=false;};
+    }).catch(error=>{if(lifetime.signal.aborted)return;setStorageError(error instanceof Error?error.message:'Browser storage is unavailable.');setLoaded(true);});
+    return()=>{mounted.current=false;lifetime.abort();captureAbort.current?.abort();clearTimeout(toastTimer.current);};
   },[]);
   const refreshCloud=useCallback(async()=>{
     if(cloudLock.current)return;
@@ -274,7 +292,7 @@ export default function App(){
     if(!sidebarOpen||!narrow)return;
     const frame=requestAnimationFrame(()=>searchRef.current?.focus());
     const keys=(event:KeyboardEvent)=>{
-      if(document.querySelector('dialog[open]'))return;
+      if(document.querySelector('dialog[open]')||isFolioSelectEvent(event)||isFolioSelectPopupOpen())return;
       if(event.key==='Escape'){event.preventDefault();event.stopPropagation();setSidebarOpen(false);}
       if(event.key==='Tab'){
         const controls=Array.from(document.querySelectorAll<HTMLElement>('.sidebar button:not(:disabled),.sidebar input,.sidebar [tabindex="0"]')).filter(el=>el.getClientRects().length);
@@ -291,8 +309,9 @@ export default function App(){
     const prior=document.activeElement as HTMLElement;
     let returnFocus=true;
     const frame=requestAnimationFrame(()=>document.querySelector<HTMLElement>('[data-popover-panel] button,[data-popover-panel] select,[data-popover-panel] input')?.focus());
-    const outside=(event:PointerEvent)=>{if(!(event.target as Element)?.closest('[data-popover-root="'+popover+'"]')){returnFocus=false;setPopover(null);}};
+    const outside=(event:PointerEvent)=>{if(isFolioSelectEvent(event))return;if(!(event.target as Element)?.closest('[data-popover-root="'+popover+'"]')){returnFocus=false;setPopover(null);}};
     const keys=(event:KeyboardEvent)=>{
+      if(event.defaultPrevented||isFolioSelectEvent(event)||isFolioSelectPopupOpen())return;
       if(event.key==='Escape'){event.preventDefault();setPopover(null);prior?.focus();}
       if(event.key==='Tab'){
         const controls=Array.from(document.querySelectorAll<HTMLElement>('[data-popover-panel] button:not(:disabled),[data-popover-panel] input,[data-popover-panel] select')).filter(el=>el.getClientRects().length);
@@ -319,9 +338,9 @@ export default function App(){
   },[filteredItems,position,selectItem]);
   useEffect(()=>{
     const keydown=(event:KeyboardEvent)=>{
-      if(anyModal||popover||event.defaultPrevented||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+      if(anyModal||popover||isFolioSelectEvent(event)||isFolioSelectPopupOpen()||event.defaultPrevented||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
       const target=event.target as Element;
-      if(target?.closest?.('input,textarea,select,[contenteditable="true"],[role="textbox"]'))return;
+      if(target?.closest?.('input,textarea,select,[contenteditable="true"],[role="textbox"],[role="combobox"],[role="listbox"]'))return;
       if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();step(event.key==='ArrowDown'?1:-1);}
       if(event.key==='Home'&&filteredItems.length){event.preventDefault();selectItem(filteredItems[0].id);}
       if(event.key==='End'&&filteredItems.length){event.preventDefault();selectItem(filteredItems[filteredItems.length-1].id);}
@@ -348,8 +367,10 @@ export default function App(){
   };
   const rememberSaved=(saved:SavedIconRecord)=>{setSavedSelectedId(saved.id);notify('Saved to your icon library. Open Saved to recolor or download it.');};
   const importIcons=async(files:File[])=>{
+    const signal=appSession.current.signal;if(signal.aborted)return;
     setIconView('convert');setQuery('');setFavoritesOnly(false);
     const report=await icons.importFiles(files);
+    if(signal.aborted)return;
     if(report?.added.length)setIconSelectedId(report.added[0].id);
     if(report)setIconExpanded(current=>new Set([...current,...report.folders.map(folder=>folder.id)]));
   };
@@ -361,14 +382,17 @@ export default function App(){
     requestAnimationFrame(()=>{
       const active=document.activeElement;
       if(revision===navigationRevision.current&&currentTab.current==='icons'&&(!active||active===document.body||!active.isConnected||active.matches(':disabled')))
-        document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
+        document.querySelector<HTMLElement>('[data-workspace-switcher]')?.focus();
     });
   };
 
-  const importZip=(file:File)=>new Promise<ImportBundle>((resolve,reject)=>{
+  const importZip=(file:File,signal:AbortSignal)=>new Promise<ImportBundle>((resolve,reject)=>{
+    if(signal.aborted){reject(new DOMException('This workspace session ended.','AbortError'));return;}
     const worker=new Worker(new URL('./archive.worker.ts',import.meta.url),{type:'module'});
-    const cleanup=()=>{clearTimeout(timer);worker.terminate();};
+    const cleanup=()=>{clearTimeout(timer);signal.removeEventListener('abort',cancel);worker.terminate();};
+    const cancel=()=>{cleanup();reject(new DOMException('This workspace session ended.','AbortError'));};
     const timer=setTimeout(()=>{cleanup();reject(new Error('This archive took too long to extract. Try a smaller ZIP.'));},120000);
+    signal.addEventListener('abort',cancel,{once:true});
     worker.onmessage=event=>{
       const message=event.data;
       if(message.type==='progress')setImportProgress(message.message);
@@ -376,9 +400,10 @@ export default function App(){
       if(message.type==='error'){cleanup();reject(new Error(message.message));}
     };
     worker.onerror=()=>{cleanup();reject(new Error('The archive worker could not read this ZIP.'));};
-    void file.arrayBuffer().then(buffer=>worker.postMessage({buffer,name:file.name,modifiedAt:file.lastModified},[buffer])).catch(error=>{cleanup();reject(error);});
+    void file.arrayBuffer().then(buffer=>{if(!signal.aborted)worker.postMessage({buffer,name:file.name,modifiedAt:file.lastModified},[buffer]);}).catch(error=>{cleanup();reject(error);});
   });
   const importFiles=async(files:File[])=>{
+    const signal=appSession.current.signal;if(signal.aborted)return;
     if(importLock.current){notify('An import is already running.');return;}
     if(!loaded||storageError){notify('Enable browser storage and reload before importing files.');return;}
     if(!files.length)return;
@@ -389,17 +414,20 @@ export default function App(){
     if(images.length)jobs.push({name:images.length===1?images[0].name:images.length+' images',images});
     const results:ImportResult[]=[];let firstNew:HtmlPage|undefined;
     for(const job of jobs){
+      if(signal.aborted)return;
       setImportProgress('Opening '+job.name+'…');
       try{
         if(job.file&&job.file.size>256*1024*1024)throw new Error('This ZIP is larger than the 256 MB per-archive limit.');
-        const bundle=job.file?await importZip(job.file):await importImages(job.images!,'Image upload'+(job.images!.length>1?' ('+job.images!.length+')':''));
+        const bundle=job.file?await importZip(job.file,signal):await importImages(job.images!,'Image upload'+(job.images!.length>1?' ('+job.images!.length+')':''));
+        if(signal.aborted)return;
         await saveImport(bundle);
+        if(signal.aborted)return;
         setArchives(current=>{const next=new Map(current.map(item=>[item.id,item]));for(const item of bundle.archives)next.set(item.id,item);return [...next.values()];});
         setItems(current=>{const next=new Map(current.map(item=>[item.id,item]));for(const item of bundle.pages)next.set(item.id,item);return [...next.values()];});setLibraryExpanded(current=>new Set([...current,...bundle.archives.map(archive=>archive.id)]));
         if(!firstNew){const order=getPageOrder(buildTree(bundle.archives,bundle.pages));const ordered=order.map(id=>bundle.pages.find(item=>item.id===id)!);firstNew=ordered.find(item=>itemKind(item)===kind)??ordered[0];}
         const html=bundle.pages.filter(item=>itemKind(item)==='html').length;const image=bundle.pages.length-html;
         results.push({name:job.name,ok:true,message:bundle.pages.length?html+' HTML · '+image+' images · '+bundle.files.length+' files retained':'No HTML pages or supported images found.'});
-      }catch(error){results.push({name:job.name,ok:false,message:error instanceof Error?error.message:'Could not import this file.'});}
+      }catch(error){if(signal.aborted)return;results.push({name:job.name,ok:false,message:error instanceof Error?error.message:'Could not import this file.'});}
       setImportResults([...results]);
     }
     importLock.current=false;setImporting(false);setImportProgress('');
@@ -414,38 +442,43 @@ export default function App(){
   };
 
   const importFromDrive=async()=>{
+    const signal=appSession.current.signal;if(signal.aborted)return;
     const source=driveUrl.trim();
     if(!source||importLock.current)return;
     if(!loaded||storageError){setDriveError('Enable browser storage and reload before importing files.');return;}
     setDriveError('');setImporting(true);setImportProgress('Connecting to Google Drive…');
     try{
-      const file=await fetchGoogleDriveFile(source,message=>setImportProgress(message));
+      const file=await fetchGoogleDriveFile(source,message=>{if(!signal.aborted)setImportProgress(message);},fetch,signal);
+      if(signal.aborted)return;
       setDriveOpen(false);setDriveUrl('');
       await importFiles([file]);
     }catch(error){
+      if(signal.aborted)return;
       setDriveError(error instanceof Error?error.message:'Could not import this Google Drive file.');
       setImporting(false);setImportProgress('');
     }
   };
 
   const runCaptures=async(targets:HtmlPage[],options=captureOptions)=>{
+    const lifetime=appSession.current.signal;if(lifetime.aborted)return;
     const htmlTargets=targets.filter(item=>itemKind(item)==='html');
     if(captureAbort.current||!htmlTargets.length){if(!htmlTargets.length)notify('Every matching HTML page already has a screenshot. Enable replace to capture again.');return;}
     const abort=new AbortController();captureAbort.current=abort;
     setQueue({running:true,total:htmlTargets.length,done:0,failed:0,current:htmlTargets[0].label});
     let done=0;let failed=0;
     for(const page of htmlTargets){
-      if(abort.signal.aborted)break;
+      if(abort.signal.aborted||lifetime.aborted)break;
       setQueue({running:true,total:htmlTargets.length,done,failed,current:page.label});
       setCaptureErrors(current=>{const next=new Map(current);next.delete(page.id);return next;});
       try{
-        const snapshot=await capturePage(page,options,abort.signal);if(abort.signal.aborted)break;
-        await putSnapshot(snapshot);setSnapshots(current=>new Map(current).set(page.id,snapshot));done++;
+        const snapshot=await capturePage(page,options,abort.signal);if(abort.signal.aborted||lifetime.aborted)break;
+        await putSnapshot(snapshot);if(lifetime.aborted)break;setSnapshots(current=>new Map(current).set(page.id,snapshot));done++;
       }catch(error){
-        if(abort.signal.aborted)break;
+        if(abort.signal.aborted||lifetime.aborted)break;
         failed++;setCaptureErrors(current=>new Map(current).set(page.id,error instanceof Error?error.message:'Could not capture this page.'));
       }
     }
+    if(lifetime.aborted)return;
     captureAbort.current=null;setQueue({running:false,total:htmlTargets.length,done,failed,current:''});
     notify((abort.signal.aborted?'Capture stopped. ':'')+done+' screenshot'+(done===1?'':'s')+' saved'+(failed?' · '+failed+' failed. Open the page warning to retry.':'.'));
   };
@@ -483,22 +516,27 @@ export default function App(){
   };
   const openFolderDialog=(moveId:string|null=null)=>{setPopover(null);setFolderName('');setFolderError('');setFolderDialog({moveId});};
   const submitFolder=async(event:React.FormEvent)=>{
+    const signal=appSession.current.signal;if(signal.aborted)return;
     event.preventDefault();if(savingFolder)return;setSavingFolder(true);setFolderError('');
     try{
-      if(isIcons){const folder=await icons.createFolder(folderName);if(folderDialog?.moveId)await (isSaved?icons.moveSaved(folderDialog.moveId,folder.id):icons.moveItem(folderDialog.moveId,folder.id));setIconExpanded(current=>new Set([...current,folder.id]));setQuery('');setFolderDialog(null);return;}
-      const folder=await createFolder(folderName);setFolders(current=>[...current,folder]);setExpanded(current=>new Set([...current,folder.id]));setQuery('');
+      if(isIcons){const folder=await icons.createFolder(folderName);if(signal.aborted)return;if(folderDialog?.moveId)await (isSaved?icons.moveSaved(folderDialog.moveId,folder.id):icons.moveItem(folderDialog.moveId,folder.id));if(signal.aborted)return;setIconExpanded(current=>new Set([...current,folder.id]));setQuery('');setFolderDialog(null);return;}
+      const folder=await createFolder(folderName);if(signal.aborted)return;setFolders(current=>[...current.filter(item=>item.id!==folder.id),folder]);setExpanded(current=>new Set([...current,folder.id]));setQuery('');
       if(folderDialog?.moveId)updateOrganization(await moveItemsToFolder([folderDialog.moveId],folder.id));
+      if(signal.aborted)return;
       setFolderDialog(null);notify('Folder created'+(folderDialog?.moveId?' and item moved.':'.'));
     }catch(error){setFolderError(error instanceof Error?error.message:'Could not create folder.');}
     finally{setSavingFolder(false);}
   };
   const downloadSelected=async(sourceOnly=false)=>{
+    const signal=appSession.current.signal;if(signal.aborted)return;
     if(!selected||downloading)return;setDownloading(true);setPopover(null);
     try{
       const icon=isIcons?(isSaved?icons.saved:icons.items).find(item=>item.id===selected.id):undefined;
       const output=icon?await (isSaved?icons.getSavedOutput(icon.id,icon.revision):icons.getOutput(icon.id,icon.revision)):undefined;
+      if(signal.aborted)return;
       if(isIcons&&!output)throw new Error('Finish converting this icon before downloading.');
       const file=output&&icon?{blob:output,filename:icon.filename}:await(sourceOnly?downloadHtmlSource(selected):downloadWorkspaceItem(selected));
+      if(signal.aborted)return;
       const url=URL.createObjectURL(file.blob);
       const link=document.createElement('a');link.href=url;link.download=file.filename;link.click();
       window.setTimeout(()=>URL.revokeObjectURL(url),30_000);
@@ -519,7 +557,7 @@ export default function App(){
       setSnapshots(current=>new Map([...current].filter(([id])=>retained.has(id))));
       setOrganization(current=>new Map([...current].filter(([id])=>retained.has(id))));
       setCaptureErrors(current=>new Map([...current].filter(([id])=>retained.has(id))));
-      notify('Import removed from this browser.');
+      notify(isSharedWorkspaceEnabled()?'Import removed from the shared workspace.':'Import removed from this browser.');
     }catch(error){notify(error instanceof Error?error.message:'Could not remove this import.');}
   };
   const requestRemove=(id:string)=>{if(isIcons){const folder=icons.folders.find(item=>item.id===id);if(folder&&!isSaved)setIconRemove({id,folder:true,name:folder.name});return;}if(importing||queue.running)notify('Finish or cancel the current job before removing an import.');else setRemoveId(id);};
@@ -535,26 +573,25 @@ export default function App(){
   const updateGrid=(grid:GridLayout)=>{setGrids(current=>({...current,[kind]:normalizeGrid(grid)}));setCanvasPages(current=>({...current,[kind]:0}));};
   useEffect(()=>{setCanvasPages(current=>resetGridPages(current,'all'));},[query,favoritesOnly]);
   useEffect(()=>{setCanvasPages(current=>resetGridPages(current,'image'));},[imageShape]);
+  useEffect(()=>subscribeSharedWorkspace(change=>{
+    if(change.error){setSharedError(change.error);return;}
+    setSharedError('');
+    if(change.appearance)setAppearance(getSharedAppearance());
+    if(change.library){
+      const revision=++sharedReadRevision.current;
+      void listWorkspace().then(workspace=>{
+        if(!mounted.current||revision!==sharedReadRevision.current)return;
+        setArchives(workspace.archives);setItems(workspace.pages);setFolders(workspace.folders);
+        setFavoriteFolders(new Set(workspace.favoriteFolders));setOrganization(new Map(workspace.organization.map(item=>[item.id,item])));
+        setSnapshots(new Map(workspace.snapshots.map(item=>[item.pageId,item])));
+      }).catch(error=>setSharedError(error instanceof Error?error.message:'Could not refresh the shared workspace.'));
+    }
+  }),[]);
+  useEffect(()=>{if(settingsTab!=='appearance')applyAppearance(appearance);},[appearance,settingsTab]);
+  if(settingsTab)return <SettingsPage section={settingsTab} owner={accountController.account?.role==='owner'} name={accountController.account?.name??'Folio'} busy={accountController.busy} onLogout={()=>void accountController.logout()} returnHref={'#'+(tab==='image'?'images':tab)}>
+    {settingsTab==='ai'?<AiSettings ai={ai}/>:settingsTab==='appearance'?<AppearanceSettings value={appearance} onSave={async value=>{const saved=await saveSharedAppearance(value);setAppearance(saved);applyAppearance(saved);}}/>:settingsTab==='accounts'?<AccountsSettings controller={accountController}/>:settingsTab==='workspace'?<SharedWorkspaceSettings/>:<ProfileSettings controller={accountController}/>}
+  </SettingsPage>;
   return <div className="folio-app">
-    <nav className="workspace-navigation" aria-label="Workspace">
-      <div className="workspace-tabs" role="tablist" aria-label="File type" onKeyDown={event=>{
-        const values:WorkspaceTab[]=['html','image','icons'];const index=values.indexOf(tab);
-        const next=event.key==='ArrowRight'?(index+1)%3:event.key==='ArrowLeft'?(index+2)%3:event.key==='Home'?0:event.key==='End'?2:null;
-        if(next===null)return;event.preventDefault();event.stopPropagation();switchTab(values[next]);event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
-      }}>
-        <button role="tab" tabIndex={tab==='html'?0:-1} aria-selected={tab==='html'} onClick={()=>switchTab('html')}><FileCode2 size={14}/>HTML<span>{htmlCount}</span></button>
-        <button role="tab" tabIndex={tab==='image'?0:-1} aria-selected={tab==='image'} onClick={()=>switchTab('image')}><Images size={14}/>Images<span>{imageCount}</span></button>
-        <button role="tab" tabIndex={isIcons?0:-1} aria-selected={isIcons} onClick={()=>switchTab('icons')}><ScanLine size={14}/>Icons<span>{icons.items.length+icons.saved.length}</span></button>
-      </div>
-      {isIcons&&<span className="workspace-navigation-note"><ShieldCheck size={12}/>Saved on this device</span>}
-      <div className="popover-root workspace-navigation-menu" data-popover-root="app">
-        <button className={'icon-button '+(popover==='app'?'active':'')} aria-label="Workspace menu" title="Workspace menu" aria-haspopup="dialog" aria-expanded={popover==='app'} onClick={()=>setPopover(popover==='app'?null:'app')}><MoreHorizontal size={18}/></button>
-        {popover==='app'&&<div className="toolbar-popover workspace-menu" role="dialog" aria-label="Workspace menu" data-popover-panel>
-          <button className="menu-row" onClick={openAiSettings}><Settings2 size={14}/>Settings</button>
-          <button className="menu-row" onClick={()=>{setPopover(null);setHelpOpen(true);}}><HelpCircle size={14}/>Help & shortcuts</button>
-        </div>}
-      </div>
-    </nav>
     <div className="app-shell" style={{'--sidebar-width':sidebarWidth+'px'} as CSSProperties}
     onDragEnter={event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();dragDepth.current++;setDragging(true);}}}
     onDragLeave={event=>{event.preventDefault();dragDepth.current--;if(dragDepth.current<=0){dragDepth.current=0;setDragging(false);}}}
@@ -565,7 +602,11 @@ export default function App(){
     {sidebarOpen&&<button className="sidebar-scrim" aria-label="Close file sidebar" onClick={()=>setSidebarOpen(false)}/>}
     <aside className={'sidebar '+(sidebarOpen?'is-open':'')} aria-label="File navigation">
       <div className="sidebar-top">
-        <span className="sidebar-section-title">{isIcons?'Icons':kind==='html'?'HTML':'Images'}<span>{kindItems.length}</span></span>
+        <PopoverSelect className="workspace-switcher" data-workspace-switcher="" aria-label="Workspace" value={tab} onValueChange={value=>switchTab(value as WorkspaceTab)} options={[
+          {value:'html',label:'HTML',icon:<FileCode2 size={15}/>,count:htmlCount},
+          {value:'image',label:'Images',icon:<Images size={15}/>,count:imageCount},
+          {value:'icons',label:'Icons',icon:<ScanLine size={15}/>,count:icons.items.length+icons.saved.length},
+        ]}/>
         <button className="icon-button" aria-label="Import files" title={isIcons?'Import PNG or WebP icons':'Import ZIPs or images'} disabled={!navigationLoaded||navigationBusy} onClick={()=>inputRef.current?.click()}><Plus size={17}/></button>
         {isIcons?<button className="icon-button" aria-label="Import folder" title="Import a folder of PNG or WebP icons" disabled={!icons.loaded||icons.importing} onClick={()=>iconFolderInput.current?.click()}><FolderInput size={16}/></button>:<button className="icon-button" aria-label="Import from Google Drive" title="Import from Google Drive" disabled={!loaded||importing} onClick={()=>{setDriveError('');setDriveOpen(true);}}><CloudDownload size={16}/></button>}
       </div>
@@ -577,9 +618,9 @@ export default function App(){
           <button className={'sort-button '+(popover==='sort'?'active':'')} aria-label="Sort and group files" title="Sort and group files" aria-haspopup="dialog" aria-expanded={popover==='sort'} onClick={()=>setPopover(popover==='sort'?null:'sort')}><ArrowDownUp size={13}/><span>Sort</span></button>
           {popover==='sort'&&<div className="toolbar-popover sort-popover" role="dialog" aria-label="Sort and group files" data-popover-panel>
             <div className="popover-title">{isIcons?'Icons':kind==='image'?'Images':'HTML pages'}</div><p className="sort-date-note">File dates first; “Added” is used when source dates are unavailable.</p>
-            <label className="setting-row"><span>Sort by</span><select aria-label="Sort files" value={order.sort} onChange={event=>updateOrder({sort:event.target.value as SortOrder})}><option value="name-asc">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option>{!isIcons&&kind==='image'&&<><option value="largest">Largest dimensions</option><option value="smallest">Smallest dimensions</option></>}</select></label>
-            {!isIcons&&kind==='image'&&<label className="setting-row"><span>Image shape</span><select aria-label="Sidebar image shape" value={imageShape} onChange={event=>setImageShape(normalizeImageShape(event.target.value))}><option value="all">All images</option><option value="landscape">Landscape</option><option value="portrait">Portrait</option><option value="square">Square</option><option value="unknown">Unknown dimensions</option></select></label>}
-            <label className="setting-row"><span>Group by</span><select aria-label="Group files" value={order.group} onChange={event=>updateOrder({group:event.target.value as GroupMode})}><option value="folders">Folders</option><option value="month">Month</option><option value="all">All files</option></select></label>
+            <label className="setting-row"><span>Sort by</span><PopoverSelect  aria-label="Sort files" value={order.sort} onValueChange={value=>updateOrder({sort:value as SortOrder})} options={[{value:'name-asc',label:'Name A–Z'},{value:'name-desc',label:'Name Z–A'},{value:'newest',label:'Newest first'},{value:'oldest',label:'Oldest first'},...(!isIcons&&kind==='image'?[{value:'largest',label:'Largest dimensions'},{value:'smallest',label:'Smallest dimensions'}]:[])]}/></label>
+            {!isIcons&&kind==='image'&&<label className="setting-row"><span>Image shape</span><PopoverSelect  aria-label="Sidebar image shape" value={imageShape} onValueChange={value=>setImageShape(normalizeImageShape(value))} options={[{value:'all',label:'All images'},{value:'landscape',label:'Landscape'},{value:'portrait',label:'Portrait'},{value:'square',label:'Square'},{value:'unknown',label:'Unknown dimensions'}]}/></label>}
+            <label className="setting-row"><span>Group by</span><PopoverSelect  aria-label="Group files" value={order.group} onValueChange={value=>updateOrder({group:value as GroupMode})} options={[{value:'folders',label:'Folders'},{value:'month',label:'Month'},{value:'all',label:'All files'}]}/></label>
           </div>}
         </div>
         <button className="icon-button tiny" title="New folder" aria-label="New folder" onClick={()=>openFolderDialog()} disabled={!navigationLoaded}><FolderPlus size={15}/></button>
@@ -597,6 +638,7 @@ export default function App(){
         <button className="drop-note" onClick={()=>inputRef.current?.click()} disabled={navigationBusy} title={isIcons?'Drop PNGs, WebPs or folders anywhere in this workspace':importing?importProgress:'Drop ZIPs or images anywhere in this workspace'}>
           {navigationBusy?<LoaderCircle size={12} className="spin"/>:<Upload size={12}/>}<span>{isIcons?(icons.importing?'Saving icons…':'Drop PNGs, WebPs or folders here'):importing?importProgress:'Drop ZIPs or images here'}</span>
         </button>
+        <button className="icon-button sidebar-settings" aria-label="Settings" title="Settings" onClick={()=>openSettings()}><Settings size={16}/></button>
         <button className="icon-button tiny" aria-label="Help" title="Help and shortcuts" onClick={()=>setHelpOpen(true)}><HelpCircle size={14}/></button>
       </div>
     </aside>
@@ -639,7 +681,7 @@ export default function App(){
           {popover==='settings'&&<div className="toolbar-popover" role="dialog" aria-label="View and capture settings" data-popover-panel>
             <div className="popover-title">View</div>
             {kind==='html'&&<><div className="mode-switch" role="group" aria-label="Preview mode"><button aria-pressed={mode==='live'} className={mode==='live'?'active':''} onClick={()=>{setMode('live');setView('preview');}}>Live HTML</button><button aria-pressed={mode==='snapshot'} className={mode==='snapshot'?'active':''} onClick={()=>{setMode('snapshot');setView('preview');}}>Screenshot</button></div>
-              <label className="setting-row"><span>Preview width</span><select aria-label="Preview width" value={viewport} onChange={event=>setViewport(Number(event.target.value))}><option value={1440}>Desktop · 1440</option><option value={1920}>Wide · 1920</option><option value={768}>Tablet · 768</option><option value={390}>Mobile · 390</option></select></label></>}
+              <label className="setting-row"><span>Preview width</span><PopoverSelect  aria-label="Preview width" value={viewport} onValueChange={value=>setViewport(Number(value))} options={[{value:1440,label:'Desktop · 1440'},{value:1920,label:'Wide · 1920'},{value:768,label:'Tablet · 768'},{value:390,label:'Mobile · 390'}]}/></label></>}
             <label className="setting-row checkbox-row"><span>Fit to window</span><input type="checkbox" checked={fit} onChange={event=>setFit(event.target.checked)}/></label>
             {kind==='html'&&<><div className="menu-divider"/><div className="popover-title">Screenshots</div>
               <button className="menu-row" disabled={!selected||queue.running} onClick={()=>{setPopover(null);if(selected)void runCaptures([selected],{...captureOptions,width:viewport});}}><Camera size={14}/>Capture current page</button>
@@ -657,6 +699,7 @@ export default function App(){
         {isIcons&&<button className="icon-button" aria-label="Remove selected icon" title="Remove selected icon" disabled={!selected} onClick={()=>selected&&setIconRemove({id:selected.id,folder:false,name:selected.label,saved:isSaved})}><Trash2 size={16}/></button>}
       </header>
       {!isIcons&&view==='gallery'&&<CanvasControls kind={kind} grid={grids[kind]} shape={imageShape} sort={order.sort} onGridChange={updateGrid} onShapeChange={shape=>setImageShape(normalizeImageShape(shape))} onSortChange={sort=>updateOrder({sort})}/>}
+      {sharedError&&<div className="error-banner" role="alert"><AlertTriangle size={14}/>{sharedError}</div>}
       {(isIcons?icons.storageError:storageError)&&<div className="error-banner" role="alert"><AlertTriangle size={14}/>{isIcons?icons.storageError:storageError}</div>}
       {queue.running&&<div className="queue-banner" role="status"><LoaderCircle className="spin" size={13}/><span>Capturing {Math.min(queue.done+queue.failed+1,queue.total)} / {queue.total}</span><strong>{queue.current}</strong><span>{queue.done} saved</span><button onClick={()=>captureAbort.current?.abort()}>Cancel</button></div>}
       {isIcons?(isSaved?<SavedIconsWorkspace collection={icons} selectedId={selectedId} filteredIds={filteredItems.map(item=>item.id)} onViewChange={changeIconView}/>:<PngSvgWorkspace collection={icons} selectedId={selectedId} filteredIds={filteredItems.map(item=>item.id)} onImport={()=>inputRef.current?.click()} onImportFolder={()=>iconFolderInput.current?.click()} ai={ai} onAiSettings={openAiSettings} onSaved={rememberSaved} onViewChange={changeIconView}/>):<div className="content-region">
@@ -674,28 +717,21 @@ export default function App(){
     {dragging&&<div className="drop-overlay"><span><Upload size={18}/>{isIcons?'Drop PNGs, WebPs or folders':'Drop ZIPs or images'}</span></div>}
     {toast&&<div className="toast" role="status"><span>{toast}</span><button className="icon-button tiny" aria-label="Dismiss notification" onClick={()=>setToast('')}><X size={13}/></button></div>}
 
-    {settingsOpen&&<Modal title="Settings" className="settings-modal" onClose={()=>setSettingsOpen(false)}>
-      <div className="settings-tabs" role="tablist" aria-label="Settings section" onKeyDown={event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?'ai':event.key==='End'?'profile':settingsTab==='ai'?'profile':'ai';setSettingsTab(next);event.currentTarget.querySelector<HTMLButtonElement>('[data-settings-tab="'+next+'"]')?.focus();}}>
-        <button data-settings-tab="ai" id="settings-ai-tab" role="tab" aria-selected={settingsTab==='ai'} aria-controls="settings-ai-panel" tabIndex={settingsTab==='ai'?0:-1} onClick={()=>setSettingsTab('ai')}><Sparkles size={14}/>AI</button>
-        <button data-settings-tab="profile" id="settings-profile-tab" role="tab" aria-selected={settingsTab==='profile'} aria-controls="settings-profile-panel" tabIndex={settingsTab==='profile'?0:-1} onClick={()=>setSettingsTab('profile')}>Profile</button>
-      </div>
-      <div role="tabpanel" id={'settings-'+settingsTab+'-panel'} aria-labelledby={'settings-'+settingsTab+'-tab'}>{settingsTab==='ai'?<AiSettings ai={ai}/>:<ProfileSettings/>}</div>
-    </Modal>}
     {imageAiItem&&<Modal title={'AI SVG · '+imageAiItem.label} className="image-ai-modal" onClose={()=>setImageAiItem(null)}><div className="modal-body"><AiSvgPanel key={imageAiItem.id} ai={ai} asset={{key:imageAiItem.id,id:imageAiItem.id,name:imageAiItem.path.split('/').pop()||imageAiItem.label,kind:'images',getSource:async()=>{const file=await getFile(imageAiItem.id);return file?.blob.slice(0,file.blob.size,file.mime);}}} onSettings={openAiSettings} onSave={icons.saveArtwork} onSaved={rememberSaved}/></div></Modal>}
     {iconRemove&&<Modal title={iconRemove.saved?'Remove saved icon?':iconRemove.folder?'Remove icon folder?':'Remove icon?'} onClose={()=>{if(!removingIcon)setIconRemove(null);}}><div className="modal-body"><p><strong>{iconRemove.name}</strong></p><p>{iconRemove.saved?'This saved artwork, its chosen color and retained original will be removed from the icon library.':`The conversion${iconRemove.folder?'s in this folder and its subfolders':''} and their originals will be removed. Icons saved to your library are kept${iconRemove.folder?' in Uncategorized':''}.`} Your original files on disk are unaffected.</p></div><div className="modal-footer"><button className="button" disabled={removingIcon} onClick={()=>setIconRemove(null)}>Cancel</button><button className="button danger" disabled={removingIcon} onClick={()=>void confirmIconRemoval()}>{removingIcon?'Removing…':'Remove'}</button></div></Modal>}
     {driveOpen&&<Modal title="Import from Google Drive" onClose={()=>{if(!importing){setDriveOpen(false);setDriveError('');}}}><form onSubmit={event=>{event.preventDefault();void importFromDrive();}}><div className="modal-body"><p className="modal-intro">Paste a Google Drive share link for a ZIP or supported image. The file must be downloadable by anyone with the link.</p><label className="field-label" htmlFor="drive-url">Google Drive file link</label><input autoFocus id="drive-url" className="text-input" type="url" value={driveUrl} onChange={event=>{setDriveUrl(event.target.value);setDriveError('');}} placeholder="https://drive.google.com/file/d/…" required disabled={importing}/>{driveError&&<p className="form-error" role="alert">{driveError}</p>}{importing&&<p className="form-note"><LoaderCircle size={12} className="spin"/> {importProgress||'Downloading…'}</p>}<p className="form-note">Single-file Drive links are supported. Folder links and private files that require sign-in are not.</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>{setDriveOpen(false);setDriveError('');}} disabled={importing}>Cancel</button><button className="button primary" disabled={importing||!driveUrl.trim()}>{importing?<><LoaderCircle size={14} className="spin"/>Importing…</>:<><CloudDownload size={14}/>Import from Drive</>}</button></div></form></Modal>}
-    {folderDialog&&<Modal title={folderDialog.moveId?'Create folder & move item':'New folder'} onClose={()=>{if(!savingFolder)setFolderDialog(null);}}><form onSubmit={submitFolder}><div className="modal-body"><label className="field-label" htmlFor="folder-name">Folder name</label><input autoFocus id="folder-name" className="text-input" value={folderName} onChange={event=>setFolderName(event.target.value)} maxLength={80} placeholder="e.g. Keepers" required/>{folderError&&<p className="form-error" role="alert">{folderError}</p>}<p className="form-note">{isIcons?'Icon folders are saved on this device.':'HTML and images can share a folder. Linked resources stay attached to their pages.'}</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>setFolderDialog(null)} disabled={savingFolder}>Cancel</button><button className="button primary" disabled={savingFolder||!folderName.trim()}>{savingFolder?'Saving…':folderDialog.moveId?'Create & move':'Create folder'}</button></div></form></Modal>}
-    {captureDialog&&<Modal title="Capture HTML pages" onClose={()=>setCaptureDialog(false)}><div className="modal-body"><p className="modal-intro"><strong>{pendingCaptures.length} pages</strong> to capture{query?' matching “'+query+'”':favoritesOnly?' in favorites':''}. You can keep browsing.</p><div className="form-grid"><label>Viewport width<select value={captureOptions.width} onChange={event=>setCaptureOptions({...captureOptions,width:Number(event.target.value)})}><option value={1440}>Desktop · 1440 px</option><option value={1920}>Wide · 1920 px</option><option value={768}>Tablet · 768 px</option><option value={390}>Mobile · 390 px</option></select></label><label>Wait after loading<select value={captureOptions.delay} onChange={event=>setCaptureOptions({...captureOptions,delay:Number(event.target.value)})}><option value={500}>0.5 seconds</option><option value={1000}>1 second</option><option value={2500}>2.5 seconds</option><option value={5000}>5 seconds</option></select></label></div><label className="check-field"><input type="checkbox" checked={captureOptions.fullPage} onChange={event=>setCaptureOptions({...captureOptions,fullPage:event.target.checked})}/>Capture full page</label><label className="check-field"><input type="checkbox" checked={recapture} onChange={event=>setRecapture(event.target.checked)}/>Replace existing screenshots</label><p className="form-note">Keep this tab open. Browser captures may differ for remote images, embedded video, or some effects.</p></div><div className="modal-footer"><button className="button" onClick={()=>setCaptureDialog(false)}>Cancel</button><button className="button primary" disabled={!pendingCaptures.length||queue.running} onClick={()=>{setCaptureDialog(false);void runCaptures(pendingCaptures);}}><Camera size={14}/>Capture {pendingCaptures.length} pages</button></div></Modal>}
+    {folderDialog&&<Modal title={folderDialog.moveId?'Create folder & move item':'New folder'} onClose={()=>{if(!savingFolder)setFolderDialog(null);}}><form onSubmit={submitFolder}><div className="modal-body"><label className="field-label" htmlFor="folder-name">Folder name</label><input autoFocus id="folder-name" className="text-input" value={folderName} onChange={event=>setFolderName(event.target.value)} maxLength={80} placeholder="e.g. Keepers" required/>{folderError&&<p className="form-error" role="alert">{folderError}</p>}<p className="form-note">{isIcons?'Icon folders belong to this workspace.':'HTML and images can share a folder. Linked resources stay attached to their pages.'}</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>setFolderDialog(null)} disabled={savingFolder}>Cancel</button><button className="button primary" disabled={savingFolder||!folderName.trim()}>{savingFolder?'Saving…':folderDialog.moveId?'Create & move':'Create folder'}</button></div></form></Modal>}
+    {captureDialog&&<Modal title="Capture HTML pages" onClose={()=>setCaptureDialog(false)}><div className="modal-body"><p className="modal-intro"><strong>{pendingCaptures.length} pages</strong> to capture{query?' matching “'+query+'”':favoritesOnly?' in favorites':''}. You can keep browsing.</p><div className="form-grid"><label>Viewport width<PopoverSelect  value={captureOptions.width} onValueChange={value=>setCaptureOptions({...captureOptions,width:Number(value)})} aria-label="Capture viewport width" options={[{value:1440,label:'Desktop · 1440 px'},{value:1920,label:'Wide · 1920 px'},{value:768,label:'Tablet · 768 px'},{value:390,label:'Mobile · 390 px'}]}/></label><label>Wait after loading<PopoverSelect  value={captureOptions.delay} onValueChange={value=>setCaptureOptions({...captureOptions,delay:Number(value)})} aria-label="Capture loading delay" options={[{value:500,label:'0.5 seconds'},{value:1000,label:'1 second'},{value:2500,label:'2.5 seconds'},{value:5000,label:'5 seconds'}]}/></label></div><label className="check-field"><input type="checkbox" checked={captureOptions.fullPage} onChange={event=>setCaptureOptions({...captureOptions,fullPage:event.target.checked})}/>Capture full page</label><label className="check-field"><input type="checkbox" checked={recapture} onChange={event=>setRecapture(event.target.checked)}/>Replace existing screenshots</label><p className="form-note">Keep this tab open. Browser captures may differ for remote images, embedded video, or some effects.</p></div><div className="modal-footer"><button className="button" onClick={()=>setCaptureDialog(false)}>Cancel</button><button className="button primary" disabled={!pendingCaptures.length||queue.running} onClick={()=>{setCaptureDialog(false);void runCaptures(pendingCaptures);}}><Camera size={14}/>Capture {pendingCaptures.length} pages</button></div></Modal>}
     {reportOpen&&<Modal title="Import details" onClose={()=>setReportOpen(false)}><div className="report-list">{importResults.map((result,index)=><div className="report-item" key={index}>{result.ok?<Check size={16}/>:<AlertTriangle size={16}/>}<div><strong>{result.name}</strong><p>{result.message}</p></div></div>)}</div></Modal>}
-    {importsOpen&&<Modal title="Manage imports" onClose={()=>setImportsOpen(false)}><div className="import-list">{roots.length?roots.map(root=><div className="import-row" key={root.id}><div><strong>{root.name}</strong><span>{root.cloud?'Private collection · ':'This browser · '}{items.filter(item=>item.rootId===root.id).length} files · {formatBytes(archives.filter(archive=>archive.rootId===root.id).reduce((sum,archive)=>sum+archive.byteSize,0))}</span></div><button className="icon-button" aria-label={'Remove '+root.name} title="Remove import" disabled={importing||queue.running} onClick={()=>{setImportsOpen(false);requestRemove(root.id);}}><Trash2 size={15}/></button></div>):<p className="form-note">No imports yet.</p>}</div></Modal>}
-    {removeId&&<Modal title={isCloudArchive(removeId)?"Hide this collection import?":"Remove this import?"} onClose={()=>setRemoveId(null)}><div className="modal-body"><p><strong>{archiveMap.get(removeId)?.name}</strong></p><p>{isCloudArchive(removeId)?"This import and its local favorites, folder assignments and screenshots will be hidden from this browser. The private collection files remain saved on the Site.":"Its files, favorites, and screenshots will be removed from this browser. Your original files are unaffected. Items moved into your folders are part of this import."}</p></div><div className="modal-footer"><button className="button" onClick={()=>setRemoveId(null)}>Cancel</button><button className="button danger" onClick={()=>void removeArchive()}>{isCloudArchive(removeId)?"Hide import":"Remove import"}</button></div></Modal>}
+    {importsOpen&&<Modal title="Manage imports" onClose={()=>setImportsOpen(false)}><div className="import-list">{roots.length?roots.map(root=><div className="import-row" key={root.id}><div><strong>{root.name}</strong><span>{root.cloud?'Private collection · ':isSharedWorkspaceEnabled()?'Shared workspace · ':'This browser · '}{items.filter(item=>item.rootId===root.id).length} files · {formatBytes(archives.filter(archive=>archive.rootId===root.id).reduce((sum,archive)=>sum+archive.byteSize,0))}</span></div><button className="icon-button" aria-label={'Remove '+root.name} title="Remove import" disabled={importing||queue.running} onClick={()=>{setImportsOpen(false);requestRemove(root.id);}}><Trash2 size={15}/></button></div>):<p className="form-note">No imports yet.</p>}</div></Modal>}
+    {removeId&&<Modal title={isCloudArchive(removeId)?"Hide this collection import?":"Remove this import?"} onClose={()=>setRemoveId(null)}><div className="modal-body"><p><strong>{archiveMap.get(removeId)?.name}</strong></p><p>{isCloudArchive(removeId)?"This import and its favorites, folder assignments and screenshots will be hidden from this workspace. The original private collection files remain saved on the Site.":"Its files, favorites, and screenshots will be removed from this workspace for everyone. Your original files on disk are unaffected. Items moved into your folders are part of this import."}</p></div><div className="modal-footer"><button className="button" onClick={()=>setRemoveId(null)}>Cancel</button><button className="button danger" onClick={()=>void removeArchive()}>{isCloudArchive(removeId)?"Hide import":"Remove import"}</button></div></Modal>}
     {warningsOpen&&<Modal title="Page notices" onClose={()=>setWarningsOpen(false)}><div className="modal-body">{selected&&captureErrors.has(selected.id)&&<div className="error-card"><strong>Screenshot could not be saved</strong><p>{captureErrors.get(selected.id)}</p><button className="button" disabled={queue.running} onClick={()=>{setWarningsOpen(false);void runCaptures([selected]);}}><Camera size={14}/>Retry capture</button></div>}<ul className="notice-list">{warnings.map((warning,index)=><li key={index}>{warning}</li>)}</ul></div></Modal>}
     {helpOpen&&<Modal title="Workspace help" onClose={()=>setHelpOpen(false)}><div className="modal-body help-content">
-      <section><h3>Import and browse</h3><p>Drop several ZIPs or images anywhere, use the + button, or import one downloadable ZIP/image from a Google Drive share link. Nested ZIPs keep their hierarchy. HTML and Images have separate tabs; HTML resources stay attached behind the scenes. Index pages use their folder names. Click a folder to preview its first matching file; its arrow only expands or collapses. Star a folder to include its current contents in Favorites.</p><p><kbd>↑</kbd> <kbd>↓</kbd> or the top arrows cycle through every matching file across folders, including collapsed ones. The last file loops to the first. <kbd>←</kbd> <kbd>→</kbd> control focused tree branches. <kbd>/</kbd> finds a file. Typing fields keep their own arrow keys.</p></section>
+      <section><h3>Import and browse</h3><p>Drop several ZIPs or images anywhere, use the + button, or import one downloadable ZIP/image from a Google Drive share link. Nested ZIPs keep their hierarchy. HTML and Images have separate workspace views; HTML resources stay attached behind the scenes. Index pages use their folder names. Click a folder to preview its first matching file; its arrow only expands or collapses. Star a folder to include its current contents in Favorites.</p><p><kbd>↑</kbd> <kbd>↓</kbd> or the top arrows cycle through every matching file across folders, including collapsed ones. The last file loops to the first. <kbd>←</kbd> <kbd>→</kbd> control focused tree branches. <kbd>/</kbd> finds a file. Typing fields keep their own arrow keys.</p></section>
       <section><h3>Keep what matters</h3><p>Star a file, filter Favorites, or use Move to folder. Create folders with the sidebar folder-plus button or directly from the move menu. Use Sort to order names or dates, group by month, or show all files together. Drag the sidebar divider to resize it; double-click to reset. Folders organize references; original paths and linked resources stay intact.</p><p>Download saves original image bytes. For HTML, it downloads a ZIP containing the page’s owning archive and its assets. Source-only HTML and saved PNGs are available in View and capture settings.</p></section>
-      <section><h3>Icons: PNG and WebP to SVG</h3><p>Open Icons in the top navigation. Drop PNGs, WebPs or folders into the canvas or sidebar; loose files enter Uncategorized and folders retain their hierarchy. Originals and converted results are saved in this browser and conversion starts automatically. Clearing site data removes this local collection.</p><p>Choose Pixel vectors for native pixel-grid geometry, Smooth curves for measured approximate contours, or Embedded bitmap for the original PNG or WebP inside an SVG. The canvas toolbar controls mode, zoom and background. Use Save to library to keep a chosen conversion independently, or Recreate with AI to review a new editable candidate. Saved icons can be recolored and exported with their chosen color. Every conversion records a native-size pixel check; only zero visible differences is verified. Smooth curves can differ from the source and pixel geometry remains pixelated when enlarged. Results are checked using the recorded browser and sRGB8 reference, without a cross-browser guarantee.</p></section>
+      <section><h3>Icons: PNG and WebP to SVG</h3><p>Choose Icons from the workspace dropdown above Search. Drop PNGs, WebPs or folders into the canvas or sidebar; loose files enter Uncategorized and folders retain their hierarchy. Conversion runs in your browser and starts automatically. Originals and completed results are saved to the private shared workspace.</p><p>Choose Pixel vectors for native pixel-grid geometry, Smooth curves for measured approximate contours, or Embedded bitmap for the original PNG or WebP inside an SVG. The canvas toolbar controls mode, zoom and background. Use Save to library to keep a chosen conversion independently, or Recreate with AI to review a new editable candidate. Saved icons can be recolored and exported with their chosen color. Every conversion records a native-size pixel check; only zero visible differences is verified. Smooth curves can differ from the source and pixel geometry remains pixelated when enlarged. Results are checked using the recorded browser and sRGB8 reference, without a cross-browser guarantee.</p></section>
       <section><h3>Views and screenshots</h3><p>View and capture settings contains preview width, fit, live/screenshot view, and current or batch captures. Gallery shows saved HTML screenshots or your original images. Captures run in the browser while you browse. These are DOM renderings, not server-side Playwright screenshots; remote resources, video, frames, canvas effects, and some CSS may differ.</p></section>
-      <section><h3>Saved collection and browser imports</h3><p>The Banner Collection is saved privately on this Site. Its file list appears automatically; resource bytes load only when you open a page or image. Files you drop or import from Drive are saved only in this browser. Favorites, folders and screenshots also stay in this browser. Clearing browser storage removes those local settings and imports, while the private collection remains available. Hiding a collection import keeps it hidden after refresh on this browser. Imported scripts run in an isolated frame and can still request their external resources.</p><p>Supported images: PNG, JPEG, WebP, GIF, AVIF, SVG, BMP, and ICO. Limits: 256 MB per ZIP, 768 MB extracted per import, 128 MB per file, 20,000 entries, eight nested ZIP levels. Available browser storage limits the total collection. Password-protected ZIPs and server applications are unsupported.</p></section>
+      <section><h3>Shared collection and existing browser files</h3><p>The Banner Collection is saved privately on this Site. Its file list appears automatically; resource bytes load only when you open a page or image. After you sign in to Folio, new imports, favorites, folders and screenshots belong to the same private workspace for every account. Earlier browser-only imports remain intact; review and share them from Settings → Workspace. Hiding a collection import changes the shared workspace. Imported scripts run in an isolated frame and can still request their external resources.</p><p>Supported images: PNG, JPEG, WebP, GIF, AVIF, SVG, BMP, and ICO. Limits: 256 MB per ZIP, 768 MB extracted per import, 128 MB per file, 20,000 entries, eight nested ZIP levels. Available browser storage limits the total collection. Password-protected ZIPs and server applications are unsupported.</p></section>
     </div></Modal>}
     </div>
   </div>;

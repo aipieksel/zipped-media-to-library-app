@@ -68,14 +68,17 @@ export async function fetchGoogleDriveFile(
   value:string,
   onProgress?:(message:string)=>void,
   fetcher:typeof fetch=fetch,
+  signal?:AbortSignal,
 ):Promise<File>{
+  signal?.throwIfAborted();
   const id=googleDriveFileId(value);
   const url=googleDriveDownloadUrl(value);
   onProgress?.('Connecting to Google Drive…');
   let response:Response;
   try{
-    response=await fetcher(url,{method:'GET',redirect:'follow',credentials:'omit'});
+    response=await fetcher(url,{method:'GET',redirect:'follow',credentials:'omit',signal});
   }catch{
+    signal?.throwIfAborted();
     throw new Error('Google Drive blocked this browser download. Make the file available to anyone with the link and allow downloads, then try again.');
   }
   if(!response.ok)throw new Error(`Google Drive returned HTTP ${response.status}. Check that the link can download the file.`);
@@ -91,6 +94,7 @@ export async function fetchGoogleDriveFile(
   const chunks:Uint8Array[]=[];
   let received=0;
   while(true){
+    signal?.throwIfAborted();
     const {done,value:chunk}=await reader.read();
     if(done)break;
     if(!chunk)continue;
@@ -104,6 +108,7 @@ export async function fetchGoogleDriveFile(
     onProgress?.('Downloading from Google Drive · '+detail);
   }
   if(!received)throw new Error('Google Drive returned an empty file.');
+  signal?.throwIfAborted();
   const probe=chunks[0]?.slice(0,512)??new Uint8Array();
   const extension=sniffExtension(probe,contentType);
   if(!extension)throw new Error('The Drive file is not a supported ZIP or image.');

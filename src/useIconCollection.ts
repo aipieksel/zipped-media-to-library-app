@@ -8,6 +8,8 @@ import type {IconCollectionStore} from './icon-collection';
 import {captureIconDrop, iconEntriesFromFiles, readIconDrop} from './icon-drop';
 import type {CapturedIconDrop} from './icon-drop';
 import type {IconCollectionSnapshot, IconFolder, IconImportBatch, IconImportReport, IconJob, IconJobProgress, IconPreferences, SaveArtworkInput, SavedIconVerification} from './icon-types';
+import {SharedWorkspaceError} from './shared/client';
+import {isSharedWorkspaceEnabled} from './shared/workspace';
 
 interface ActiveJob {
   claim: IconJob;
@@ -95,10 +97,15 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
           await store.complete(claim, result);
         } catch (failure) {
           if (job.controller.signal.aborted || !mounted.current) await store.release(claim).catch(() => undefined);
-          else {
+          else if (failure instanceof SharedWorkspaceError) {
+            await store.pauseAfterSharedFailure(claim, failure.message).catch(() => undefined);
+            if (mounted.current && storeRef.current === store) setError(failure.message);
+            break;
+          } else {
             const message = messageOf(failure, 'This image could not be converted.');
             try {await store.fail(claim, message);} catch (saveFailure) {
-              if (mounted.current && storeRef.current === store) setError(`The conversion result could not be saved: ${messageOf(saveFailure, message)}. The original remains in local storage.`);
+              await store.pauseAfterSharedFailure(claim, messageOf(saveFailure, message)).catch(() => undefined);
+              if (mounted.current && storeRef.current === store) setError(`The conversion result could not be saved: ${messageOf(saveFailure, message)}. The saved original is unchanged.`);
               break;
             }
           }
@@ -168,7 +175,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
     const report = await store.importEntries(batch, snapshotRef.current.preferences.defaultMode);
     if (!mounted.current || storeRef.current !== store) return report;
     setError(''); setPreferencesError('');
-    const summary = `${report.added.length} icon${report.added.length === 1 ? '' : 's'} saved locally${report.folders.length ? ` · ${report.folders.length} folder${report.folders.length === 1 ? '' : 's'} added` : ''}${report.skipped ? ` · ${report.skipped} skipped` : ''}.`;
+    const summary = `${report.added.length} icon${report.added.length === 1 ? '' : 's'} saved ${isSharedWorkspaceEnabled() ? 'to the shared workspace' : 'locally'}${report.folders.length ? ` · ${report.folders.length} folder${report.folders.length === 1 ? '' : 's'} added` : ''}${report.skipped ? ` · ${report.skipped} skipped` : ''}.`;
     setNotice([summary, ...report.notices.slice(0, 3)].join(' '));
     await refresh(); void processQueue();
     return report;
@@ -178,7 +185,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
     if (importingRef.current) {setNotice('An icon import is already running. Drop the next batch when it finishes.'); return;}
     importingRef.current = true; setImporting(true);
     try {return await finishImport(batch);} catch (failure) {
-      if (mounted.current) setError(`Nothing from this import was saved. ${messageOf(failure, 'The local import failed.')}`);
+      if (mounted.current) setError(`The import was not published. ${messageOf(failure, 'The import failed.')}`);
       return undefined;
     } finally {importingRef.current = false; if (mounted.current) setImporting(false);}
   }, [finishImport]);
@@ -199,7 +206,7 @@ export function useIconCollection(databaseName = ICON_DB_NAME) {
       if (controller.signal.aborted || !mounted.current) return;
       return await finishImport(batch);
     } catch (failure) {
-      if (mounted.current && !controller.signal.aborted) setError(`Nothing from this drop was saved. ${messageOf(failure, 'The folder could not be read.')}`);
+      if (mounted.current && !controller.signal.aborted) setError(`The drop was not published. ${messageOf(failure, 'The folder could not be read.')}`);
       return undefined;
     } finally {
       if (dropAbort.current === controller) dropAbort.current = null;

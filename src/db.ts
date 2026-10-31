@@ -5,6 +5,8 @@ import {configureDimensionPersistence,installImageDimensions} from './image-dime
 import {thumbnailEvictions,THUMBNAIL_MAX_FILE_BYTES} from './thumbnail-cache';
 import { isSupportedImagePath } from './archive';
 import { fetchCloudCatalogue, fetchCloudArchiveFiles, isCloudArchive, resolveFileBlob, installImageMetadata } from './cloud';
+import {registerSharedDatabase, resolveSharedRecord, sharedDatabaseName, sharedWorkspaceEpoch, withSharedWrite} from './shared/runtime';
+import {SHARED_PREFERENCE_KEYS} from './shared/codec';
 import type { ArchiveFile, ArchiveMeta, CloudCatalogue, GalleryThumbnail, HtmlPage, ImportBundle, ItemOrganization, LocalArchiveFile, Snapshot, WorkspaceFolder } from './types';
 
 interface WorkspaceSchema extends DBSchema {
@@ -19,11 +21,18 @@ interface WorkspaceSchema extends DBSchema {
 }
 
 let connection: Promise<IDBPDatabase<WorkspaceSchema>> | undefined;
+let connectionName = '';
+let connectionEpoch = -1;
 
 function database(): Promise<IDBPDatabase<WorkspaceSchema>> {
+  const name = sharedDatabaseName('folio-workspace'), generation = sharedWorkspaceEpoch();
+  if (connectionName !== name || connectionEpoch !== generation) {
+    void connection?.then(db => db.close()).catch(() => undefined);
+    connection = undefined; connectionName = name; connectionEpoch = generation;
+  }
   if (!connection) {
     let migrationError: unknown;
-    connection = openDB<WorkspaceSchema>('folio-workspace', 3, {
+    connection = openDB<WorkspaceSchema>(name, 3, {
       upgrade(db, oldVersion, _newVersion, transaction) {
         if (oldVersion === 0) {
           db.createObjectStore('archives', { keyPath: 'id' }).createIndex('byRoot', 'rootId');
@@ -79,12 +88,24 @@ function database(): Promise<IDBPDatabase<WorkspaceSchema>> {
         void current?.then(db => db.close());
       },
       terminated() { connection = undefined; },
+    }).then(db => {
+      if (generation !== sharedWorkspaceEpoch()) {db.close(); throw new Error('The workspace session changed while opening storage.');}
+      registerSharedDatabase('library', db); return db;
     }).catch(error => {
       connection = undefined;
       throw migrationError ?? error;
     });
   }
   return connection;
+}
+
+/** The authenticated root hydrates this separate cache before mounting the workspace. */
+export function openWorkspaceDatabase(): Promise<IDBPDatabase<WorkspaceSchema>> {return database();}
+
+async function resolveRows<T>(rows: T[]): Promise<T[]> {
+  const resolved: T[] = [];
+  for (let offset = 0; offset < rows.length; offset += 4) resolved.push(...await Promise.all(rows.slice(offset, offset + 4).map(row => resolveSharedRecord(row))));
+  return resolved;
 }
 
 function assertImport(bundle: ImportBundle): void {
@@ -113,20 +134,21 @@ function assertImport(bundle: ImportBundle): void {
 /** One transaction: no successful-looking partial import after quota or write failure. */
 export async function saveImport(bundle: ImportBundle): Promise<void> {
   assertImport(bundle);
-  const db = await database();
-  const tx = db.transaction(['archives', 'pages', 'files'], 'readwrite');
-  try {
-    await Promise.all([
-      ...bundle.archives.map(archive => tx.objectStore('archives').add(archive)),
-      ...bundle.pages.map(page => tx.objectStore('pages').add(page)),
-      ...bundle.files.map(file => tx.objectStore('files').add(file)),
-      tx.done,
-    ]);
-  } catch (error) {
-    try { tx.abort(); } catch { /* The database already aborted the transaction. */ }
-    await tx.done.catch(() => undefined);
-    throw error;
-  }
+  return withSharedWrite('library', await database(), async db => {
+    const tx = db.transaction(['archives', 'pages', 'files'], 'readwrite');
+    try {
+      await Promise.all([
+        ...bundle.archives.map(archive => tx.objectStore('archives').add(archive)),
+        ...bundle.pages.map(page => tx.objectStore('pages').add(page)),
+        ...bundle.files.map(file => tx.objectStore('files').add(file)),
+        tx.done,
+      ]);
+    } catch (error) {
+      try { tx.abort(); } catch { /* The database already aborted the transaction. */ }
+      await tx.done.catch(() => undefined);
+      throw error;
+    }
+  });
 }
 
 /** Metadata and saved screenshots only; archive resource bytes stay out of startup reads. */
@@ -143,13 +165,13 @@ export async function listWorkspace(): Promise<{ archives: ArchiveMeta[]; pages:
   if(cachedImages?.generation)installImageMetadata(cachedImages.images,cachedImages.generation);
   archives.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
   folders.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
-  return { archives, pages, snapshots, folders, organization, favoriteFolders:[...normalizeFolderFavorites(favoriteFolders?.value)] };
+  return { archives, pages, snapshots: await resolveRows(snapshots), folders, organization, favoriteFolders:[...normalizeFolderFavorites(favoriteFolders?.value)] };
 }
 
 export async function getFile(id: string): Promise<LocalArchiveFile | undefined> {
   const db = await database();
   const local = await db.get('files', id);
-  if (local) return local;
+  if (local) return resolveSharedRecord(local);
   const page = await db.get('pages', id);
   if (!page || !isCloudArchive(page.archiveId)) return undefined;
   const file = (await getArchiveFiles(page.archiveId)).get(page.path);
@@ -162,56 +184,58 @@ export async function getArchiveFiles(archiveId: string): Promise<Map<string, Ar
   const archive = await db.get('archives', archiveId);
   if (archive?.cloud) return fetchCloudArchiveFiles(archiveId, archive.cloud.manifest);
   const files = await db.getAllFromIndex('files', 'byArchive', archiveId);
-  return new Map(files.map(file => [file.path, file]));
+  return new Map((await resolveRows(files)).map(file => [file.path, file]));
 }
 
 export async function putSnapshot(snapshot: Snapshot): Promise<void> {
   if (!(snapshot.blob instanceof Blob) || !snapshot.blob.size || !Number.isFinite(snapshot.width) || !Number.isFinite(snapshot.height) || snapshot.width <= 0 || snapshot.height <= 0) {
     throw new Error('The snapshot is empty or has invalid dimensions.');
   }
-  const db = await database();
-  const tx = db.transaction(['pages', 'snapshots'], 'readwrite');
-  try {
-    const page = await tx.objectStore('pages').get(snapshot.pageId);
-    if (!page) throw new Error('This page was removed before its snapshot was saved.');
-    if (page.kind === 'image') throw new Error('Image files do not need HTML screenshots.');
-    await tx.objectStore('snapshots').put(snapshot);
-    await tx.done;
-  } catch (error) {
-    try { tx.abort(); } catch { /* Already complete or aborted. */ }
-    await tx.done.catch(() => undefined);
-    throw error;
-  }
+  return withSharedWrite('library', await database(), async db => {
+    const tx = db.transaction(['pages', 'snapshots'], 'readwrite');
+    try {
+      const page = await tx.objectStore('pages').get(snapshot.pageId);
+      if (!page) throw new Error('This page was removed before its snapshot was saved.');
+      if (page.kind === 'image') throw new Error('Image files do not need HTML screenshots.');
+      await tx.objectStore('snapshots').put(snapshot);
+      await tx.done;
+    } catch (error) {
+      try { tx.abort(); } catch { /* Already complete or aborted. */ }
+      await tx.done.catch(() => undefined);
+      throw error;
+    }
+  });
 }
 
 /** Delete a single import and its descendants, preserving every other workspace root. */
 export async function deleteRoot(rootId: string): Promise<void> {
-  const db = await database();
-  const tx = db.transaction(['archives', 'pages', 'files', 'snapshots', 'organization', 'prefs','galleryThumbnails'], 'readwrite');
-  try {
-    if (isCloudArchive(rootId)) {
-      const previous = await tx.objectStore('prefs').get('hiddenCloudRoots');
-      const hidden = Array.isArray(previous?.value) ? previous.value.filter((id): id is string => typeof id === 'string') : [];
-      await tx.objectStore('prefs').put({ key: 'hiddenCloudRoots', value: [...new Set([...hidden, rootId])] });
+  return withSharedWrite('library', await database(), async db => {
+    const tx = db.transaction(['archives', 'pages', 'files', 'snapshots', 'organization', 'prefs','galleryThumbnails'], 'readwrite');
+    try {
+      if (isCloudArchive(rootId)) {
+        const previous = await tx.objectStore('prefs').get('hiddenCloudRoots');
+        const hidden = Array.isArray(previous?.value) ? previous.value.filter((id): id is string => typeof id === 'string') : [];
+        await tx.objectStore('prefs').put({ key: 'hiddenCloudRoots', value: [...new Set([...hidden, rootId])] });
+      }
+      const archives = await tx.objectStore('archives').index('byRoot').getAllKeys(rootId);
+      const pages = await tx.objectStore('pages').index('byRoot').getAllKeys(rootId);
+      const favoriteFolders = await tx.objectStore('prefs').get('favoriteFolders');
+      await tx.objectStore('prefs').put({key:'favoriteFolders',value:removeArchiveFolderFavorites(favoriteFolders?.value,archives)});
+      for (const archiveId of archives) {
+        const keys = await tx.objectStore('files').index('byArchive').getAllKeys(archiveId);
+        await Promise.all(keys.map(key => tx.objectStore('files').delete(key)));
+        await tx.objectStore('archives').delete(archiveId);
+      }
+      const removedPages=new Set(pages);
+      for(const entry of await tx.objectStore('galleryThumbnails').getAll())if(removedPages.has(entry.pageId))await tx.objectStore('galleryThumbnails').delete(entry.key);
+      await Promise.all(pages.flatMap(pageId => [tx.objectStore('pages').delete(pageId), tx.objectStore('snapshots').delete(pageId), tx.objectStore('organization').delete(pageId)]));
+      await tx.done;
+    } catch (error) {
+      try { tx.abort(); } catch { /* Already complete or aborted. */ }
+      await tx.done.catch(() => undefined);
+      throw error;
     }
-    const archives = await tx.objectStore('archives').index('byRoot').getAllKeys(rootId);
-    const pages = await tx.objectStore('pages').index('byRoot').getAllKeys(rootId);
-    const favoriteFolders = await tx.objectStore('prefs').get('favoriteFolders');
-    await tx.objectStore('prefs').put({key:'favoriteFolders',value:removeArchiveFolderFavorites(favoriteFolders?.value,archives)});
-    for (const archiveId of archives) {
-      const keys = await tx.objectStore('files').index('byArchive').getAllKeys(archiveId);
-      await Promise.all(keys.map(key => tx.objectStore('files').delete(key)));
-      await tx.objectStore('archives').delete(archiveId);
-    }
-    const removedPages=new Set(pages);
-    for(const entry of await tx.objectStore('galleryThumbnails').getAll())if(removedPages.has(entry.pageId))await tx.objectStore('galleryThumbnails').delete(entry.key);
-    await Promise.all(pages.flatMap(pageId => [tx.objectStore('pages').delete(pageId), tx.objectStore('snapshots').delete(pageId), tx.objectStore('organization').delete(pageId)]));
-    await tx.done;
-  } catch (error) {
-    try { tx.abort(); } catch { /* Already complete or aborted. */ }
-    await tx.done.catch(() => undefined);
-    throw error;
-  }
+  });
 }
 
 /** Folder assignment is organization metadata; original archive paths never move. */
@@ -220,84 +244,88 @@ export async function createFolder(name: string): Promise<WorkspaceFolder> {
   if (!trimmed) throw new Error('Enter a folder name.');
   if (trimmed.length > 80) throw new Error('Use a folder name of 80 characters or fewer.');
   if (/[\u0000-\u001f\u007f]/.test(trimmed)) throw new Error('Folder names cannot contain control characters.');
-  const db = await database();
-  const tx = db.transaction('folders', 'readwrite');
-  try {
-    const existing = await tx.store.getAll();
-    if (existing.some(folder => folder.name.toLocaleLowerCase() === trimmed.toLocaleLowerCase())) throw new Error('A folder with that name already exists.');
-    const folder: WorkspaceFolder = { id: uniqueId(), name: trimmed, createdAt: Date.now() };
-    await tx.store.add(folder);
-    await tx.done;
-    return folder;
-  } catch (error) {
-    try { tx.abort(); } catch { /* Already complete or aborted. */ }
-    await tx.done.catch(() => undefined);
-    throw error;
-  }
+  return withSharedWrite('library', await database(), async db => {
+    const tx = db.transaction('folders', 'readwrite');
+    try {
+      const existing = await tx.store.getAll();
+      if (existing.some(folder => folder.name.toLocaleLowerCase() === trimmed.toLocaleLowerCase())) throw new Error('A folder with that name already exists.');
+      const folder: WorkspaceFolder = { id: uniqueId(), name: trimmed, createdAt: Date.now() };
+      await tx.store.add(folder);
+      await tx.done;
+      return folder;
+    } catch (error) {
+      try { tx.abort(); } catch { /* Already complete or aborted. */ }
+      await tx.done.catch(() => undefined);
+      throw error;
+    }
+  });
 }
 
 /** Folder membership is inherited at display time; individual file stars remain independent. */
 export async function setFolderFavorite(id: string, favorite: boolean): Promise<string[]> {
   if (typeof id !== 'string' || typeof favorite !== 'boolean') throw new Error('Invalid folder favorite.');
-  const db = await database();
-  const tx = db.transaction(['archives','pages','folders','organization','prefs'], 'readwrite');
-  try {
-    const [archives,pages,folders,organization,stored] = await Promise.all([
-      tx.objectStore('archives').getAll(),tx.objectStore('pages').getAll(),tx.objectStore('folders').getAll(),
-      tx.objectStore('organization').getAll(),tx.objectStore('prefs').get('favoriteFolders'),
-    ]);
-    const favorites=normalizeFolderFavorites(stored?.value);
-    if ((favorite || !favorites.has(id)) && !hasFavoriteFolder(id,archives,pages,folders,new Map(organization.map(item=>[item.id,item])))) throw new Error('This folder is no longer in the workspace.');
-    if (favorite) favorites.add(id); else favorites.delete(id);
-    const result=[...favorites];
-    await tx.objectStore('prefs').put({key:'favoriteFolders',value:result});
-    await tx.done;
-    return result;
-  } catch(error) {
-    try {tx.abort();} catch { /* Already completed or aborted. */ }
-    await tx.done.catch(()=>undefined);
-    throw error;
-  }
+  return withSharedWrite('library', await database(), async db => {
+    const tx = db.transaction(['archives','pages','folders','organization','prefs'], 'readwrite');
+    try {
+      const [archives,pages,folders,organization,stored] = await Promise.all([
+        tx.objectStore('archives').getAll(),tx.objectStore('pages').getAll(),tx.objectStore('folders').getAll(),
+        tx.objectStore('organization').getAll(),tx.objectStore('prefs').get('favoriteFolders'),
+      ]);
+      const favorites=normalizeFolderFavorites(stored?.value);
+      if ((favorite || !favorites.has(id)) && !hasFavoriteFolder(id,archives,pages,folders,new Map(organization.map(item=>[item.id,item])))) throw new Error('This folder is no longer in the workspace.');
+      if (favorite) favorites.add(id); else favorites.delete(id);
+      const result=[...favorites];
+      await tx.objectStore('prefs').put({key:'favoriteFolders',value:result});
+      await tx.done;
+      return result;
+    } catch(error) {
+      try {tx.abort();} catch { /* Already completed or aborted. */ }
+      await tx.done.catch(()=>undefined);
+      throw error;
+    }
+  });
 }
 
 export async function setItemFavorite(id: string, favorite: boolean): Promise<ItemOrganization> {
   if (typeof favorite !== 'boolean') throw new Error('Invalid favorite state.');
-  const db = await database();
-  const tx = db.transaction(['pages', 'organization'], 'readwrite');
-  try {
-    if (!await tx.objectStore('pages').getKey(id)) throw new Error('This item is no longer in the workspace.');
-    const current = await tx.objectStore('organization').get(id);
-    const next: ItemOrganization = { id, favorite, folderId: current?.folderId ?? null };
-    await tx.objectStore('organization').put(next);
-    await tx.done;
-    return next;
-  } catch (error) {
-    try { tx.abort(); } catch { /* Already complete or aborted. */ }
-    await tx.done.catch(() => undefined);
-    throw error;
-  }
+  return withSharedWrite('library', await database(), async db => {
+    const tx = db.transaction(['pages', 'organization'], 'readwrite');
+    try {
+      if (!await tx.objectStore('pages').getKey(id)) throw new Error('This item is no longer in the workspace.');
+      const current = await tx.objectStore('organization').get(id);
+      const next: ItemOrganization = { id, favorite, folderId: current?.folderId ?? null };
+      await tx.objectStore('organization').put(next);
+      await tx.done;
+      return next;
+    } catch (error) {
+      try { tx.abort(); } catch { /* Already complete or aborted. */ }
+      await tx.done.catch(() => undefined);
+      throw error;
+    }
+  });
 }
 
 export async function moveItemsToFolder(ids: string[], folderId: string | null): Promise<ItemOrganization[]> {
-  const db = await database();
-  const tx = db.transaction(['pages', 'folders', 'organization'], 'readwrite');
-  try {
-    if (folderId !== null && !await tx.objectStore('folders').getKey(folderId)) throw new Error('Choose an existing folder.');
-    const result: ItemOrganization[] = [];
-    for (const id of new Set(ids)) {
-      if (!await tx.objectStore('pages').getKey(id)) throw new Error('An item was removed before it could be moved.');
-      const current = await tx.objectStore('organization').get(id);
-      const next: ItemOrganization = { id, favorite: current?.favorite ?? false, folderId };
-      await tx.objectStore('organization').put(next);
-      result.push(next);
+  return withSharedWrite('library', await database(), async db => {
+    const tx = db.transaction(['pages', 'folders', 'organization'], 'readwrite');
+    try {
+      if (folderId !== null && !await tx.objectStore('folders').getKey(folderId)) throw new Error('Choose an existing folder.');
+      const result: ItemOrganization[] = [];
+      for (const id of new Set(ids)) {
+        if (!await tx.objectStore('pages').getKey(id)) throw new Error('An item was removed before it could be moved.');
+        const current = await tx.objectStore('organization').get(id);
+        const next: ItemOrganization = { id, favorite: current?.favorite ?? false, folderId };
+        await tx.objectStore('organization').put(next);
+        result.push(next);
+      }
+      await tx.done;
+      return result;
+    } catch (error) {
+      try { tx.abort(); } catch { /* Already complete or aborted. */ }
+      await tx.done.catch(() => undefined);
+      throw error;
     }
-    await tx.done;
-    return result;
-  } catch (error) {
-    try { tx.abort(); } catch { /* Already complete or aborted. */ }
-    await tx.done.catch(() => undefined);
-    throw error;
-  }
+  });
 }
 
 export async function getPreference<T>(key: string): Promise<T | undefined> {
@@ -305,7 +333,9 @@ export async function getPreference<T>(key: string): Promise<T | undefined> {
 }
 
 export async function setPreference(key: string, value: unknown): Promise<void> {
-  await (await database()).put('prefs', { key, value });
+  const db = await database();
+  if (SHARED_PREFERENCE_KEYS.has(key)) await withSharedWrite('library', db, async stage => {await stage.put('prefs', {key, value});});
+  else await db.put('prefs', { key, value });
 }
 
 

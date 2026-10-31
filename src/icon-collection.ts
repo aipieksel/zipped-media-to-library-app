@@ -1,5 +1,7 @@
 import {createEmbeddedRasterSvg, inspectRaster, rasterMimeHint} from './raster-input';
 import {openDB} from 'idb';
+import {isSharedWorkspaceEnabled, registerSharedDatabase, resolveSharedRecord, sharedDatabaseName, SHARED_ICONS_DB, subscribeSharedWorkspace, withSharedWrite} from './shared/runtime';
+import {sharedIconIdentity, validateSharedIconSvg} from './shared/icon-trust';
 import type {DBSchema, IDBPDatabase, IDBPTransaction} from 'idb';
 import {uniqueId} from './identity';
 import {allocateSvgFilename, PNG_SVG_LIMITS} from './png-svg';
@@ -181,41 +183,57 @@ interface PreparedArtwork {
   currentIcon?: {id: string; revision: number; requireReady: boolean};
 }
 
-/** Local-only storage. This module has no Library database or network dependency. */
+/** Existing operations use a separate authenticated shared cache when that workspace is active. */
 export class IconCollectionStore {
   private readonly listeners = new Set<() => void>();
   private readonly channel?: BroadcastChannel;
   private closed = false;
+  private readonly unsubscribeShared: () => void;
+  private readonly sharedChecks = new Map<string, {fidelity: PngSvgFidelity; verification?: SavedIconVerification}>();
+  private readonly servedSaved = new Map<string, string>();
+  private readonly checkAbort = new AbortController();
 
   constructor(private readonly db: IDBPDatabase<IconSchema>, readonly name: string) {
     if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
       this.channel = new BroadcastChannel(`folio-icons-change:${name}`);
       this.channel.onmessage = () => {for (const listener of this.listeners) listener();};
     }
+    this.unsubscribeShared = subscribeSharedWorkspace(change => {if (change.icons && name === SHARED_ICONS_DB) this.announce();});
   }
 
   subscribe(listener: () => void): () => void {this.listeners.add(listener); return () => {this.listeners.delete(listener);};}
-  close(): void {this.closed = true; this.channel?.close(); this.listeners.clear(); this.db.close();}
+  close(): void {this.closed = true; this.checkAbort.abort(); this.sharedChecks.clear(); this.servedSaved.clear(); this.unsubscribeShared(); this.channel?.close(); this.listeners.clear(); this.db.close();}
   private announce(): void {if (this.closed) return; this.channel?.postMessage('changed'); for (const listener of this.listeners) listener();}
 
-  private async write<T>(stores: StoreName[], action: (tx: WriteTransaction) => Promise<T>, announce = true): Promise<T> {
+  private async write<T>(stores: StoreName[], action: (tx: WriteTransaction) => Promise<T>, announce = true, share = true): Promise<T> {
     if (this.closed) throw new Error('The local Icons collection is closed. Reload to reopen it.');
-    const tx = this.db.transaction(stores, 'readwrite');
-    try {
-      const value = await action(tx);
-      await tx.done;
-      if (announce) this.announce();
-      return value;
-    } catch (error) {
-      try {tx.abort();} catch { /* IndexedDB may already have aborted the transaction. */ }
-      await tx.done.catch(() => undefined);
-      throw error;
-    }
+    const perform = async (db: IDBPDatabase<IconSchema>) => {
+      const tx = db.transaction(stores, 'readwrite');
+      try {const value = await action(tx); await tx.done; return value;}
+      catch (error) {try {tx.abort();} catch { /* IndexedDB may already have aborted. */ } await tx.done.catch(() => undefined); throw error;}
+    };
+    // Claims, heartbeat, release and view preferences are device work, not shared edits.
+    const value = share && announce && stores.some(name => name !== 'prefs') ? await withSharedWrite('icons', this.db, perform) : await perform(this.db);
+    if (announce) this.announce();
+    return value;
   }
 
   async snapshot(): Promise<IconCollectionSnapshot> {
-    const tx = this.db.transaction(['icons', 'savedIcons', 'folders', 'prefs'], 'readonly');
+    const tx = this.db.transaction(['icons', 'savedIcons', 'folders', 'prefs', 'sources', 'outputs', 'savedSources', 'savedSvg'], 'readonly');
     const [items, saved, folders, prefs] = await Promise.all([tx.objectStore('icons').getAll(), tx.objectStore('savedIcons').getAll(), tx.objectStore('folders').getAll(), tx.objectStore('prefs').get('workspace')]);
+    if (this.name === SHARED_ICONS_DB) {
+      for (const item of items) if (item.result) {
+        const [source, output] = await Promise.all([tx.objectStore('sources').get(item.id), tx.objectStore('outputs').get(item.id)]);
+        const check = this.sharedChecks.get(sharedIconIdentity(item, source, output));
+        item.result = {...item.result, fidelity: check?.fidelity ?? unchecked(item.result.width, item.result.height, 'Open this icon to check its shared SVG bytes in this browser.'), verification: check?.verification as PngSvgResult['verification']};
+      }
+      for (const item of saved) {
+        const [source, output] = await Promise.all([tx.objectStore('savedSources').get(item.id), tx.objectStore('savedSvg').get(item.id)]);
+        const check = this.sharedChecks.get(sharedIconIdentity(item, source, output));
+        item.fidelity = check?.fidelity ?? unchecked(item.width, item.height, 'This shared SVG will be checked in this browser when opened.');
+        item.verification = check?.verification;
+      }
+    }
     await tx.done;
     items.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
     folders.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
@@ -227,28 +245,52 @@ export class IconCollectionStore {
     const tx = this.db.transaction(['icons', 'sources'], 'readonly');
     const [item, source] = await Promise.all([tx.objectStore('icons').getKey(id), tx.objectStore('sources').get(id)]);
     await tx.done;
-    return item ? source?.blob : undefined;
+    return item && source ? (await resolveSharedRecord(source)).blob : undefined;
   }
 
   async getOutput(id: string, revision?: number): Promise<Blob | undefined> {
-    const tx = this.db.transaction(['icons', 'outputs'], 'readonly');
-    const [item, output] = await Promise.all([tx.objectStore('icons').get(id), tx.objectStore('outputs').get(id)]);
+    const tx = this.db.transaction(['icons', 'outputs', 'sources'], 'readonly');
+    const [item, output, source] = await Promise.all([tx.objectStore('icons').get(id), tx.objectStore('outputs').get(id), tx.objectStore('sources').get(id)]);
     await tx.done;
-    return item?.status === 'ready' && item.result && output?.revision === item.revision && (revision === undefined || revision === item.revision) ? output.blob : undefined;
+    if (item?.status !== 'ready' || !item.result || output?.revision !== item.revision || revision !== undefined && revision !== item.revision) return undefined;
+    const resolved = await resolveSharedRecord(output);
+    if (this.name === SHARED_ICONS_DB) {
+      if (!source) throw new Error('The shared artwork source is missing.');
+      const original = await resolveSharedRecord(source), key = sharedIconIdentity(item, source, output);
+      const svg = await validateSharedIconSvg(resolved.blob, original.blob, item);
+      if (!this.sharedChecks.has(key)) {
+        try {
+          const {checkArtworkPixels} = await import('./ai/fidelity');
+          this.sharedChecks.set(key, await checkArtworkPixels(svg, original.blob, item.result.width, item.result.height, this.checkAbort.signal));
+        } catch (error) {
+          if (this.checkAbort.signal.aborted) throw error;
+          this.sharedChecks.set(key, {fidelity: unchecked(item.result.width, item.result.height, error instanceof Error ? error.message : 'The native pixel check could not run.')});
+        }
+        this.announce();
+      }
+    }
+    return resolved.blob;
   }
 
   async getSavedOutput(id: string, revision?: number): Promise<Blob | undefined> {
-    const tx = this.db.transaction(['savedIcons', 'savedSvg'], 'readonly');
-    const [item, svg] = await Promise.all([tx.objectStore('savedIcons').get(id), tx.objectStore('savedSvg').get(id)]);
+    const tx = this.db.transaction(['savedIcons', 'savedSvg', 'savedSources'], 'readonly');
+    const [item, svg, source] = await Promise.all([tx.objectStore('savedIcons').get(id), tx.objectStore('savedSvg').get(id), tx.objectStore('savedSources').get(id)]);
     await tx.done;
-    return item && svg?.revision === item.revision && (revision === undefined || revision === item.revision) ? svg.output : undefined;
+    if (!item || svg?.revision !== item.revision || revision !== undefined && revision !== item.revision) return undefined;
+    const resolved = await resolveSharedRecord(svg);
+    if (this.name === SHARED_ICONS_DB) {
+      if (!source) throw new Error('The shared artwork source is missing.');
+      await validateSharedIconSvg(resolved.output, (await resolveSharedRecord(source)).blob, item);
+      this.servedSaved.set(id, sharedIconIdentity(item, source, svg));
+    }
+    return resolved.output;
   }
 
   async getSavedSource(id: string): Promise<Blob | undefined> {
     const tx = this.db.transaction(['savedIcons', 'savedSources'], 'readonly');
     const [item, source] = await Promise.all([tx.objectStore('savedIcons').getKey(id), tx.objectStore('savedSources').get(id)]);
     await tx.done;
-    return item ? source?.blob : undefined;
+    return item && source ? (await resolveSharedRecord(source)).blob : undefined;
   }
 
   private async commitArtwork(input: PreparedArtwork): Promise<SavedIconRecord> {
@@ -278,9 +320,10 @@ export class IconCollectionStore {
   async saveConverted(id: string, expectedRevision: number): Promise<SavedIconRecord> {
     checkSavedRevision(expectedRevision);
     const tx = this.db.transaction(['icons', 'sources', 'outputs'], 'readonly');
-    const [item, source, output] = await Promise.all([tx.objectStore('icons').get(id), tx.objectStore('sources').get(id), tx.objectStore('outputs').get(id)]);
+    let [item, source, output] = await Promise.all([tx.objectStore('icons').get(id), tx.objectStore('sources').get(id), tx.objectStore('outputs').get(id)]);
     await tx.done;
     if (!item || item.revision !== expectedRevision || item.status !== 'ready' || !item.result || !source || output?.revision !== expectedRevision) throw new Error('Choose a current successful conversion before saving.');
+    source = await resolveSharedRecord(source); output = await resolveSharedRecord(output);
     if (output.blob.size > PNG_SVG_LIMITS.maxSvgBytes) throw new Error('The saved SVG exceeds the output limit.');
     const svg = await output.blob.text(), result = item.result;
     resultBlob({...result, svg});
@@ -305,7 +348,7 @@ export class IconCollectionStore {
       const [item, original] = await Promise.all([tx.objectStore('icons').get(source.id), tx.objectStore('sources').get(source.id)]);
       await tx.done;
       if (!item || item.revision !== source.revision || !original) throw new Error('The original icon changed or was removed.');
-      source = {...source, name: item.sourceName, mime: item.sourceMime ?? 'image/png', blob: original.blob};
+      source = {...source, name: item.sourceName, mime: item.sourceMime ?? 'image/png', blob: (await resolveSharedRecord(original)).blob};
       currentIcon = {id: item.id, revision: item.revision, requireReady: false};
     }
     const captured = await sourceSnapshot(source, input.width, input.height);
@@ -316,9 +359,10 @@ export class IconCollectionStore {
   async recolorSaved(id: string, color: string | null, expectedRevision: number): Promise<SavedIconRecord> {
     checkSavedRevision(expectedRevision);
     const tx = this.db.transaction(['savedIcons', 'savedSvg'], 'readonly');
-    const [item, svg] = await Promise.all([tx.objectStore('savedIcons').get(id), tx.objectStore('savedSvg').get(id)]);
+    let [item, svg] = await Promise.all([tx.objectStore('savedIcons').get(id), tx.objectStore('savedSvg').get(id)]);
     await tx.done;
     if (!item || !svg || item.revision !== expectedRevision || svg.revision !== expectedRevision) throw new Error('The saved artwork changed. Reload its current version and try again.');
+    svg = await resolveSharedRecord(svg);
     if (!item.recolorable && color !== null) throw new Error('This SVG contains an embedded bitmap. Only vector artwork can be recolored.');
     const normalizedColor = color === null ? null : typeof color === 'string' && /^#[\da-f]{6}$/i.test(color) ? color.toLowerCase() : undefined;
     if (normalizedColor === undefined) throw new Error('Choose a six-digit hex color.');
@@ -337,6 +381,16 @@ export class IconCollectionStore {
   /** A native browser check may only stamp the exact saved content revision it rendered. */
   async recordSavedVerification(id: string, expectedRevision: number, fidelity: PngSvgFidelity, verification: SavedIconVerification): Promise<boolean> {
     checkSavedRevision(expectedRevision);
+    if (this.name === SHARED_ICONS_DB) {
+      const tx = this.db.transaction(['savedIcons', 'savedSvg', 'savedSources'], 'readonly');
+      const [item, svg, source] = await Promise.all([tx.objectStore('savedIcons').get(id), tx.objectStore('savedSvg').get(id), tx.objectStore('savedSources').get(id)]);
+      await tx.done;
+      if (!item || item.revision !== expectedRevision || svg?.revision !== expectedRevision || !source) return false;
+      const identity = sharedIconIdentity(item, source, svg);
+      if (identity !== this.servedSaved.get(id)) return false;
+      this.sharedChecks.set(identity, savedCheck(fidelity, verification, item.width, item.height));
+      this.announce(); return true;
+    }
     return this.write(['savedIcons', 'savedSvg'], async tx => {
       const item = await tx.objectStore('savedIcons').get(id), svg = await tx.objectStore('savedSvg').get(id);
       if (!item || item.revision !== expectedRevision || svg?.revision !== expectedRevision) return false;
@@ -421,7 +475,7 @@ export class IconCollectionStore {
           id, folderId, name: allocateIconName(parts.at(-1)!, namesAt(folderId), true), sourceName: entry.file.name, sourceMime: rasterMimeHint(entry.file),
           sourcePath: entry.relativePath, filename: allocateSvgFilename(entry.file.name, outputNames), size: entry.file.size,
           lastModified: validTime(entry.file.lastModified) ? entry.file.lastModified : 0, createdAt: now, updatedAt: now,
-          mode, revision: 1, status: 'queued', message: 'Saved locally · waiting to convert…', favorite: false,
+          mode, revision: 1, status: 'queued', message: isSharedWorkspaceEnabled() ? 'Saved to workspace · waiting to convert…' : 'Saved locally · waiting to convert…', favorite: false,
         };
         added.push(item); sources.push({id, blob: entry.file.slice(0, entry.file.size, rasterMimeHint(entry.file))});
       }
@@ -473,7 +527,7 @@ export class IconCollectionStore {
       if (result.mode !== item!.mode || result.sourceBytes !== item!.size) throw new Error('The converter result no longer matches this saved source or mode.');
       const {svg: _svg, ...metadata} = result;
       await tx.objectStore('outputs').put({id: item!.id, revision: item!.revision, blob});
-      await tx.objectStore('icons').put({...item!, status: 'ready', message: 'SVG saved locally.', updatedAt: now, sourceMime: result.sourceFormat === 'webp' ? 'image/webp' : 'image/png', result: metadata, claim: undefined});
+      await tx.objectStore('icons').put({...item!, status: 'ready', message: isSharedWorkspaceEnabled() ? 'SVG saved to workspace.' : 'SVG saved locally.', updatedAt: now, sourceMime: result.sourceFormat === 'webp' ? 'image/webp' : 'image/png', result: metadata, claim: undefined});
       return true;
     });
   }
@@ -494,7 +548,16 @@ export class IconCollectionStore {
       if (!item || item.status !== 'processing' || item.revision !== claim.revision || item.claim?.owner !== claim.owner || item.claim?.token !== claim.token) return false;
       await tx.objectStore('icons').put({...item, status: 'queued', claim: undefined, message: 'Saved locally · waiting to resume…', updatedAt: Date.now()});
       return true;
-    });
+    }, true, false);
+  }
+
+  /** Failed publication is recoverable in Workspace Settings; do not automatically rerun it. */
+  async pauseAfterSharedFailure(claim: IconClaim, message: string): Promise<void> {
+    await this.write(['icons'], async tx => {
+      const item = await tx.objectStore('icons').get(claim.id);
+      if (!item || item.revision !== claim.revision || item.claim?.owner !== claim.owner || item.claim?.token !== claim.token) return;
+      await tx.objectStore('icons').put({...item, status: 'cancelled', claim: undefined, message: String(message).slice(0, 2000), updatedAt: Date.now()});
+    }, true, false);
   }
 
   async retry(id: string, mode?: ConversionMode): Promise<IconRecord> {
@@ -514,7 +577,9 @@ export class IconCollectionStore {
       const item = await tx.objectStore('icons').get(id);
       if (!item || !['queued', 'processing'].includes(item.status)) return;
       await tx.objectStore('outputs').delete(id);
-      await tx.objectStore('icons').put({...item, revision: item.revision + 1, status: 'cancelled', claim: undefined, result: undefined, message: 'Conversion stopped. The original image is saved; retry whenever you are ready.', updatedAt: Date.now()});
+      const next = {...item, revision: item.revision + 1, status: 'cancelled' as const, claim: undefined, result: undefined, message: 'Conversion stopped. The original image is saved; retry whenever you are ready.', updatedAt: Date.now()} as IconRecord & {sharedPending?: boolean};
+      delete next.sharedPending;
+      await tx.objectStore('icons').put(next);
     });
   }
 
@@ -522,7 +587,9 @@ export class IconCollectionStore {
     await this.write(['icons', 'outputs'], async tx => {
       for (const item of await tx.objectStore('icons').getAll()) if (item.status === 'queued' || item.status === 'processing') {
         await tx.objectStore('outputs').delete(item.id);
-        await tx.objectStore('icons').put({...item, revision: item.revision + 1, status: 'cancelled', claim: undefined, result: undefined, message: 'Conversion stopped. The original image is saved; retry whenever you are ready.', updatedAt: Date.now()});
+        const next = {...item, revision: item.revision + 1, status: 'cancelled' as const, claim: undefined, result: undefined, message: 'Conversion stopped. The original image is saved; retry whenever you are ready.', updatedAt: Date.now()} as IconRecord & {sharedPending?: boolean};
+        delete next.sharedPending;
+        await tx.objectStore('icons').put(next);
       }
     });
   }
@@ -624,7 +691,8 @@ export class IconCollectionStore {
 }
 
 /** Each call returns an independent handle; QA may use a dedicated database name. */
-export async function openIconCollection(name = ICON_DB_NAME): Promise<IconCollectionStore> {
+async function openIconDatabase(name: string): Promise<IDBPDatabase<IconSchema>> {
+  name = sharedDatabaseName(name);
   if (!name || name.length > 180) throw new Error('Invalid local Icons database name.');
   let db: IDBPDatabase<IconSchema>;
   db = await openDB<IconSchema>(name, ICON_DB_VERSION, {
@@ -650,12 +718,20 @@ export async function openIconCollection(name = ICON_DB_NAME): Promise<IconColle
   try {
     if (!await tx.store.getKey(UNCATEGORIZED_ICON_FOLDER_ID)) await tx.store.add({id: UNCATEGORIZED_ICON_FOLDER_ID, parentId: null, name: 'Uncategorized', createdAt: Date.now(), favorite: false});
     await tx.done;
-    return new IconCollectionStore(db, name);
+    registerSharedDatabase('icons', db);
+    return db;
   } catch (error) {
     try {tx.abort();} catch { /* Already aborted. */ }
     await tx.done.catch(() => undefined); db.close(); throw error;
   }
 }
+
+export async function openIconCollection(name = ICON_DB_NAME): Promise<IconCollectionStore> {
+  const db = await openIconDatabase(name);
+  return new IconCollectionStore(db, db.name);
+}
+
+export function openSharedIconDatabase(): Promise<IDBPDatabase<IconSchema>> {return openIconDatabase(ICON_DB_NAME);}
 
 /** Presentation-only adapters never enter the Library archive/file persistence APIs. */
 export function projectIconCollection(snapshot: IconCollectionSnapshot, favoritesOnly = false): IconTreeProjection {

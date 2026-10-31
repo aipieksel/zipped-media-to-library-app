@@ -4,9 +4,9 @@
 ZIPs, HTML, images and captures in private app storage. See [PRIVACY.md](PRIVACY.md)
 for exclusions and the local pre-commit check.
 
-A compact browser workspace for browsing exported HTML pages, images and local PNG/WebP-to-SVG icons. A private Site-owned collection loads its metadata automatically and fetches resources as needed. ZIP, image and Google Drive imports remain in this browser's IndexedDB storage. Icons have their own local collection of original PNG/WebP files and generated SVGs. Collection bytes and operational inventories are not bundled in this repository.
+A compact browser workspace for exported HTML pages, images and PNG/WebP-to-SVG icons. Folio accounts share one private workspace: new imports, folders, favorites, screenshots, original icons and saved artwork use authenticated server storage. Conversion still runs locally. Existing browser-only files are preserved and can be deliberately shared from Settings. Collection bytes and operational inventories are never bundled in this repository.
 
-Use the top **HTML / Images / Icons** tabs. All three use the same file sidebar, tree, search, sorting, Favorites and previous/next navigation. Icons extends that workspace with conversion controls in the canvas toolbar; it has no separate converter sidebar. HTML and Images retain the existing Library tools and collection.
+Use the custom **workspace dropdown above Search** to choose **HTML**, **Images** or **Icons**. All three use the same file sidebar, tree, search, sorting, Favorites and previous/next navigation. Icons extends that workspace with conversion controls in the canvas toolbar; it has no separate converter sidebar. HTML and Images retain the existing Library tools and collection.
 
 ## Using the workspace
 
@@ -33,7 +33,7 @@ Both HTML and Images have canvas galleries. Choose Auto or 1–8 columns and row
 | `/` | Focus file search |
 | Escape | Dismiss a dialog or popover; return focus from an HTML preview to the tree |
 
-Shared file navigation works in all three tabs. Shortcuts do not take over arrow keys while editing a text input. The top tab list also supports Left/Right and Home/End. Within live HTML, the preview bridge relays navigation keys when the page is not editing a field.
+Shared file navigation works in all three tabs. Shortcuts do not take over arrow keys while editing a text input. The shared custom dropdown supports keyboard navigation, typeahead, selection and Escape; file shortcuts yield while it is active. Within live HTML, the preview bridge relays navigation keys when the page is not editing a field.
 
 ## Images, screenshots and downloads
 
@@ -47,7 +47,7 @@ Captures use an in-browser DOM renderer, not a remote Playwright service. Keep t
 
 ## Local PNG and WebP to SVG conversion
 
-Open **Icons** and drop PNGs, WebPs or folders onto the canvas or sidebar, use the sidebar's **+** or folder-import button, or choose **Import PNGs / WebPs** or **Import folder** in the empty state. Original PNG or WebP bytes and queued entries are saved locally before conversion starts automatically. Loose files enter the persistent **Uncategorized** folder. Folder imports retain their hierarchy, including distinct roots with the same name; safe suffixes resolve display and export-name collisions.
+Open **Icons** and drop PNGs, WebPs or folders onto the canvas or sidebar, use the sidebar's **+** or folder-import button, or choose **Import PNGs / WebPs** or **Import folder** in the empty state. Original PNG or WebP bytes and queued entries are saved before conversion starts automatically; in the authenticated app, the shared save is acknowledged first. Loose files enter the persistent **Uncategorized** folder. Folder imports retain their hierarchy, including distinct roots with the same name; safe suffixes resolve display and export-name collisions.
 
 Directory drops preserve empty folders when the browser exposes directory entries. A file-only folder chooser can preserve the paths of files it returns, but cannot report empty folders. Unsupported files, unreadable entries and admission limits produce import notices rather than silently merging unrelated folders. The [import implementation](src/icon-drop.ts) defines the supported directory-entry and picker paths.
 
@@ -91,7 +91,7 @@ Each result saves the check timestamp, browser, engine/version and native **sRGB
 
 ### Converter storage and limits
 
-Original PNG/WebP files, generated SVGs, nested folders, favorites, conversion state and view preferences persist in the separate local **`folio-icons` IndexedDB** database. They are not uploaded to the Site collection or Google Drive. Switching tabs and normal reloads retain them. Startup reads metadata and loads source/output Blobs as needed rather than keeping the entire collection decoded in memory.
+Original PNG/WebP files, completed SVGs, nested folders and favorites are shared through authenticated D1 metadata and immutable R2 chunks. The browser keeps a separate shared cache; existing **`folio-icons`** records are preserved for deliberate migration. Worker claims, view preferences and AI pairing remain device-local. Startup reads metadata and source/output bytes load as needed.
 
 Queued work resumes automatically while the app is open. Interrupted processing can resume after its prior claim expires; a second tab does not take over a live job. Explicitly stopped and failed jobs stay stopped until **Convert again**. Claims and revision checks prevent an old conversion from restoring a deleted or superseded result. Storage or quota failures are shown instead of reporting an unsaved result as ready. See the [collection storage](src/icon-collection.ts) and [queue controller](src/useIconCollection.ts).
 
@@ -109,7 +109,7 @@ Queued work resumes automatically while the app is open. Interrupted processing 
 | Folder traversal | 5,000 entries, including folders/unsupported files, and 32 path levels |
 | One ZIP export | 128 MiB of generated SVG input bytes |
 
-Static PNGs and WebPs are supported; animated PNGs and animated WebPs are rejected explicitly. Invalid, oversized or excessively complex files produce actionable errors without silent downscaling. The 100-file limit applies to each import, not the saved collection's lifetime. Total saved data is limited by browser storage quota, shared with the site's other local data. Clearing site data or browser eviction can remove local icons; keep your originals and useful exports.
+Static PNGs and WebPs are supported; animated PNGs and animated WebPs are rejected explicitly. Invalid, oversized or excessively complex files produce actionable errors without silent downscaling. The 100-file limit applies to each import, not the saved collection's lifetime. Shared saves are bounded by the metadata and chunk limits below. Browser quota still applies to caches, pending work and preserved old local files. Keep your originals and useful exports; shared storage is persistence, not a backup policy.
 
 ## AI SVG studio and Saved icons
 
@@ -131,7 +131,7 @@ AI reconstruction is an approximation, not a guarantee of pixel-perfect curves.
 
 ### Connect your ChatGPT account
 
-Open the top **workspace menu → Settings → AI**. The browser connects explicitly
+Open the sidebar **Settings cog → AI**. The browser connects explicitly
 to the Folio companion running on your own computer. The companion uses the
 official Codex CLI's ChatGPT sign-in; it does not substitute API-key billing.
 The supplied package is adapted in [vendor/ai-cli-integration](vendor/ai-cli-integration).
@@ -167,7 +167,7 @@ discovery, but its image execution and restrictions have not been verified, so
 Grok SVG generation stays unavailable. DeepSeek is not implemented in that
 package. The shared service has provider/capability contracts for future tools;
 general photo editing and bitmap generation are not claimed by the current SVG
-adapter. Ordinary PNG/WebP conversion does not need AI or an account connection.
+adapter. Ordinary PNG/WebP conversion does not need an AI-provider connection. The hosted shared workspace requires a Folio account.
 
 AI accepts static PNG, WebP and JPEG originals up to 8 MiB, 4096 pixels per side
 and 4,194,304 pixels. It prepares a native-size PNG attachment without silently
@@ -179,7 +179,7 @@ are sent through the paired CLI to the chosen provider.
 ### Save, recolor and export
 
 Saving creates an independent record containing the exact SVG, an immutable base
-SVG, its source-image snapshot and provenance in local IndexedDB. Retrying or
+SVG, its source-image snapshot and provenance in the shared workspace. Retrying or
 removing the conversion does not remove chosen artwork. Removing a conversion
 folder moves saved artwork into **Uncategorized**, resolving name collisions.
 Saved artwork is removed only through its own removal action.
@@ -192,23 +192,65 @@ colors** restores the exact immutable base bytes and their saved check. Individu
 SVG and ZIP downloads use the current saved color. Embedded-bitmap conversions
 can also be saved with their exact source bytes, but are clearly non-recolorable.
 
-Saved icons survive navigation, refresh and normal browser restarts. They remain
-in this site's browser profile; clearing site data, storage eviction or moving to
-another device can remove or omit them. Keep a ZIP backup. This feature does not
-promise permanent or cross-device cloud storage.
+Saved icons survive navigation and reload and are available to every authorized
+Folio account using this workspace. Clearing a browser cache does not delete a
+server-saved icon. Deleting saved artwork is a shared workspace action. Keep a ZIP
+backup; server persistence does not promise indefinite retention or recovery after deletion.
 
-### Profile, sign-in and password
+### Settings, accounts and appearance
 
-**Settings → Profile** displays the authenticated identity supplied by the
-existing private Site. Sign-in/out use the hosting platform's ChatGPT account
-flow. A Folio display-name preference is local to this browser. Password and
-security links go to the account provider; Folio never stores a password or
-creates a second password database. Site identity and the locally signed-in AI
-provider are separate connections.
+The footer cog opens a real Settings page. Profile, AI, Appearance, Workspace and
+owner-only Accounts use left navigation and direct hash routes, such as
+`#settings/appearance`. Back to library returns to the preceding workspace. The
+Settings footer includes a real app-session logout action.
+
+Folio registration/login is independent of the ChatGPT account used by the hosting
+gate and the Codex account used by the optional AI companion. The owner completes
+one-time setup by choosing a Folio email, name and password. Bootstrap is bound to
+a configured trusted Site-owner subject; the first arbitrary visitor cannot
+claim ownership. Passwords use salted native scrypt; opaque server sessions use
+HttpOnly cookies, Secure on HTTPS, with SameSite=Lax. Sessions expire and can be
+revoked. Profile updates save a display name; password changes verify the current
+password and invalidate prior sessions/recovery links, replacing the current
+browser session after success.
+
+Owners create recipient-bound, expiring invitation links in Accounts. No email is
+sent. A teammate registers with that link and gets the same files and organization,
+not a personal data partition. The existing Site remains private: the teammate
+also needs permission to open the hosted Site. An app invitation does not change
+the hosting audience. Owner-only member management can disable a member and revoke
+access. Member password recovery requires owner password confirmation; a locked-out
+owner can initiate recovery through the separately verified Site-owner boundary.
+Recovery links are single-use and revoke existing sessions when consumed.
+
+Appearance controls accent, background, surfaces, text, secondary text and borders.
+Draft colors preview locally. Save/Reset persists shared workspace colors; leaving
+without saving restores the previous palette. Hex validation and text-contrast
+checks reject unsafe or unreadable values. UI colors do not recolor SVG artwork,
+imported HTML or the explicit light/dark/checker preview backgrounds.
+
+### Existing browser files
+
+Settings → Workspace inventories the old device-local Library and Icons data.
+The explicit Share action stages the transfer and preserves original browser
+records. IDs, folder relationships, filenames, sources, saved SVG base/current
+colors and verification provenance are retained. Interrupted/conflicting writes
+remain recoverable; retry uses stable IDs instead of duplicating successful items.
+No historical browser media is automatically uploaded merely by signing in.
 
 ## Storage and import limits
 
-Library imports, screenshots, favorites, folders, and view preferences survive a normal refresh in the same browser profile and site. They are not cloud-synchronized. Clearing this site's browser data removes those local items; keep your original ZIPs and images. The private Site-owned collection remains available. **View and capture settings → Manage imports** removes a local import or hides a saved collection category on that browser; hiding does not delete server originals. Icons has the separate local database and removal controls described above; its data is not part of the private Site-owned collection.
+The authenticated workspace uses one shared data set. D1 stores revisioned metadata,
+accounts, membership and sessions; R2 stores immutable checksummed chunks. Server
+acknowledgement is required before a change is shown as shared-saved. Stale writes
+return a conflict instead of replacing another session's changes. Protected media,
+including existing catalogue resources, use private/no-store responses and require
+active membership. Logout unmounts private views and their object URLs.
+
+The existing curated catalogue is reused without reuploading its original files.
+New imports and shared organization use an additive overlay. View selection,
+scroll/expansion, disposable thumbnails, worker claims and companion pairing stay
+local. The old Library/Icon databases remain untouched until deliberate migration.
 
 Additive IndexedDB upgrades preserve existing HTML identifiers, screenshots and resource Blobs. Version 2 indexes imported images; version 3 adds a separate automatic-thumbnail cache. User folders contain organization metadata; original archive paths and linked assets never move.
 
@@ -222,7 +264,7 @@ Additive IndexedDB upgrades preserve existing HTML identifiers, screenshots and 
 | Nested ZIP depth | 8 levels beneath the outer ZIP |
 | Direct image batch | 20,000 files, 768 MiB total, 128 MiB per image |
 
-There is no fixed import-count limit; available browser storage is the practical limit. Password-protected, split, ZIP64 and unsupported-compression archives are rejected. Server applications and native image conversions such as HEIC or TIFF are outside the supported scope.
+Shared metadata currently has a 1 MiB JSON bound per Library/Icons dataset and at most 10,000 unique chunk references. Original bytes are split into checksummed chunks of at most 8 MiB. A larger metadata set fails with an explicit storage error while retaining recoverable input; these bounds can be reached before the parser limits above. Available browser cache capacity also applies. Password-protected, split, ZIP64 and unsupported-compression archives are rejected. Server applications and native image conversions such as HEIC or TIFF are outside the supported scope.
 
 HTML runs in an opaque sandbox with scripts enabled. Its resource bridge is scoped to its own archive. Imported scripts cannot access the workspace's document or storage through that frame, but may still make external network requests. Preview pages are content to inspect, not trusted application code.
 

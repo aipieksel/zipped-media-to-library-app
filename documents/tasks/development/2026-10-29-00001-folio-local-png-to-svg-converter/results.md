@@ -230,3 +230,13 @@ S5 appended verbatim. Three independent assessment/research artifacts complete. 
 ## Revision10 execution admission
 
 Owner: /root; attempt r10-20261031. Subtasks have disjoint file ownership. Criticizer /root/r10_design_research approved revision10; finalize --stage criticized and resolve --execution --require-critique passed. Only assessment/plan checkpoint drift since baseline (018ff95); app baseline unchanged. Original admission: {"planRevision": 10, "planHashes": {"checklist.md": "3a263b23f4f63abae3e3a234989ba6aa7f7f6b5f60497a23387d1359c21c145d", "fix-plan.md": "8d96e81a25d40d65ad87427236ed4aab457b9911865c165dc6235e9b85ade503", "test-plan.md": "3c56115bba24e83b3366aad75091650218f89eeaf32891682d019fe86936cbb2"}, "definitionHash": "1142b2b9eb58135c79a023612616abf89b3bbaea748a323fa48df5c3049f0859", "critiqueHash": "27dfd409330c024eba066951b6a058a0bf1570157e521ef421c2b7988279e302"}.
+
+### Revision10 integration checkpoint
+
+Reviewed plan `235634e`, shared dropdown/appearance primitives `6e38c59`, and native account/shared API services `c8eb8a4` are pushed to GitHub with matching local/remote trees. The next checkpoint persists the routed sidebar/Settings/account UI and browser shared-storage adapter before final verification. It is an implementation checkpoint, not a release approval.
+
+The integrated TypeScript check passes. Focused account-client, Settings-route, appearance and Drive checks pass. Native Worker/D1/R2 tests establish cookie sessions, two synthetic accounts reading the same file, and denied reads after logout. Independent review has additionally found and is resolving (a) a concurrent empty-document startup failure, (b) the metadata capacity regression for large imports, (c) trust of remote SVG/fidelity fields, and (d) jobs crossing an App-session boundary. These findings and their regression evidence must close before release.
+
+The managed preview is shared with another active project: it initially served a different application, a repair restored the Folio fixture, and a later reload again returned the other application's missing-route response. No alternate server, host or network bypass was used. Actual browser UI acceptance remains pending; source/automated checks are not substituted for a successful browser journey.
+
+Production runtime environment revision3 has the new secret, exact trusted Site-owner subject and application origin configured without storing them in GitHub. The owner-private audience is unchanged. No production Folio password or teammate account was created; activation remains the owner's own credential-entry step after publication.
