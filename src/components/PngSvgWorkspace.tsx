@@ -1,14 +1,18 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {AlertTriangle, CheckCircle2, Download, FolderInput, Info, LoaderCircle, RefreshCw, ScanLine, ShieldCheck, Square, Upload} from 'lucide-react';
+import {AlertTriangle, CheckCircle2, Download, FolderInput, Info, LoaderCircle, RefreshCw, ScanLine, ShieldCheck, Square, Upload, Save, Sparkles} from 'lucide-react';
 import type {useIconCollection} from '../useIconCollection';
 import type {ConversionMode} from '../png-svg';
 import {buildSvgZip} from '../png-svg-download';
 import './png-svg.css';
+import {IconViews} from './IconViews';
+import {AiSvgPanel} from './AiSvgPanel';
+import type {AiSettingsController} from '../ai/useAiSettings';
+import type {SavedIconRecord} from '../icon-types';
 
 type IconCollection = ReturnType<typeof useIconCollection>;
 type Zoom = 'fit' | '1' | '2' | '4';
 type Background = 'checker' | 'light' | 'dark';
-interface Props {collection:IconCollection; selectedId:string|null; filteredIds:string[]; onImport:()=>void; onImportFolder:()=>void}
+interface Props {collection:IconCollection; selectedId:string|null; filteredIds:string[]; onImport:()=>void; onImportFolder:()=>void; ai:AiSettingsController; onAiSettings:()=>void; onSaved:(item:SavedIconRecord)=>void; onViewChange:(view:'convert'|'saved')=>void}
 const modeNames:Record<ConversionMode,string>={pixels:'Pixel vectors',smooth:'Smooth curves',embedded:'Embedded bitmap'};
 const modeNotes:Record<ConversionMode,string>={
   pixels:'Editable fills on the original pixel grid. For smooth enlarged contours, choose Smooth curves.',
@@ -23,7 +27,7 @@ function downloadBlob(blob:Blob,filename:string){
 }
 
 /** Canvas only: App owns the one shared Library sidebar and all tree navigation. */
-export function PngSvgWorkspace({collection,selectedId,filteredIds,onImport,onImportFolder}:Props){
+export function PngSvgWorkspace({collection,selectedId,filteredIds,onImport,onImportFolder,ai,onAiSettings,onSaved,onViewChange}:Props){
   const item=collection.items.find(value=>value.id===selectedId),result=item?.result;
   const mode=item?.mode??collection.preferences.defaultMode;
   const sourceFormat=result?.sourceFormat??(item?.sourceMime==='image/webp'?'webp':'png');
@@ -31,6 +35,8 @@ export function PngSvgWorkspace({collection,selectedId,filteredIds,onImport,onIm
   const [zoom,setZoom]=useState<Zoom>(collection.preferences.zoom);
   const [background,setBackground]=useState<Background>(collection.preferences.background);
   const [inspectPixels,setInspectPixels]=useState(false);
+  const [aiOpen,setAiOpen]=useState(false),[saving,setSaving]=useState(false),[savedKey,setSavedKey]=useState('');
+  useEffect(()=>{setAiOpen(false);},[item?.id]);
   const [urls,setUrls]=useState<{id:string;revision:number;source:string;output:string}|null>(null);
   const [previewError,setPreviewError]=useState(''),[actionError,setActionError]=useState('');
   const [packing,setPacking]=useState(false),[fitScale,setFitScale]=useState(1);
@@ -77,11 +83,13 @@ export function PngSvgWorkspace({collection,selectedId,filteredIds,onImport,onIm
       downloadBlob(await buildSvgZip(entries),'folio-icons.zip');
     }catch(error){setActionError(error instanceof Error?error.message:'The ZIP could not be prepared.');}finally{setPacking(false);}
   };
+  const saveConversion=async()=>{if(!item||saving||!result)return;const sourceId=item.id,revision=item.revision;setSaving(true);setActionError('');try{const saved=await collection.saveConverted(sourceId,revision);setSavedKey(`${sourceId}:${revision}`);onSaved(saved);}catch(error){setActionError(error instanceof Error?error.message:'The icon could not be saved.');}finally{setSaving(false);}};
   const verified=result?.fidelity.status==='verified'&&result.fidelity.differingPixels===0;
   const fidelityTitle=verified?'Pixel match verified':result?.fidelity.differingPixels!==null&&result?.fidelity.differingPixels!==undefined?`${result.fidelity.differingPixels.toLocaleString()} differing pixels`:'Pixel check unavailable';
   const checkedAt=result?.verification?.checkedAt;
   return <section className="png-converter-canvas" aria-label="Icon conversion canvas">
     <div className="icon-conversion-toolbar" aria-label="Conversion and preview controls">
+      <IconViews view="convert" savedCount={collection.saved.length} onChange={onViewChange}/>
       <label className="icon-mode-field"><span>Mode</span><select ref={modeSelect} aria-label="Conversion mode" value={mode} onChange={event=>void setMode(event.target.value as ConversionMode)}><option value="pixels">Pixel vectors · exact grid</option><option value="smooth">Smooth curves · approximate</option><option value="embedded">Embedded bitmap · original bytes</option></select></label>
       <label><span>Zoom</span><select aria-label="Preview zoom" value={zoom} onChange={event=>{const value=event.target.value as Zoom;setZoom(value);void collection.setPreferences({zoom:value});}}><option value="fit">Fit</option><option value="1">100% · native</option><option value="2">200%</option><option value="4">400%</option></select></label>
       <label><span>Background</span><select aria-label="Preview background" value={background} onChange={event=>{const value=event.target.value as Background;setBackground(value);void collection.setPreferences({background:value});}}><option value="checker">Checkerboard</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
@@ -92,7 +100,7 @@ export function PngSvgWorkspace({collection,selectedId,filteredIds,onImport,onIm
     <div className="icon-collection-status" role="status"><ShieldCheck size={12}/><span>{collection.importing?'Saving imported icons…':`${collection.items.length} saved on this device`}{pending?` · ${pending} converting`:''}{failed?` · ${failed} need attention`:''}</span><span className="icon-mode-scope">Mode applies to this icon and new imports.</span></div>
     {(collection.notice||actionError||previewError)&&<div className="png-notice" role="status"><Info size={14}/><span>{actionError||previewError||collection.notice}</span></div>}
     {!item?<div className="workspace-empty icon-empty"><ScanLine size={27}/><h1>{collection.items.length?'No matching icons':'Your icons, in the same place'}</h1><p>{collection.items.length?'Choose another folder or adjust Find a file and Favorites.':'Drop PNGs, WebPs or folders anywhere. They are saved here and converted automatically.'}</p>{!collection.items.length&&<div className="empty-actions"><button className="button primary" onClick={onImport} disabled={!collection.loaded||collection.importing}><Upload size={14}/>Import PNGs / WebPs</button><button className="button" onClick={onImportFolder} disabled={!collection.loaded||collection.importing}><FolderInput size={14}/>Import folder</button></div>}<p className="icon-empty-note">Loose images go into Uncategorized. Files and conversion stay on your device.</p></div>:<div className="png-preview-workspace">
-      <div className="icon-mode-description"><span className={'png-mode-tag '+(mode==='embedded'?'is-bitmap':'')}>{modeNames[mode]}</span><p>{modeNotes[mode]}</p></div>
+      <div className="icon-mode-description"><span className={'png-mode-tag '+(mode==='embedded'?'is-bitmap':'')}>{modeNames[mode]}</span><p>{modeNotes[mode]}</p><button className="button icon-save-button" disabled={!result||busy||saving||savedKey===`${item.id}:${item.revision}`} onClick={()=>void saveConversion()}>{saving?<LoaderCircle size={13} className="spin"/>:<Save size={13}/>} {savedKey===`${item.id}:${item.revision}`?'Saved':'Save to library'}</button><button className="button icon-save-button" disabled={!result||busy} aria-expanded={aiOpen} onClick={()=>setAiOpen(!aiOpen)}><Sparkles size={13}/>Recreate with AI</button></div>
       <div className="png-comparison">
         <section className="png-preview-card" aria-label={'Original '+sourceLabel+' preview'}><header><span>Original {sourceLabel}</span><span>{bytesLabel(item.size)}</span></header><div ref={originalSurface} className="png-preview-surface" onScroll={event=>syncPan(event.currentTarget,outputSurface.current)}>{shownUrls&&imageSize?<div className="png-preview-stage"><div className={'png-image-plane bg-'+background} style={imageSize}><img className={inspectPixels?'pixel-zoom':''} src={shownUrls.source} alt={'Original '+item.sourceName} width={imageSize.width} height={imageSize.height}/></div></div>:<div className="png-preview-placeholder">{busy?<><LoaderCircle size={22} className="spin"/>Validating and converting…</>:'Preview available after a successful conversion.'}</div>}</div><footer><span>{result?`${result.width} × ${result.height} px`:'Original saved locally'}</span><label className="pixel-inspection"><input type="checkbox" checked={inspectPixels} onChange={event=>setInspectPixels(event.target.checked)}/>Show source pixels</label></footer></section>
         <section className="png-preview-card" aria-label="SVG output preview"><header><span>SVG output</span><span>{result?bytesLabel(result.outputBytes):'—'}</span></header><div ref={outputSurface} className="png-preview-surface" onScroll={event=>syncPan(event.currentTarget,originalSurface.current)}>{shownUrls&&imageSize?<div className="png-preview-stage"><div className={'png-image-plane bg-'+background} style={imageSize}><img src={shownUrls.output} alt={'SVG output for '+item.sourceName} width={imageSize.width} height={imageSize.height}/></div></div>:<div className="png-preview-placeholder">{busy?<><LoaderCircle size={22} className="spin"/>{progress?.message??'Queued for conversion…'}</>:item.message||'Convert this icon to see its SVG.'}</div>}</div><footer><span>{result?`${result.width} × ${result.height} px`:'Native dimensions retained'}</span><span>{mode==='embedded'?'Bitmap inside SVG':mode==='smooth'?'Editable vector curves':'Editable pixel fills'}</span></footer></section>
@@ -102,7 +110,8 @@ export function PngSvgWorkspace({collection,selectedId,filteredIds,onImport,onIm
         {result?.warnings.map((warning,index)=><p className="png-result-warning" key={index}>{warning}</p>)}
         <div className="png-retry-row">{busy?<button className="button" onClick={()=>{void collection.cancel(item.id);modeSelect.current?.focus();}}><Square size={12}/>Stop this icon</button>:<button className="button" onClick={()=>{void collection.retry(item.id,mode);modeSelect.current?.focus();}}><RefreshCw size={12}/>Convert again</button>}{mode!=='pixels'&&<button className="text-button" onClick={()=>void setMode('pixels')}>Use exact pixel vectors</button>}{mode==='pixels'&&<button className="text-button" onClick={()=>void setMode('smooth')}>Try smooth curves</button>}{mode!=='embedded'&&<button className="text-button" onClick={()=>void setMode('embedded')}>Use embedded bitmap</button>}</div>
       </div>
+      {aiOpen&&result&&<AiSvgPanel key={`${item.id}:${item.revision}`} ai={ai} asset={{key:`${item.id}:${item.revision}`,id:item.id,revision:item.revision,name:item.sourceName,kind:'icons',folderId:item.folderId,getSource:async()=>{const source=await collection.getSource(item.id);return source?.slice(0,source.size,sourceFormat==='webp'?'image/webp':'image/png');},getCurrentSvg:async()=>{const output=await collection.getOutput(item.id,item.revision);return output?.text();}}} onSettings={onAiSettings} onSave={collection.saveArtwork} onSaved={onSaved} onClose={()=>setAiOpen(false)}/>}
     </div>}
-    <details className="png-about"><summary><Info size={12}/>About fidelity & local storage</summary><div><p>Pixel vectors reproduce the decoded pixel grid and remain pixelated when enlarged. Smooth curves fit new outlines and may change pixels, colors, or small details. Compare the actual result before using it. Embedded bitmap retains the original PNG or WebP bytes inside SVG. It is not editable vector artwork.</p><p>“Pixel match verified” requires zero visible RGBA differences after rendering the generated SVG at its native dimensions. Hidden RGB is ignored only when both pixels are fully transparent. Each saved check records its browser and time; it does not certify every browser or color profile. Lossy WebP is compared with its decoded pixels, not the unknown image before compression. Animated PNG and WebP are unsupported; export a still frame first.</p><p>Icons and folders persist in this browser. Clearing site data removes them. Files never upload; browser storage quota limits the collection. Import up to 100 PNG or static WebP files / 100 MB at a time, up to 20 MB per file, 4096 pixels per side and 4,194,304 pixels. Complex vectors have bounded output; smooth conversion has its own workload limit. ZIP exports contain the ready icons in the current view, up to 128 MB. Use individual downloads or a smaller filtered view for larger collections.</p></div></details>
+    <details className="png-about"><summary><Info size={12}/>About fidelity & local storage</summary><div><p>Pixel vectors reproduce the decoded pixel grid and remain pixelated when enlarged. Smooth curves fit new outlines and may change pixels, colors, or small details. Compare the actual result before using it. Embedded bitmap retains the original PNG or WebP bytes inside SVG. It is not editable vector artwork.</p><p>“Pixel match verified” requires zero visible RGBA differences after rendering the generated SVG at its native dimensions. Hidden RGB is ignored only when both pixels are fully transparent. Each saved check records its browser and time; it does not certify every browser or color profile. Lossy WebP is compared with its decoded pixels, not the unknown image before compression. Animated PNG and WebP are unsupported; export a still frame first.</p><p>Icons and folders persist in this browser. Clearing site data removes them. Ordinary conversion stays local. An explicit AI action sends the selected image, SVG and instructions through your connected provider. Browser storage quota limits the collection. Import up to 100 PNG or static WebP files / 100 MB at a time, up to 20 MB per file, 4096 pixels per side and 4,194,304 pixels. Complex vectors have bounded output; smooth conversion has its own workload limit. ZIP exports contain the ready icons in the current view, up to 128 MB. Use individual downloads or a smaller filtered view for larger collections.</p></div></details>
   </section>;
 }

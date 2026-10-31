@@ -111,6 +111,101 @@ Queued work resumes automatically while the app is open. Interrupted processing 
 
 Static PNGs and WebPs are supported; animated PNGs and animated WebPs are rejected explicitly. Invalid, oversized or excessively complex files produce actionable errors without silent downscaling. The 100-file limit applies to each import, not the saved collection's lifetime. Total saved data is limited by browser storage quota, shared with the site's other local data. Clearing site data or browser eviction can remove local icons; keep your originals and useful exports.
 
+## AI SVG studio and Saved icons
+
+Use **Save to library** on a ready conversion, or **Recreate with AI** on that same
+page. The **Convert / Saved** switch stays in the canvas toolbar; both views use
+the existing Icons sidebar, folders, search, favorites and file navigation.
+The selected image in **Images** also has an **AI SVG** action using the same AI
+settings and candidate review panel.
+
+AI can recreate a source image as clean SVG geometry or clean up its current SVG.
+The prompt preserves the design, native canvas, proportions, negative space,
+colors and transparency, with optional instructions for the requested changes.
+It asks for self-contained editable shapes and curves. Folio validates the XML,
+rejects active/external/embedded-image content, then renders the exact accepted
+SVG at native size against the original image. The result is a separate candidate;
+review it and choose **Save to icon library** or **Download candidate**. Cancellation,
+navigation and a newer source revision cannot replace the existing conversion.
+AI reconstruction is an approximation, not a guarantee of pixel-perfect curves.
+
+### Connect your ChatGPT account
+
+Open the top **workspace menu → Settings → AI**. The browser connects explicitly
+to the Folio companion running on your own computer. The companion uses the
+official Codex CLI's ChatGPT sign-in; it does not substitute API-key billing.
+The supplied package is adapted in [vendor/ai-cli-integration](vendor/ai-cli-integration).
+Provider credentials stay with the CLI. The companion's pairing code stays in
+this app tab's memory and expires when the companion is restarted.
+
+One-time setup, with Node.js 22 or newer:
+
+```sh
+npm install -g @openai/codex@0.166.0
+codex login
+git clone https://github.com/aipieksel/zipped-media-to-library-app.git
+cd zipped-media-to-library-app
+npm ci
+npm run companion:build
+npm run companion
+```
+
+Keep the terminal open, copy its pairing code into AI settings, and connect.
+Allow the browser's local-computer connection permission if prompted. Choose a
+model and reasoning level from the actual CLI catalog. **Test AI connection** runs
+a small real text request; generating an icon tests the separate image-to-SVG
+path. See [companion setup and troubleshooting](companion/README.md).
+
+Codex 0.166.0 is the release used for the real, unauthenticated flag and strict
+configuration compatibility probe. That probe is not a successful provider
+request or a test of the owner's account. Automated process/HTTP tests use
+deterministic CLI fixtures. A real account/image inference still requires the
+owner's local sign-in, companion and explicit generation action.
+
+OpenAI/Codex is the enabled SVG adapter. The supplied package includes Grok
+discovery, but its image execution and restrictions have not been verified, so
+Grok SVG generation stays unavailable. DeepSeek is not implemented in that
+package. The shared service has provider/capability contracts for future tools;
+general photo editing and bitmap generation are not claimed by the current SVG
+adapter. Ordinary PNG/WebP conversion does not need AI or an account connection.
+
+AI accepts static PNG, WebP and JPEG originals up to 8 MiB, 4096 pixels per side
+and 4,194,304 pixels. It prepares a native-size PNG attachment without silently
+resizing. Existing SVG context and returned artwork are limited to 2 MiB. Very
+large pixel-vector output can use **Recreate from the image** without sending the
+oversized SVG. Only the explicitly selected source, bounded SVG and instructions
+are sent through the paired CLI to the chosen provider.
+
+### Save, recolor and export
+
+Saving creates an independent record containing the exact SVG, an immutable base
+SVG, its source-image snapshot and provenance in local IndexedDB. Retrying or
+removing the conversion does not remove chosen artwork. Removing a conversion
+folder moves saved artwork into **Uncategorized**, resolving name collisions.
+Saved artwork is removed only through its own removal action.
+
+In **Saved**, use the color picker or enter a six-digit hex value, then **Apply
+color**. It changes vector fills/strokes while retaining transparency, clears the
+old fidelity badge, and checks the actual color variant against the saved source.
+An intentional color change normally has a nonzero difference count. **Original
+colors** restores the exact immutable base bytes and their saved check. Individual
+SVG and ZIP downloads use the current saved color. Embedded-bitmap conversions
+can also be saved with their exact source bytes, but are clearly non-recolorable.
+
+Saved icons survive navigation, refresh and normal browser restarts. They remain
+in this site's browser profile; clearing site data, storage eviction or moving to
+another device can remove or omit them. Keep a ZIP backup. This feature does not
+promise permanent or cross-device cloud storage.
+
+### Profile, sign-in and password
+
+**Settings → Profile** displays the authenticated identity supplied by the
+existing private Site. Sign-in/out use the hosting platform's ChatGPT account
+flow. A Folio display-name preference is local to this browser. Password and
+security links go to the account provider; Folio never stores a password or
+creates a second password database. Site identity and the locally signed-in AI
+provider are separate connections.
+
 ## Storage and import limits
 
 Library imports, screenshots, favorites, folders, and view preferences survive a normal refresh in the same browser profile and site. They are not cloud-synchronized. Clearing this site's browser data removes those local items; keep your original ZIPs and images. The private Site-owned collection remains available. **Settings → Manage imports** removes a local import or hides a saved collection category on that browser; hiding does not delete server originals. Icons has the separate local database and removal controls described above; its data is not part of the private Site-owned collection.

@@ -1,8 +1,8 @@
 import {useCallback,useEffect,useMemo,useRef,useState,useSyncExternalStore} from 'react';
 import type {CSSProperties} from 'react';
-import {ArrowLeft,ArrowRight,ArrowDownUp,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle,ScanLine,ShieldCheck} from 'lucide-react';
+import {ArrowLeft,ArrowRight,ArrowDownUp,Camera,Check,ChevronDown,ChevronsDownUp,ChevronsUpDown,CloudDownload,Download,FileCode2,Folder,FolderInput,FolderPlus,HelpCircle,Images,LoaderCircle,Menu,Plus,Search,Settings2,Star,Trash2,Upload,X,AlertTriangle,ScanLine,ShieldCheck,Sparkles,MoreHorizontal} from 'lucide-react';
 import type {ArchiveMeta,HtmlPage,ImportBundle,ItemKind,ItemOrganization,Snapshot,WorkspaceFolder} from './types';
-import {listWorkspace,saveImport,putSnapshot,deleteRoot,getPreference,setPreference,createFolder,setItemFavorite,moveItemsToFolder,syncCloudCollection,setFolderFavorite} from './db';
+import {listWorkspace,saveImport,putSnapshot,deleteRoot,getPreference,setPreference,createFolder,setItemFavorite,moveItemsToFolder,syncCloudCollection,setFolderFavorite,getFile} from './db';
 import {importImages} from './archive';
 import {buildTree,buildOrganizedTree,filterTree,getPageOrder,getAncestorIds} from './tree';
 import {projectTree,normalizeOrder,DEFAULT_ORDER} from './order';
@@ -28,7 +28,15 @@ import {itemDateInfo,treeDateMetadata,dateDescription} from './metadata';
 import {firstFolderPage,removeArchiveFolderFavorites} from './folder-favorites';
 import {PngSvgWorkspace} from './components/PngSvgWorkspace';
 import {useIconCollection} from './useIconCollection';
-import {projectIconCollection,UNCATEGORIZED_ICON_FOLDER_ID} from './icon-collection';
+import {projectIconCollection,projectSavedIconCollection,UNCATEGORIZED_ICON_FOLDER_ID} from './icon-collection';
+import {Modal} from './components/Modal';
+import {AiSettings} from './components/AiSettings';
+import {ProfileSettings} from './components/ProfileSettings';
+import {AiSvgPanel} from './components/AiSvgPanel';
+import {SavedIconsWorkspace} from './components/SavedIconsWorkspace';
+import {useAiSettings} from './ai/useAiSettings';
+import type {SavedIconRecord} from './icon-types';
+import './components/ai.css';
 
 type WorkspaceTab = ItemKind | 'icons';
 const hashTab = (): WorkspaceTab | null => window.location.hash === '#icons' || window.location.hash === '#png-to-svg' ? 'icons' : window.location.hash === '#images' ? 'image' : window.location.hash === '#html' ? 'html' : null;
@@ -40,26 +48,26 @@ const emptyQueue:QueueState={running:false,total:0,done:0,failed:0,current:''};
 const itemKind=(item:HtmlPage):ItemKind=>item.kind??'html';
 const formatBytes=(bytes:number)=>bytes>1024*1024?(bytes/1024/1024).toFixed(1)+' MB':Math.max(1,Math.round(bytes/1024))+' KB';
 
-function Modal({title,children,onClose}:{title:string;children:React.ReactNode;onClose:()=>void}){
-  const ref=useRef<HTMLDialogElement>(null);
-  useEffect(()=>{const previous=document.activeElement as HTMLElement;const element=ref.current;element?.showModal();const frame=requestAnimationFrame(()=>element?.querySelector<HTMLElement>('input,select')?.focus());return()=>{cancelAnimationFrame(frame);element?.close();if(previous?.isConnected&&previous!==document.body&&!previous.matches(':disabled'))previous.focus();else document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();};},[]);
-  return <dialog ref={ref} className="modal" aria-labelledby="modal-title" onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>{if(event.target===ref.current)onClose();}}>
-    <div className="modal-header"><h2 id="modal-title">{title}</h2><button className="icon-button" onClick={onClose} aria-label="Close dialog"><X size={16}/></button></div>{children}
-  </dialog>;
-}
-
 export default function App(){
   const [tab,setTab]=useState<WorkspaceTab>(()=>hashTab()??'html');
   const navigationRevision=useRef(0);
   const currentTab=useRef(tab);currentTab.current=tab;
   const isIcons=tab==='icons';
   const icons=useIconCollection();
+  const ai=useAiSettings();
+  const [settingsOpen,setSettingsOpen]=useState(false);
+  const [settingsTab,setSettingsTab]=useState<'ai'|'profile'>('ai');
+  const [imageAiItem,setImageAiItem]=useState<HtmlPage|null>(null);
+  const [iconView,setIconView]=useState<'convert'|'saved'>('convert');
+  const [savedSelectedId,setSavedSelectedId]=useState<string|null>(null);
+  const isSaved=isIcons&&iconView==='saved';
+  const openAiSettings=()=>{setSettingsTab('ai');setSettingsOpen(true);setPopover(null);};
   const [iconSelectedId,setIconSelectedId]=useState<string|null>(null);
   const [iconExpanded,setIconExpanded]=useState<Set<string>>(new Set());
   const [iconOrder,setIconOrder]=useState<ViewOrder>({...DEFAULT_ORDER});
   const iconPreferencesLoaded=useRef(false);
   const iconFolderInput=useRef<HTMLInputElement>(null);
-  const [iconRemove,setIconRemove]=useState<{id:string;folder:boolean;name:string}|null>(null);
+  const [iconRemove,setIconRemove]=useState<{id:string;folder:boolean;name:string;saved?:boolean}|null>(null);
   const [removingIcon,setRemovingIcon]=useState(false);
   const [libraryArchives,setArchives]=useState<ArchiveMeta[]>([]);
   const [libraryItems,setItems]=useState<HtmlPage[]>([]);
@@ -92,7 +100,7 @@ export default function App(){
   const [captureDialog,setCaptureDialog]=useState(false);
   const [captureOptions,setCaptureOptions]=useState<CaptureOptions>(DEFAULT_CAPTURE);
   const [recapture,setRecapture]=useState(false);
-  const [popover,setPopover]=useState<'settings'|'move'|'sort'|null>(null);
+  const [popover,setPopover]=useState<'settings'|'move'|'sort'|'app'|null>(null);
   const [helpOpen,setHelpOpen]=useState(false);
   const [importsOpen,setImportsOpen]=useState(false);
   const [removeId,setRemoveId]=useState<string|null>(null);
@@ -132,15 +140,15 @@ export default function App(){
   const remembered=useRef<Partial<Record<ItemKind,string>>>({});
   const organizationLock=useRef(false);
 
-  const iconProjection=useMemo(()=>projectIconCollection({items:icons.items,folders:icons.folders,preferences:icons.preferences}),[icons.items,icons.folders,icons.preferences]);
-  const iconFavorites=useMemo(()=>projectIconCollection({items:icons.items,folders:icons.folders,preferences:icons.preferences},true),[icons.items,icons.folders,icons.preferences]);
+  const iconProjection=useMemo(()=>(iconView==='saved'?projectSavedIconCollection:projectIconCollection)({items:icons.items,saved:icons.saved,folders:icons.folders,preferences:icons.preferences}),[iconView,icons.items,icons.saved,icons.folders,icons.preferences]);
+  const iconFavorites=useMemo(()=>(iconView==='saved'?projectSavedIconCollection:projectIconCollection)({items:icons.items,saved:icons.saved,folders:icons.folders,preferences:icons.preferences},true),[iconView,icons.items,icons.saved,icons.folders,icons.preferences]);
   const items=isIcons?iconProjection.pages:libraryItems;
   const archives=isIcons?iconProjection.archives:libraryArchives;
   const folders=isIcons?iconProjection.folders:libraryFolders;
   const organization=isIcons?iconProjection.organization:libraryOrganization;
   const favoriteFolders=isIcons?iconProjection.favoriteFolders:libraryFavoriteFolders;
-  const selectedId=isIcons?iconSelectedId:librarySelectedId;
-  const setSelectedId=isIcons?setIconSelectedId:setLibrarySelectedId;
+  const selectedId=isIcons?(isSaved?savedSelectedId:iconSelectedId):librarySelectedId;
+  const setSelectedId=isIcons?(isSaved?setSavedSelectedId:setIconSelectedId):setLibrarySelectedId;
   const expanded=isIcons?iconExpanded:libraryExpanded;
   const setExpanded=isIcons?setIconExpanded:setLibraryExpanded;
   const displayKind:ItemKind=isIcons?'image':kind;
@@ -152,13 +160,13 @@ export default function App(){
   },[kind]);
   useEffect(()=>{
     if(!icons.loaded||iconPreferencesLoaded.current)return;
-    iconPreferencesLoaded.current=true;setIconSelectedId(icons.preferences.selectedId);setIconExpanded(new Set(icons.preferences.expanded));setIconOrder(normalizeOrder(icons.preferences.order));
+    iconPreferencesLoaded.current=true;setIconView(icons.preferences.view);setSavedSelectedId(icons.preferences.savedSelectedId);setIconSelectedId(icons.preferences.selectedId);setIconExpanded(new Set(icons.preferences.expanded));setIconOrder(normalizeOrder(icons.preferences.order));
   },[icons.loaded,icons.preferences]);
   useEffect(()=>{
     if(!icons.loaded||!iconPreferencesLoaded.current)return;
-    const timer=setTimeout(()=>void icons.setPreferences({selectedId:iconSelectedId,expanded:[...iconExpanded],order:iconOrder}),300);
+    const timer=setTimeout(()=>void icons.setPreferences({selectedId:iconSelectedId,savedSelectedId,view:iconView,expanded:[...iconExpanded],order:iconOrder}),300);
     return()=>clearTimeout(timer);
-  },[icons.loaded,iconSelectedId,iconExpanded,iconOrder,icons.setPreferences]);
+  },[icons.loaded,iconSelectedId,savedSelectedId,iconView,iconExpanded,iconOrder,icons.setPreferences]);
 
   const itemMap=useMemo(()=>new Map(items.map(item=>[item.id,item])),[items]);
   const archiveMap=useMemo(()=>new Map(archives.map(archive=>[archive.id,archive])),[archives]);
@@ -180,7 +188,7 @@ export default function App(){
   const favoriteCount=useMemo(()=>getPageOrder(favoritesTree).length,[favoritesTree]);
   const selectedFavorite=!!selectedId&&!!organization.get(selectedId)?.favorite;
   const selectedFolder=selectedId?organization.get(selectedId)?.folderId??null:null;
-  const anyModal=helpOpen||importsOpen||captureDialog||reportOpen||!!removeId||!!folderDialog||warningsOpen||driveOpen||!!iconRemove;
+  const anyModal=settingsOpen||!!imageAiItem||helpOpen||importsOpen||captureDialog||reportOpen||!!removeId||!!folderDialog||warningsOpen||driveOpen||!!iconRemove;
   const notify=useCallback((message:string)=>{setToast(message);clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setToast(''),6000);},[]);
 
   useEffect(()=>{
@@ -232,10 +240,10 @@ export default function App(){
     if(!navigationLoaded)return;
     const current=selectedId?itemMap.get(selectedId):undefined;
     if(current&&itemKind(current)===displayKind&&filteredItems.some(item=>item.id===current.id))return;
-    const preferred=isIcons?icons.preferences.selectedId:remembered.current[kind];
+    const preferred=isIcons?(isSaved?icons.preferences.savedSelectedId:icons.preferences.selectedId):remembered.current[kind];
     const next=filteredItems.find(item=>item.id===preferred)??filteredItems[0];
     setSelectedId(next?.id??null);
-  },[navigationLoaded,kind,displayKind,isIcons,filteredItems,itemMap,selectedId,icons.preferences.selectedId]);
+  },[navigationLoaded,kind,displayKind,isIcons,isSaved,filteredItems,itemMap,selectedId,icons.preferences.selectedId,icons.preferences.savedSelectedId]);
   useEffect(()=>{
     if(!selectedId)return;
     setExpanded(current=>{
@@ -328,8 +336,19 @@ export default function App(){
     setQuery('');setFavoritesOnly(false);setPopover(null);setWarnings([]);setSidebarOpen(false);setDragging(false);dragDepth.current=0;
     window.location.hash=nextTab==='image'?'images':nextTab;
   };
+  const changeIconView=(view:'convert'|'saved')=>{
+    const previous=document.activeElement as HTMLElement|null;
+    setIconView(view);setQuery('');setFavoritesOnly(false);setPopover(null);void icons.setPreferences({view});
+    // A deliberate view switch replaces its toolbar. Retain keyboard focus on
+    // the replacement control; imports use their own non-focusing view change.
+    requestAnimationFrame(()=>{
+      if(currentTab.current==='icons'&&(!previous?.isConnected||document.activeElement===previous))
+        document.querySelector<HTMLElement>(`.icon-view-switch [data-icon-view="${view}"]`)?.focus();
+    });
+  };
+  const rememberSaved=(saved:SavedIconRecord)=>{setSavedSelectedId(saved.id);notify('Saved to your icon library. Open Saved to recolor or download it.');};
   const importIcons=async(files:File[])=>{
-    setQuery('');setFavoritesOnly(false);
+    setIconView('convert');setQuery('');setFavoritesOnly(false);
     const report=await icons.importFiles(files);
     if(report?.added.length)setIconSelectedId(report.added[0].id);
     if(report)setIconExpanded(current=>new Set([...current,...report.folders.map(folder=>folder.id)]));
@@ -337,7 +356,7 @@ export default function App(){
   const confirmIconRemoval=async()=>{
     if(!iconRemove||removingIcon)return;
     const target=iconRemove,revision=navigationRevision.current;setRemovingIcon(true);
-    await (target.folder?icons.removeFolder(target.id):icons.removeItem(target.id));
+    try{await (target.saved?icons.removeSaved(target.id):target.folder?icons.removeFolder(target.id):icons.removeItem(target.id));}catch(error){notify(error instanceof Error?error.message:'The icon could not be removed.');setRemovingIcon(false);return;}
     setRemovingIcon(false);setIconRemove(null);
     requestAnimationFrame(()=>{
       const active=document.activeElement;
@@ -432,7 +451,7 @@ export default function App(){
   };
   const updateOrganization=(values:ItemOrganization[])=>setOrganization(current=>{const next=new Map(current);for(const item of values)next.set(item.id,item);return next;});
   const toggleFavorite=async(id:string)=>{
-    if(isIcons){await icons.toggleFavorite(id);return;}
+    if(isIcons){try{if(isSaved)await icons.setSavedFavorite(id,!organization.get(id)?.favorite);else await icons.toggleFavorite(id);}catch(error){notify(error instanceof Error?error.message:'Could not save favorite.');}return;}
     if(organizationLock.current)return;
     organizationLock.current=true;setOrganizing(true);
     try{updateOrganization([await setItemFavorite(id,!organization.get(id)?.favorite)]);}catch(error){notify(error instanceof Error?error.message:'Could not save favorite.');}
@@ -453,7 +472,7 @@ export default function App(){
   };
   const moveItem=async(folderId:string|null,id=selectedId)=>{
     if(!id||organizationLock.current)return;
-    if(isIcons){await icons.moveItem(id,folderId??UNCATEGORIZED_ICON_FOLDER_ID);setPopover(null);setQuery('');if(folderId)setIconExpanded(current=>new Set([...current,folderId]));return;}
+    if(isIcons){try{await (isSaved?icons.moveSaved(id,folderId??UNCATEGORIZED_ICON_FOLDER_ID):icons.moveItem(id,folderId??UNCATEGORIZED_ICON_FOLDER_ID));setPopover(null);setQuery('');if(folderId)setIconExpanded(current=>new Set([...current,folderId]));}catch(error){notify(error instanceof Error?error.message:'Could not move icon.');}return;}
     organizationLock.current=true;setOrganizing(true);
     try{
       updateOrganization(await moveItemsToFolder([id],folderId));setPopover(null);setQuery('');
@@ -466,7 +485,7 @@ export default function App(){
   const submitFolder=async(event:React.FormEvent)=>{
     event.preventDefault();if(savingFolder)return;setSavingFolder(true);setFolderError('');
     try{
-      if(isIcons){const folder=await icons.createFolder(folderName);if(folderDialog?.moveId)await icons.moveItem(folderDialog.moveId,folder.id);setIconExpanded(current=>new Set([...current,folder.id]));setQuery('');setFolderDialog(null);return;}
+      if(isIcons){const folder=await icons.createFolder(folderName);if(folderDialog?.moveId)await (isSaved?icons.moveSaved(folderDialog.moveId,folder.id):icons.moveItem(folderDialog.moveId,folder.id));setIconExpanded(current=>new Set([...current,folder.id]));setQuery('');setFolderDialog(null);return;}
       const folder=await createFolder(folderName);setFolders(current=>[...current,folder]);setExpanded(current=>new Set([...current,folder.id]));setQuery('');
       if(folderDialog?.moveId)updateOrganization(await moveItemsToFolder([folderDialog.moveId],folder.id));
       setFolderDialog(null);notify('Folder created'+(folderDialog?.moveId?' and item moved.':'.'));
@@ -476,8 +495,8 @@ export default function App(){
   const downloadSelected=async(sourceOnly=false)=>{
     if(!selected||downloading)return;setDownloading(true);setPopover(null);
     try{
-      const icon=isIcons?icons.items.find(item=>item.id===selected.id):undefined;
-      const output=icon?await icons.getOutput(icon.id,icon.revision):undefined;
+      const icon=isIcons?(isSaved?icons.saved:icons.items).find(item=>item.id===selected.id):undefined;
+      const output=icon?await (isSaved?icons.getSavedOutput(icon.id,icon.revision):icons.getOutput(icon.id,icon.revision)):undefined;
       if(isIcons&&!output)throw new Error('Finish converting this icon before downloading.');
       const file=output&&icon?{blob:output,filename:icon.filename}:await(sourceOnly?downloadHtmlSource(selected):downloadWorkspaceItem(selected));
       const url=URL.createObjectURL(file.blob);
@@ -503,7 +522,7 @@ export default function App(){
       notify('Import removed from this browser.');
     }catch(error){notify(error instanceof Error?error.message:'Could not remove this import.');}
   };
-  const requestRemove=(id:string)=>{if(isIcons){const folder=icons.folders.find(item=>item.id===id);if(folder)setIconRemove({id,folder:true,name:folder.name});return;}if(importing||queue.running)notify('Finish or cancel the current job before removing an import.');else setRemoveId(id);};
+  const requestRemove=(id:string)=>{if(isIcons){const folder=icons.folders.find(item=>item.id===id);if(folder&&!isSaved)setIconRemove({id,folder:true,name:folder.name});return;}if(importing||queue.running)notify('Finish or cancel the current job before removing an import.');else setRemoveId(id);};
   const allGroupIds=()=>{const ids:string[]=[];const visit=(nodes:typeof tree)=>{for(const node of nodes){if(node.kind!=='page'){ids.push(node.id);visit(node.children);}}};visit(tree);return ids;};
   const navigateLocal=(path:string)=>{
     const target=items.find(item=>itemKind(item)==='html'&&item.archiveId===selected?.archiveId&&(item.path===path||item.path===path.replace(/\/$/,'')+'/index.html'));
@@ -525,15 +544,22 @@ export default function App(){
       }}>
         <button role="tab" tabIndex={tab==='html'?0:-1} aria-selected={tab==='html'} onClick={()=>switchTab('html')}><FileCode2 size={14}/>HTML<span>{htmlCount}</span></button>
         <button role="tab" tabIndex={tab==='image'?0:-1} aria-selected={tab==='image'} onClick={()=>switchTab('image')}><Images size={14}/>Images<span>{imageCount}</span></button>
-        <button role="tab" tabIndex={isIcons?0:-1} aria-selected={isIcons} onClick={()=>switchTab('icons')}><ScanLine size={14}/>Icons<span>{icons.items.length}</span></button>
+        <button role="tab" tabIndex={isIcons?0:-1} aria-selected={isIcons} onClick={()=>switchTab('icons')}><ScanLine size={14}/>Icons<span>{icons.items.length+icons.saved.length}</span></button>
       </div>
       {isIcons&&<span className="workspace-navigation-note"><ShieldCheck size={12}/>Saved on this device</span>}
+      <div className="popover-root workspace-navigation-menu" data-popover-root="app">
+        <button className={'icon-button '+(popover==='app'?'active':'')} aria-label="Workspace menu" title="Workspace menu" aria-haspopup="dialog" aria-expanded={popover==='app'} onClick={()=>setPopover(popover==='app'?null:'app')}><MoreHorizontal size={18}/></button>
+        {popover==='app'&&<div className="toolbar-popover workspace-menu" role="dialog" aria-label="Workspace menu" data-popover-panel>
+          <button className="menu-row" onClick={openAiSettings}><Settings2 size={14}/>Settings</button>
+          <button className="menu-row" onClick={()=>{setPopover(null);setHelpOpen(true);}}><HelpCircle size={14}/>Help & shortcuts</button>
+        </div>}
+      </div>
     </nav>
     <div className="app-shell" style={{'--sidebar-width':sidebarWidth+'px'} as CSSProperties}
     onDragEnter={event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();dragDepth.current++;setDragging(true);}}}
     onDragLeave={event=>{event.preventDefault();dragDepth.current--;if(dragDepth.current<=0){dragDepth.current=0;setDragging(false);}}}
     onDragOver={event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();event.dataTransfer.dropEffect='copy';}}}
-    onDrop={event=>{event.preventDefault();dragDepth.current=0;setDragging(false);if(isIcons){void icons.importDrop(event.dataTransfer).then(report=>{if(report?.added.length)setIconSelectedId(report.added[0].id);if(report)setIconExpanded(current=>new Set([...current,...report.folders.map(folder=>folder.id)]));});setQuery('');setFavoritesOnly(false);}else void importFiles(Array.from(event.dataTransfer.files));}}>
+    onDrop={event=>{event.preventDefault();dragDepth.current=0;setDragging(false);if(isIcons){setIconView('convert');void icons.importDrop(event.dataTransfer).then(report=>{if(report?.added.length)setIconSelectedId(report.added[0].id);if(report)setIconExpanded(current=>new Set([...current,...report.folders.map(folder=>folder.id)]));});setQuery('');setFavoritesOnly(false);}else void importFiles(Array.from(event.dataTransfer.files));}}>
     <input ref={inputRef} type="file" accept={isIcons?".png,.webp,image/png,image/webp":".zip,.png,.jpg,.jpeg,.webp,.gif,.svg,.avif,.bmp,.ico"} multiple hidden aria-label={isIcons?"Import PNG or WebP icons":"Import ZIPs or images"} onChange={event=>{void (isIcons?importIcons(Array.from(event.target.files??[])):importFiles(Array.from(event.target.files??[])));event.target.value='';}}/>
     <input ref={iconFolderInput} type="file" multiple hidden aria-label="Import icon folder" {...{webkitdirectory:""}} onChange={event=>{void importIcons(Array.from(event.target.files??[]));event.target.value='';}}/>
     {sidebarOpen&&<button className="sidebar-scrim" aria-label="Close file sidebar" onClick={()=>setSidebarOpen(false)}/>}
@@ -564,7 +590,7 @@ export default function App(){
         {!isIcons&&cloudState==='loading'&&loaded&&<div className="tree-placeholder" role="status"><LoaderCircle className="spin" size={12}/>Loading saved collection…</div>}
         {!isIcons&&cloudState==='error'&&<div className="tree-placeholder" role="status" title={cloudError}><button className="text-button" onClick={()=>void refreshCloud()}>Collection unavailable · Retry</button></div>}
         {!navigationLoaded?<div className="tree-placeholder"><LoaderCircle className="spin" size={15}/>Opening workspace…</div>:
-          <ArchiveTree nodes={tree} pages={kindItems} selectedId={selectedId} expanded={expanded} snapshots={snapshots} captureErrors={captureErrors} query={query} preFiltered kind={displayKind} collectionLabel={isIcons?'Icons':undefined} itemNoun={isIcons?'icons':undefined} removableFolderIds={isIcons?new Set(icons.folders.filter(folder=>folder.id!==UNCATEGORIZED_ICON_FOLDER_ID).map(folder=>folder.id)):undefined} organization={organization} favoriteFolders={favoriteFolders} onFavoriteFolder={id=>void toggleFolderFavorite(id)} onOpenFolder={openFolder} nodeDates={nodeDates} showDates={order.sort==='newest'||order.sort==='oldest'||order.group==='month'}
+          <ArchiveTree nodes={tree} pages={kindItems} selectedId={selectedId} expanded={expanded} snapshots={snapshots} captureErrors={captureErrors} query={query} preFiltered kind={displayKind} collectionLabel={isIcons?'Icons':undefined} itemNoun={isIcons?'icons':undefined} removableFolderIds={isIcons?new Set(isSaved?[]:icons.folders.filter(folder=>folder.id!==UNCATEGORIZED_ICON_FOLDER_ID).map(folder=>folder.id)):undefined} organization={organization} favoriteFolders={favoriteFolders} onFavoriteFolder={id=>void toggleFolderFavorite(id)} onOpenFolder={openFolder} nodeDates={nodeDates} showDates={order.sort==='newest'||order.sort==='oldest'||order.group==='month'}
             onSelect={id=>selectItem(id)} onToggle={id=>setExpanded(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;})} onRemove={requestRemove}/>}
       </div>
       <div className="sidebar-bottom">
@@ -594,6 +620,7 @@ export default function App(){
           {selected&&<span>{selectedFolder?folderTitle:selectedArchive?.name} · {dateDescription(itemDateInfo(selected,archiveMap))}{!isIcons&&kind==='html'&&mode==='snapshot'?' · Screenshot':''}</span>}
         </div>
         {!isIcons&&kind==='html'&&selected&&(warnings.length>0||captureErrors.has(selected.id))&&<button className="icon-button warning-button" title="Page notices" aria-label="Page notices" onClick={()=>setWarningsOpen(true)}><AlertTriangle size={15}/></button>}
+        {!isIcons&&kind==='image'&&<button className="button image-ai-action" disabled={!selected} onClick={()=>selected&&setImageAiItem({...selected})} title="Recreate the selected original image as SVG"><Sparkles size={13}/><span>AI SVG</span></button>}
         <div className="item-actions">
           <button className={'icon-button '+(selectedFavorite?'is-favorite':'')} aria-label={selectedFavorite?'Remove favorite':'Add favorite'} title={selectedFavorite?'Remove favorite':'Add favorite'} aria-pressed={selectedFavorite} disabled={!selected||organizing} onClick={()=>selected&&void toggleFavorite(selected.id)}><Star size={16} fill={selectedFavorite?'currentColor':'none'}/></button>
           <div className="popover-root" data-popover-root="move">
@@ -605,7 +632,7 @@ export default function App(){
               <div className="menu-divider"/><button className="menu-row accent-text" onClick={()=>openFolderDialog(selectedId)}><FolderPlus size={14}/>New folder…</button>
             </div>}
           </div>
-          <button className="icon-button" aria-label={isIcons?'Download SVG':kind==='image'?'Download image':'Download HTML with assets'} title={isIcons?'Download converted SVG':kind==='image'?'Download original image':'Download HTML with its assets as ZIP'} disabled={!selected||downloading||(isIcons&&!icons.items.find(item=>item.id===selected.id)?.result)} onClick={()=>void downloadSelected()}>{downloading?<LoaderCircle size={16} className="spin"/>:<Download size={16}/>}</button>
+          <button className="icon-button" aria-label={isIcons?'Download SVG':kind==='image'?'Download image':'Download HTML with assets'} title={isIcons?'Download converted SVG':kind==='image'?'Download original image':'Download HTML with its assets as ZIP'} disabled={!selected||downloading||(isIcons&&!isSaved&&!icons.items.find(item=>item.id===selected.id)?.result)} onClick={()=>void downloadSelected()}>{downloading?<LoaderCircle size={16} className="spin"/>:<Download size={16}/>}</button>
         </div>
         {!isIcons&&<div className="popover-root" data-popover-root="settings">
           <button className={'icon-button settings-button '+(popover==='settings'?'active':'')} aria-label="View and capture settings" title="View and capture settings" aria-haspopup="dialog" aria-expanded={popover==='settings'} onClick={()=>setPopover(popover==='settings'?null:'settings')}><Settings2 size={17}/></button>
@@ -627,12 +654,12 @@ export default function App(){
           </div>}
         </div>}
         {!isIcons&&<button className={'gallery-toggle '+(view==='gallery'?'active':'')} aria-label={view==='gallery'?'Show selected file preview':kind==='image'?'Show image gallery':'Show HTML gallery'} aria-pressed={view==='gallery'} onClick={()=>setView(view==='gallery'?'preview':'gallery')} title={kind==='html'?'HTML gallery':'Image gallery'}><Images size={15}/><span>{view==='gallery'?'Preview':'Gallery'}</span></button>}
-        {isIcons&&<button className="icon-button" aria-label="Remove selected icon" title="Remove selected icon" disabled={!selected} onClick={()=>selected&&setIconRemove({id:selected.id,folder:false,name:selected.label})}><Trash2 size={16}/></button>}
+        {isIcons&&<button className="icon-button" aria-label="Remove selected icon" title="Remove selected icon" disabled={!selected} onClick={()=>selected&&setIconRemove({id:selected.id,folder:false,name:selected.label,saved:isSaved})}><Trash2 size={16}/></button>}
       </header>
       {!isIcons&&view==='gallery'&&<CanvasControls kind={kind} grid={grids[kind]} shape={imageShape} sort={order.sort} onGridChange={updateGrid} onShapeChange={shape=>setImageShape(normalizeImageShape(shape))} onSortChange={sort=>updateOrder({sort})}/>}
       {(isIcons?icons.storageError:storageError)&&<div className="error-banner" role="alert"><AlertTriangle size={14}/>{isIcons?icons.storageError:storageError}</div>}
       {queue.running&&<div className="queue-banner" role="status"><LoaderCircle className="spin" size={13}/><span>Capturing {Math.min(queue.done+queue.failed+1,queue.total)} / {queue.total}</span><strong>{queue.current}</strong><span>{queue.done} saved</span><button onClick={()=>captureAbort.current?.abort()}>Cancel</button></div>}
-      {isIcons?<PngSvgWorkspace collection={icons} selectedId={selectedId} filteredIds={filteredItems.map(item=>item.id)} onImport={()=>inputRef.current?.click()} onImportFolder={()=>iconFolderInput.current?.click()}/>:<div className="content-region">
+      {isIcons?(isSaved?<SavedIconsWorkspace collection={icons} selectedId={selectedId} filteredIds={filteredItems.map(item=>item.id)} onViewChange={changeIconView}/>:<PngSvgWorkspace collection={icons} selectedId={selectedId} filteredIds={filteredItems.map(item=>item.id)} onImport={()=>inputRef.current?.click()} onImportFolder={()=>iconFolderInput.current?.click()} ai={ai} onAiSettings={openAiSettings} onSaved={rememberSaved} onViewChange={changeIconView}/>):<div className="content-region">
         {view==='gallery'?(kind==='image'?<ImageGallery grid={grids.image} page={canvasPages.image} onPageChange={page=>setCanvasPages(current=>({...current,image:page}))} groupByMonth={order.group==='month'} items={filteredItems} archives={archives} organization={organization} onOpen={id=>selectItem(id)} onFavorite={id=>void toggleFavorite(id)}/>:<Gallery grid={grids.html} page={canvasPages.html} onPageChange={page=>setCanvasPages(current=>({...current,html:page}))} groupByMonth={order.group==='month'} pages={filteredItems} archives={archives} snapshots={snapshots} query={query} onOpen={(id,nextMode)=>selectItem(id,nextMode)} onCaptureMissing={()=>setCaptureDialog(true)} busy={queue.running}/>):
           selected?(kind==='image'?<ImageViewer item={selected} fit={fit} nearbyItems={filteredItems.slice(Math.max(0,position-2),position+3).filter(item=>item.id!==selected.id)}/>:<PreviewPane page={selected} mode={mode} snapshot={snapshots.get(selected.id)} viewport={viewport} fit={fit} reloadKey={0} onStep={step} onNavigate={navigateLocal} onCapture={()=>setCaptureDialog(true)} busy={queue.running} onWarnings={setWarnings}/>):
           <div className="workspace-empty">
@@ -647,7 +674,15 @@ export default function App(){
     {dragging&&<div className="drop-overlay"><span><Upload size={18}/>{isIcons?'Drop PNGs, WebPs or folders':'Drop ZIPs or images'}</span></div>}
     {toast&&<div className="toast" role="status"><span>{toast}</span><button className="icon-button tiny" aria-label="Dismiss notification" onClick={()=>setToast('')}><X size={13}/></button></div>}
 
-    {iconRemove&&<Modal title={iconRemove.folder?'Remove icon folder?':'Remove icon?'} onClose={()=>{if(!removingIcon)setIconRemove(null);}}><div className="modal-body"><p><strong>{iconRemove.name}</strong></p><p>The saved original and converted SVG{iconRemove.folder?'s in this folder and its subfolders':''} will be removed from this browser. Your original files on disk are unaffected.</p></div><div className="modal-footer"><button className="button" disabled={removingIcon} onClick={()=>setIconRemove(null)}>Cancel</button><button className="button danger" disabled={removingIcon} onClick={()=>void confirmIconRemoval()}>{removingIcon?'Removing…':'Remove'}</button></div></Modal>}
+    {settingsOpen&&<Modal title="Settings" className="settings-modal" onClose={()=>setSettingsOpen(false)}>
+      <div className="settings-tabs" role="tablist" aria-label="Settings section" onKeyDown={event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?'ai':event.key==='End'?'profile':settingsTab==='ai'?'profile':'ai';setSettingsTab(next);event.currentTarget.querySelector<HTMLButtonElement>('[data-settings-tab="'+next+'"]')?.focus();}}>
+        <button data-settings-tab="ai" id="settings-ai-tab" role="tab" aria-selected={settingsTab==='ai'} aria-controls="settings-ai-panel" tabIndex={settingsTab==='ai'?0:-1} onClick={()=>setSettingsTab('ai')}><Sparkles size={14}/>AI</button>
+        <button data-settings-tab="profile" id="settings-profile-tab" role="tab" aria-selected={settingsTab==='profile'} aria-controls="settings-profile-panel" tabIndex={settingsTab==='profile'?0:-1} onClick={()=>setSettingsTab('profile')}>Profile</button>
+      </div>
+      <div role="tabpanel" id={'settings-'+settingsTab+'-panel'} aria-labelledby={'settings-'+settingsTab+'-tab'}>{settingsTab==='ai'?<AiSettings ai={ai}/>:<ProfileSettings/>}</div>
+    </Modal>}
+    {imageAiItem&&<Modal title={'AI SVG · '+imageAiItem.label} className="image-ai-modal" onClose={()=>setImageAiItem(null)}><div className="modal-body"><AiSvgPanel key={imageAiItem.id} ai={ai} asset={{key:imageAiItem.id,id:imageAiItem.id,name:imageAiItem.path.split('/').pop()||imageAiItem.label,kind:'images',getSource:async()=>{const file=await getFile(imageAiItem.id);return file?.blob.slice(0,file.blob.size,file.mime);}}} onSettings={openAiSettings} onSave={icons.saveArtwork} onSaved={rememberSaved}/></div></Modal>}
+    {iconRemove&&<Modal title={iconRemove.saved?'Remove saved icon?':iconRemove.folder?'Remove icon folder?':'Remove icon?'} onClose={()=>{if(!removingIcon)setIconRemove(null);}}><div className="modal-body"><p><strong>{iconRemove.name}</strong></p><p>{iconRemove.saved?'This saved artwork, its chosen color and retained original will be removed from the icon library.':`The conversion${iconRemove.folder?'s in this folder and its subfolders':''} and their originals will be removed. Icons saved to your library are kept${iconRemove.folder?' in Uncategorized':''}.`} Your original files on disk are unaffected.</p></div><div className="modal-footer"><button className="button" disabled={removingIcon} onClick={()=>setIconRemove(null)}>Cancel</button><button className="button danger" disabled={removingIcon} onClick={()=>void confirmIconRemoval()}>{removingIcon?'Removing…':'Remove'}</button></div></Modal>}
     {driveOpen&&<Modal title="Import from Google Drive" onClose={()=>{if(!importing){setDriveOpen(false);setDriveError('');}}}><form onSubmit={event=>{event.preventDefault();void importFromDrive();}}><div className="modal-body"><p className="modal-intro">Paste a Google Drive share link for a ZIP or supported image. The file must be downloadable by anyone with the link.</p><label className="field-label" htmlFor="drive-url">Google Drive file link</label><input autoFocus id="drive-url" className="text-input" type="url" value={driveUrl} onChange={event=>{setDriveUrl(event.target.value);setDriveError('');}} placeholder="https://drive.google.com/file/d/…" required disabled={importing}/>{driveError&&<p className="form-error" role="alert">{driveError}</p>}{importing&&<p className="form-note"><LoaderCircle size={12} className="spin"/> {importProgress||'Downloading…'}</p>}<p className="form-note">Single-file Drive links are supported. Folder links and private files that require sign-in are not.</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>{setDriveOpen(false);setDriveError('');}} disabled={importing}>Cancel</button><button className="button primary" disabled={importing||!driveUrl.trim()}>{importing?<><LoaderCircle size={14} className="spin"/>Importing…</>:<><CloudDownload size={14}/>Import from Drive</>}</button></div></form></Modal>}
     {folderDialog&&<Modal title={folderDialog.moveId?'Create folder & move item':'New folder'} onClose={()=>{if(!savingFolder)setFolderDialog(null);}}><form onSubmit={submitFolder}><div className="modal-body"><label className="field-label" htmlFor="folder-name">Folder name</label><input autoFocus id="folder-name" className="text-input" value={folderName} onChange={event=>setFolderName(event.target.value)} maxLength={80} placeholder="e.g. Keepers" required/>{folderError&&<p className="form-error" role="alert">{folderError}</p>}<p className="form-note">{isIcons?'Icon folders are saved on this device.':'HTML and images can share a folder. Linked resources stay attached to their pages.'}</p></div><div className="modal-footer"><button type="button" className="button" onClick={()=>setFolderDialog(null)} disabled={savingFolder}>Cancel</button><button className="button primary" disabled={savingFolder||!folderName.trim()}>{savingFolder?'Saving…':folderDialog.moveId?'Create & move':'Create folder'}</button></div></form></Modal>}
     {captureDialog&&<Modal title="Capture HTML pages" onClose={()=>setCaptureDialog(false)}><div className="modal-body"><p className="modal-intro"><strong>{pendingCaptures.length} pages</strong> to capture{query?' matching “'+query+'”':favoritesOnly?' in favorites':''}. You can keep browsing.</p><div className="form-grid"><label>Viewport width<select value={captureOptions.width} onChange={event=>setCaptureOptions({...captureOptions,width:Number(event.target.value)})}><option value={1440}>Desktop · 1440 px</option><option value={1920}>Wide · 1920 px</option><option value={768}>Tablet · 768 px</option><option value={390}>Mobile · 390 px</option></select></label><label>Wait after loading<select value={captureOptions.delay} onChange={event=>setCaptureOptions({...captureOptions,delay:Number(event.target.value)})}><option value={500}>0.5 seconds</option><option value={1000}>1 second</option><option value={2500}>2.5 seconds</option><option value={5000}>5 seconds</option></select></label></div><label className="check-field"><input type="checkbox" checked={captureOptions.fullPage} onChange={event=>setCaptureOptions({...captureOptions,fullPage:event.target.checked})}/>Capture full page</label><label className="check-field"><input type="checkbox" checked={recapture} onChange={event=>setRecapture(event.target.checked)}/>Replace existing screenshots</label><p className="form-note">Keep this tab open. Browser captures may differ for remote images, embedded video, or some effects.</p></div><div className="modal-footer"><button className="button" onClick={()=>setCaptureDialog(false)}>Cancel</button><button className="button primary" disabled={!pendingCaptures.length||queue.running} onClick={()=>{setCaptureDialog(false);void runCaptures(pendingCaptures);}}><Camera size={14}/>Capture {pendingCaptures.length} pages</button></div></Modal>}
@@ -658,7 +693,7 @@ export default function App(){
     {helpOpen&&<Modal title="Workspace help" onClose={()=>setHelpOpen(false)}><div className="modal-body help-content">
       <section><h3>Import and browse</h3><p>Drop several ZIPs or images anywhere, use the + button, or import one downloadable ZIP/image from a Google Drive share link. Nested ZIPs keep their hierarchy. HTML and Images have separate tabs; HTML resources stay attached behind the scenes. Index pages use their folder names. Click a folder to preview its first matching file; its arrow only expands or collapses. Star a folder to include its current contents in Favorites.</p><p><kbd>↑</kbd> <kbd>↓</kbd> or the top arrows cycle through every matching file across folders, including collapsed ones. The last file loops to the first. <kbd>←</kbd> <kbd>→</kbd> control focused tree branches. <kbd>/</kbd> finds a file. Typing fields keep their own arrow keys.</p></section>
       <section><h3>Keep what matters</h3><p>Star a file, filter Favorites, or use Move to folder. Create folders with the sidebar folder-plus button or directly from the move menu. Use Sort to order names or dates, group by month, or show all files together. Drag the sidebar divider to resize it; double-click to reset. Folders organize references; original paths and linked resources stay intact.</p><p>Download saves original image bytes. For HTML, it downloads a ZIP containing the page’s owning archive and its assets. Source-only HTML and saved PNGs are available in Settings.</p></section>
-      <section><h3>Icons: PNG and WebP to SVG</h3><p>Open Icons in the top navigation. Drop PNGs, WebPs or folders into the canvas or sidebar; loose files enter Uncategorized and folders retain their hierarchy. Originals and converted results are saved in this browser and conversion starts automatically. Clearing site data removes this local collection.</p><p>Choose Pixel vectors for native pixel-grid geometry, Smooth curves for measured approximate contours, or Embedded bitmap for the original PNG or WebP inside an SVG. The canvas toolbar controls mode, zoom and background. Every result records a native-size pixel check; only zero visible differences is verified. Smooth curves can differ from the source and pixel geometry remains pixelated when enlarged. Results are checked using the recorded browser and sRGB8 reference, without a cross-browser guarantee.</p></section>
+      <section><h3>Icons: PNG and WebP to SVG</h3><p>Open Icons in the top navigation. Drop PNGs, WebPs or folders into the canvas or sidebar; loose files enter Uncategorized and folders retain their hierarchy. Originals and converted results are saved in this browser and conversion starts automatically. Clearing site data removes this local collection.</p><p>Choose Pixel vectors for native pixel-grid geometry, Smooth curves for measured approximate contours, or Embedded bitmap for the original PNG or WebP inside an SVG. The canvas toolbar controls mode, zoom and background. Use Save to library to keep a chosen conversion independently, or Recreate with AI to review a new editable candidate. Saved icons can be recolored and exported with their chosen color. Every conversion records a native-size pixel check; only zero visible differences is verified. Smooth curves can differ from the source and pixel geometry remains pixelated when enlarged. Results are checked using the recorded browser and sRGB8 reference, without a cross-browser guarantee.</p></section>
       <section><h3>Views and screenshots</h3><p>Settings contains preview width, fit, live/screenshot view, and current or batch captures. Gallery shows saved HTML screenshots or your original images. Captures run in the browser while you browse. These are DOM renderings, not server-side Playwright screenshots; remote resources, video, frames, canvas effects, and some CSS may differ.</p></section>
       <section><h3>Saved collection and browser imports</h3><p>The Banner Collection is saved privately on this Site. Its file list appears automatically; resource bytes load only when you open a page or image. Files you drop or import from Drive are saved only in this browser. Favorites, folders and screenshots also stay in this browser. Clearing browser storage removes those local settings and imports, while the private collection remains available. Hiding a collection import keeps it hidden after refresh on this browser. Imported scripts run in an isolated frame and can still request their external resources.</p><p>Supported images: PNG, JPEG, WebP, GIF, AVIF, SVG, BMP, and ICO. Limits: 256 MB per ZIP, 768 MB extracted per import, 128 MB per file, 20,000 entries, eight nested ZIP levels. Available browser storage limits the total collection. Password-protected ZIPs and server applications are unsupported.</p></section>
     </div></Modal>}
