@@ -1,0 +1,21 @@
+{
+  "executor": "/root",
+  "scope": "Real IndexedDB and native SVG rendering; isolated synthetic in-memory server, no production account/provider calls.",
+  "url": "http://terminal.local:4173/tests/shared-client-runner.html",
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "passed": [
+    "Legacy inventory is read-only and reports HTML, images, conversions and saved colors.",
+    "Migration preserves IDs, sources, saved SVG/color, folders/favorites and is idempotent.",
+    "No-op stage cleanup and interrupted publication retain honest, explicitly retryable state.",
+    "Two independent client revisions conflict honestly; explicit retry preserves both independent edits.",
+    "Only the importing device runs its queue; completed SVGs publish and receive a fresh native pixel check.",
+    "Hidden cloud roots refresh locally without republishing curated source files.",
+    "Logout fences queued work, aborts publication and keeps recoverable staged inputs across sign-in.",
+    "Original browser databases remain byte-for-byte inventoried and untouched."
+  ],
+  "failed": [],
+  "completedAt": "2026-10-31T19:00:47.869Z",
+  "isolatedPartition": true,
+  "parentDatabaseNamesUnchanged": true,
+  "captureMethod": "Read the completed visible DOM report in the supported cloud browser. No hidden application state or browser network APIs used."
+}

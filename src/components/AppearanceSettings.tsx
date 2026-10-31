@@ -86,7 +86,7 @@ export function AppearanceSettings({value, onSave, loading = false, error}: Appe
   const busy = loading || saving;
   return <form className="appearance-settings" onSubmit={event => {event.preventDefault(); if (validation.valid) void persist(validation.palette);}} aria-busy={busy}>
     <section className="settings-section">
-      <h3>Workspace colors</h3>
+      <h2>Workspace colors</h2>
       <p className="form-note">Preview changes here, then save them for everyone in this workspace. Image and icon colors stay the same.</p>
       <div className="appearance-fields">
         {APPEARANCE_FIELDS.map(({key, label, description}) => {

@@ -86,14 +86,14 @@ export function AccountsSettings({controller}: {controller: FolioAccountControll
 
   return <div className="account-settings">
     <section className="settings-section">
-      <h3>Workspace accounts</h3><p className="form-note">Everyone uses the same HTML, images, icons and folders. Each person signs in with their own Folio account.</p>
+      <h2>Workspace accounts</h2><p className="form-note">Everyone uses the same HTML, images, icons and folders. Each person signs in with their own Folio account.</p>
       <form className="account-invite-form" onSubmit={event => void invite(event)}><label className="form-field" htmlFor={inviteId}><span>Invite by email</span><input id={inviteId} type="email" name="invite-email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={254} required disabled={busy} placeholder="teammate@example.com"/></label><button className="button" type="submit" disabled={busy}><UserPlus size={13} aria-hidden="true"/>Create invitation</button></form>
       <p className="form-note">You receive a single-use link to share. Your teammate also needs access to this private Site. No invitation email is sent.</p>
     </section>
     {result && <CapabilityLink key={result.capability.token} result={result} onDismiss={() => setResult(null)}/>}
     {(error || controller.error) && <p className="inline-error" role="alert">{error || controller.error}</p>}
     <section className="settings-section">
-      <div className="account-section-heading"><h3>Members</h3><button className="icon-button" type="button" aria-label="Refresh workspace accounts" disabled={busy} onClick={() => void reload()}><RefreshCw size={13} aria-hidden="true"/></button></div>
+      <div className="account-section-heading"><h2>Members</h2><button className="icon-button" type="button" aria-label="Refresh workspace accounts" disabled={busy} onClick={() => void reload()}><RefreshCw size={13} aria-hidden="true"/></button></div>
       {loading && !data && <p className="account-status" role="status"><LoaderCircle size={14} className="spin" aria-hidden="true"/>Loading accounts…</p>}
       {!loading && !data && <button className="button" type="button" onClick={() => void reload()}>Try again</button>}
       {data && <ul className="account-member-list">{data.members.map(member => <li key={member.id}>
@@ -103,12 +103,12 @@ export function AccountsSettings({controller}: {controller: FolioAccountControll
         {disableId === member.id && <div className="account-inline-confirm"><p>Disable {member.name} and log out their sessions?</p><button className="button" type="button" disabled={busy} onClick={() => void setStatus(member.id, 'disabled')}>Disable access</button><button className="text-button" type="button" disabled={busy} onClick={() => setDisableId(null)}>Cancel</button></div>}
       </li>)}</ul>}
       {recovering && <form className="account-recovery-form" onSubmit={event => void recover(event)}>
-        <h4>Recovery for {recovering.name}</h4><p className="form-note">Verify your owner password to create a reset link for {recovering.email}.</p>
+        <h3>Recovery for {recovering.name}</h3><p className="form-note">Verify your owner password to create a reset link for {recovering.email}.</p>
         <input type="text" name="username" autoComplete="username" value={controller.account?.email ?? ''} readOnly className="account-autofill-username" tabIndex={-1} aria-hidden="true"/>
         <label className="form-field" htmlFor={recoveryPasswordId}><span>Your current password</span><input id={recoveryPasswordId} name="current-password" type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} minLength={12} maxLength={128} required disabled={busy}/></label>
         <div className="account-actions"><button className="button" type="submit" disabled={busy}>Create recovery link</button><button className="text-button" type="button" disabled={busy} onClick={() => {setRecoveryId(null); setPassword('');}}>Cancel</button></div>
       </form>}
     </section>
-    <section className="settings-section"><h3>Pending invitations</h3>{data && !data.invitations.length && <p className="form-note">No pending invitations.</p>}{data && <ul className="account-invitation-list">{data.invitations.map(invitation => <li key={invitation.id}><div><strong>{invitation.email}</strong><span>Expires {new Date(invitation.expiresAt).toLocaleString()}</span></div><button className="text-button" type="button" disabled={busy} onClick={() => void revoke(invitation.id)}>Revoke</button></li>)}</ul>}</section>
+    <section className="settings-section"><h2>Pending invitations</h2>{data && !data.invitations.length && <p className="form-note">No pending invitations.</p>}{data && <ul className="account-invitation-list">{data.invitations.map(invitation => <li key={invitation.id}><div><strong>{invitation.email}</strong><span>Expires {new Date(invitation.expiresAt).toLocaleString()}</span></div><button className="text-button" type="button" disabled={busy} onClick={() => void revoke(invitation.id)}>Revoke</button></li>)}</ul>}</section>
   </div>;
 }

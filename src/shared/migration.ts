@@ -1,9 +1,12 @@
 import {openDB} from 'idb';
 import {hashBytes, SharedWorkspaceError} from './client';
+import type {SharedWorkspaceClient} from './client';
 import {encodeDataset, recordKey, selectSharedRecords, stableJson} from './codec';
 import type {DataRecord, DatasetName, DatasetRecords} from './codec';
-import {installDataset, MIGRATION_LEDGER_KEY, readDatabase, requireSharedClient, sharedDatasetDatabase, withSharedWrite} from './runtime';
+import {installDataset, MIGRATION_LEDGER_KEY, readDatabase, requireSharedClient, sharedDatasetDatabase, sharedWorkspaceEpoch, withSharedWrite} from './runtime';
 import type {SharedDatabase} from './runtime';
+import {sameMigrationRecord} from './migration-equality';
+import {resolveIconNameCollisions} from './icon-names';
 
 export interface MigrationInventory {
   library: {items: number; files: number; folders: number; bytes: number};
@@ -39,13 +42,21 @@ export async function inspectBrowserData(): Promise<MigrationInventory> {
   };
 }
 
-async function migrateDataset(kind: DatasetName): Promise<number> {
-  const originals = await legacyRecords(kind), client = requireSharedClient();
+function currentMigration(attempt: number, client: SharedWorkspaceClient): void {
+  if (sharedWorkspaceEpoch() !== attempt || requireSharedClient() !== client) throw new SharedWorkspaceError('The workspace session ended. Original browser files are unchanged; restart sharing after signing in.', 'signed-out', 401);
+}
+
+async function migrateDataset(kind: DatasetName, attempt: number, client: SharedWorkspaceClient): Promise<number> {
+  currentMigration(attempt, client);
+  const originals = await legacyRecords(kind);
+  currentMigration(attempt, client);
   if (Object.values(originals).every(rows => !rows.length) || (kind === 'icons' && Object.entries(originals).every(([name, rows]) => name === 'folders' ? rows.every(row => row.id === 'icon-folder-uncategorized' && !row.favorite) : !rows.length))) return 0;
   // Original browser stores remain untouched even if hashing/upload/commit is interrupted.
   const source = await encodeDataset(kind, originals, client);
   const marker = await hashBytes(new TextEncoder().encode(stableJson(source.data)).buffer);
+  currentMigration(attempt, client);
   return withSharedWrite(kind, sharedDatasetDatabase(kind), async stage => {
+    currentMigration(attempt, client);
     const rows = await readDatabase(stage);
     const ledger = (rows.prefs?.find(row => row.key === MIGRATION_LEDGER_KEY)?.value as string[] | undefined) ?? [];
     if (ledger.includes(marker)) return 0;
@@ -54,6 +65,7 @@ async function migrateDataset(kind: DatasetName): Promise<number> {
     let added = 0;
     for (const [store, incoming] of Object.entries(source.data.stores)) {
       const target = new Map(current.data.stores[store].map(row => [recordKey(store, row), row]));
+      const originalRows = new Map(originals[store].map(row => [recordKey(store, row), row]));
       for (const row of incoming) {
         const key = recordKey(store, row), existing = target.get(key);
         if (!existing) {target.set(key, row); added++; continue;}
@@ -63,7 +75,8 @@ async function migrateDataset(kind: DatasetName): Promise<number> {
           const incoming = Array.isArray(row.value) ? row.value.filter(item => typeof item === 'string') : [];
           target.set(key, {...existing, value: [...new Set([...before, ...incoming])].sort()}); continue;
         }
-        if (stableJson(existing) !== stableJson(row)) throw new SharedWorkspaceError('A browser record with the same identity already has different shared contents. The original browser data is unchanged; review that record before sharing it.', 'migration-conflict', 409);
+        if (!await sameMigrationRecord(existing, row, originalRows.get(key), client, kind === 'icons' && ['folders', 'icons', 'savedIcons'].includes(store))) throw new SharedWorkspaceError('A browser record with the same identity already has different shared contents. The original browser data is unchanged; review that record before sharing it.', 'migration-conflict', 409);
+        currentMigration(attempt, client);
       }
       merged.stores[store] = [...target.values()];
     }
@@ -73,15 +86,17 @@ async function migrateDataset(kind: DatasetName): Promise<number> {
       const legacy = await legacyDatabase('folio-icons');
       if (legacy) {try {queue.icons = await legacy.getAll('icons') as DataRecord[];} finally {legacy.close();}}
     }
-    await installDataset(stage, merged, queue);
+    currentMigration(attempt, client); await installDataset(stage, resolveIconNameCollisions(merged, current.data), queue); currentMigration(attempt, client);
     return added;
   });
 }
 
 /** User-invoked only. Each dataset is independently acknowledged and idempotently retryable. */
 export async function migrateBrowserData(): Promise<{library: number; icons: number}> {
-  requireSharedClient();
-  const library = await migrateDataset('library');
-  const icons = await migrateDataset('icons');
+  const attempt = sharedWorkspaceEpoch(), client = requireSharedClient();
+  const library = await migrateDataset('library', attempt, client);
+  currentMigration(attempt, client);
+  const icons = await migrateDataset('icons', attempt, client);
+  currentMigration(attempt, client);
   return {library, icons};
 }

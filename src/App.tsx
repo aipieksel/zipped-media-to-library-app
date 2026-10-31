@@ -292,7 +292,7 @@ export default function App({accountController}:{accountController:FolioAccountC
     if(!sidebarOpen||!narrow)return;
     const frame=requestAnimationFrame(()=>searchRef.current?.focus());
     const keys=(event:KeyboardEvent)=>{
-      if(document.querySelector('dialog[open]')||isFolioSelectEvent(event)||isFolioSelectPopupOpen())return;
+      if(document.querySelector('dialog[open]')||(event.key!=='Escape'&&isFolioSelectEvent(event))||isFolioSelectPopupOpen())return;
       if(event.key==='Escape'){event.preventDefault();event.stopPropagation();setSidebarOpen(false);}
       if(event.key==='Tab'){
         const controls=Array.from(document.querySelectorAll<HTMLElement>('.sidebar button:not(:disabled),.sidebar input,.sidebar [tabindex="0"]')).filter(el=>el.getClientRects().length);
@@ -311,7 +311,7 @@ export default function App({accountController}:{accountController:FolioAccountC
     const frame=requestAnimationFrame(()=>document.querySelector<HTMLElement>('[data-popover-panel] button,[data-popover-panel] select,[data-popover-panel] input')?.focus());
     const outside=(event:PointerEvent)=>{if(isFolioSelectEvent(event))return;if(!(event.target as Element)?.closest('[data-popover-root="'+popover+'"]')){returnFocus=false;setPopover(null);}};
     const keys=(event:KeyboardEvent)=>{
-      if(event.defaultPrevented||isFolioSelectEvent(event)||isFolioSelectPopupOpen())return;
+      if(event.defaultPrevented||(event.key!=='Escape'&&isFolioSelectEvent(event))||isFolioSelectPopupOpen())return;
       if(event.key==='Escape'){event.preventDefault();setPopover(null);prior?.focus();}
       if(event.key==='Tab'){
         const controls=Array.from(document.querySelectorAll<HTMLElement>('[data-popover-panel] button:not(:disabled),[data-popover-panel] input,[data-popover-panel] select')).filter(el=>el.getClientRects().length);
@@ -588,7 +588,7 @@ export default function App({accountController}:{accountController:FolioAccountC
     }
   }),[]);
   useEffect(()=>{if(settingsTab!=='appearance')applyAppearance(appearance);},[appearance,settingsTab]);
-  if(settingsTab)return <SettingsPage section={settingsTab} owner={accountController.account?.role==='owner'} name={accountController.account?.name??'Folio'} busy={accountController.busy} onLogout={()=>void accountController.logout()} returnHref={'#'+(tab==='image'?'images':tab)}>
+  if(settingsTab)return <SettingsPage section={settingsTab} owner={accountController.account?.role==='owner'} name={accountController.account?.name??'Folio'} busy={accountController.busy} error={accountController.error} onLogout={()=>void accountController.logout()} returnHref={'#'+(tab==='image'?'images':tab)}>
     {settingsTab==='ai'?<AiSettings ai={ai}/>:settingsTab==='appearance'?<AppearanceSettings value={appearance} onSave={async value=>{const saved=await saveSharedAppearance(value);setAppearance(saved);applyAppearance(saved);}}/>:settingsTab==='accounts'?<AccountsSettings controller={accountController}/>:settingsTab==='workspace'?<SharedWorkspaceSettings/>:<ProfileSettings controller={accountController}/>}
   </SettingsPage>;
   return <div className="folio-app">

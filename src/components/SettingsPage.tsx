@@ -12,8 +12,9 @@ const sections = [
   {id: 'accounts', label: 'Accounts', icon: UsersRound, description: 'Manage access to the same shared workspace.'},
 ] as const;
 
-export function SettingsPage({section, owner, name, busy, onLogout, returnHref, children}: {
+export function SettingsPage({section, owner, name, busy, error, onLogout, returnHref, children}: {
   section: SettingsSection; owner: boolean; name: string; busy: boolean;
+  error?: string;
   onLogout: () => void; returnHref: string; children: ReactNode;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -32,6 +33,7 @@ export function SettingsPage({section, owner, name, busy, onLogout, returnHref, 
       <div className="settings-sidebar-footer">
         <span className="settings-account-name" title={name}>{name}</span>
         <button className="settings-logout" type="button" onClick={onLogout} disabled={busy}><LogOut size={15}/>{busy ? 'Please wait…' : 'Log out'}</button>
+        {error && <p className="settings-account-error" role="alert">{error}</p>}
       </div>
     </aside>
     <main className="settings-main">

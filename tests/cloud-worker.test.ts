@@ -159,7 +159,8 @@ test('rendition graph commits with deduplicated variants and streams exact priva
   const response=await handleCollection(request(`/api/collection/image?hash=${hash}`),env);
   assert.deepEqual(new Uint8Array(await response.arrayBuffer()),payload);
   assert.equal(response.headers.get('content-type'),'image/webp');
-  assert.equal(response.headers.get('cache-control'),'private, max-age=31536000, immutable');
+  // Versioned media must still re-enter the membership gate after logout.
+  assert.equal(response.headers.get('cache-control'),'private, no-store');
   assert.equal(response.headers.get('etag'),`"${hash}"`);
   assert.equal(response.headers.get('x-content-sha256'),hash);
   assert.equal(response.headers.get('content-length'),String(payload.length));
@@ -176,10 +177,10 @@ test('rendition HEAD and conditional GET expose validators without fetching payl
   const {env,bucket,index,hash,payload}=await imageFixture();await bucket.put('folio/collection.json',JSON.stringify(index));
   const reads:string[]=[];const get=bucket.get.bind(bucket);bucket.get=async(key,options={})=>{reads.push(key);return get(key,options);};
   const head=await handleCollection(request(`/api/collection/image?hash=${hash}`,'HEAD'),env);
-  assert.equal(head.status,200);assert.equal(head.headers.get('content-length'),String(payload.length));assert.equal(await head.text(),'');
+  assert.equal(head.status,200);assert.equal(head.headers.get('cache-control'),'private, no-store');assert.equal(head.headers.get('content-length'),String(payload.length));assert.equal(await head.text(),'');
   for(const etag of [`"${hash}"`,`W/"${hash}"`,`"other", "${hash}"`,'*']){
     const response=await handleCollection(request(`/api/collection/image?hash=${hash}`,'GET',undefined,TOKEN,{'if-none-match':etag}),env);
-    assert.equal(response.status,304);assert.equal(response.headers.get('etag'),`"${hash}"`);assert.equal(await response.text(),'');
+    assert.equal(response.status,304);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.equal(response.headers.get('etag'),`"${hash}"`);assert.equal(await response.text(),'');
   }
   assert.deepEqual(reads,['folio/collection.json']);
 });
@@ -191,7 +192,7 @@ test('image route denies bad hashes, unknown hashes and direct packed-object acc
   assert.equal((await handleCollection(request('/api/collection/image?hash='+Object.keys(index.objects)[0]),env)).status,404);
 });
 
-test('original image cache is immutable only with its exact SHA version; attachments remain protected',async()=>{
+test('original images stay uncached even at exact SHA versions; validators and attachments remain protected',async()=>{
   const {env,bucket,index,file,content}=await imageFixture();await bucket.put('folio/collection.json',JSON.stringify(index));
   const path=`/api/collection/file?archive=${file.archiveId}&path=${file.path}`;
   for(const suffix of ['', '&v='+'f'.repeat(64)]){
@@ -200,12 +201,12 @@ test('original image cache is immutable only with its exact SHA version; attachm
     assert.deepEqual(new Uint8Array(await response.arrayBuffer()),content);
   }
   const response=await handleCollection(request(`${path}&v=${file.sha256}`),env);
-  assert.equal(response.headers.get('cache-control'),'private, max-age=31536000, immutable');
+  assert.equal(response.headers.get('cache-control'),'private, no-store');
   assert.equal(response.headers.get('etag'),`"${file.sha256}"`);assert.match(response.headers.get('content-disposition')!,/^attachment;/);
   assert.match(response.headers.get('content-security-policy')!,/sandbox/);assert.equal(response.headers.get('x-content-type-options'),'nosniff');
   await response.arrayBuffer();
   const cached=await handleCollection(request(`${path}&v=${file.sha256}`,'GET',undefined,TOKEN,{'if-none-match':`"${file.sha256}"`}),env);
-  assert.equal(cached.status,304);
+  assert.equal(cached.status,304);assert.equal(cached.headers.get('cache-control'),'private, no-store');
   const html=await fixture();await html.bucket.put('folio/collection.json',JSON.stringify(html.index));
   const htmlResponse=await handleCollection(request(`/api/collection/file?archive=${html.file.archiveId}&path=${html.file.path}&v=${html.file.sha256}`),html.env);
   assert.equal(htmlResponse.headers.get('cache-control'),'private, no-store');assert.equal(htmlResponse.headers.get('etag'),null);await htmlResponse.arrayBuffer();

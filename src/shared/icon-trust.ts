@@ -2,6 +2,7 @@ import {createEmbeddedRasterSvg, inspectRaster} from '../raster-input';
 import {sanitizeSvg} from '../saved-svg';
 import {PNG_SVG_LIMITS} from '../png-svg';
 import type {IconRecord, SavedIconRecord} from '../icon-types';
+import {DOMParser} from '@xmldom/xmldom';
 import {SHARED_BLOB_FIELDS, stableJson} from './codec';
 import {SharedWorkspaceError} from './client';
 
@@ -23,6 +24,9 @@ export async function validateSharedIconSvg(blob: Blob, source: Blob, item: Icon
     if (raster.width !== width || raster.height !== height || svg !== createEmbeddedRasterSvg(bytes, width, height)) throw new SharedWorkspaceError('The shared bitmap wrapper does not contain the exact original image.', 'invalid-svg');
   } else {
     sanitizeSvg(svg, {width, height, profile: !conversion && item.provenance.kind === 'ai' ? 'ai' : 'local-vector'});
+    // The sanitizer may supply missing dimensions. Exact downloaded bytes must already declare them.
+    const root = new DOMParser({locator: false, onError() {throw new Error('Invalid shared SVG.');}}).parseFromString(svg, 'image/svg+xml').documentElement;
+    if (!root || !root.hasAttribute('width') || !root.hasAttribute('height') || !root.hasAttribute('viewBox')) throw new SharedWorkspaceError('The shared SVG must declare its native width, height and viewBox.', 'invalid-svg');
   }
   return svg;
 }

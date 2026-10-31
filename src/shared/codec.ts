@@ -1,6 +1,7 @@
 import {SharedWorkspaceClient, SharedWorkspaceError, validateBlobReference} from './client';
 import type {SharedBlobReference} from './client';
 import {validateRecordMetadata} from './metadata';
+import {resolveIconNameCollisions, withoutManagedIconNames} from './icon-names';
 
 export type DatasetName = 'library' | 'icons';
 export type DataRecord = Record<string, unknown>;
@@ -76,7 +77,7 @@ export function validateDataset(value: unknown, kind: DatasetName, allowedBlobs?
   const allowed = allowedBlobs ? new Set(allowedBlobs) : null, referenced = new Set<string>();
   for (const name of names) {
     const rows = value.stores[name];
-    if (!Array.isArray(rows) || rows.length > 20000) throw new SharedWorkspaceError('The shared collection is missing bounded records.', 'invalid-data');
+    if (!Array.isArray(rows) || rows.length > 100000) throw new SharedWorkspaceError('The shared collection is missing bounded records or exceeds 100,000 records in one store.', 'invalid-data');
     const keys = new Set<string>();
     for (const row of rows) {
       if (!object(row) || Object.hasOwn(row, SHARED_BLOB_FIELDS) || Object.hasOwn(row, '__proto__')) throw new SharedWorkspaceError('The shared collection record is invalid.', 'invalid-data');
@@ -115,6 +116,10 @@ function validateRelationships(data: DatasetData): void {
     for (const row of rows.files) if (!archives.has(String(row.archiveId)) || row.id !== `${row.archiveId}/${row.path}` || typeof row.mime !== 'string' || !object(row.blob)) throw new SharedWorkspaceError('A shared library file is incomplete.', 'invalid-data');
     for (const row of rows.pages) if (!files.has(String(row.id)) || !archives.has(String(row.archiveId)) || typeof row.label !== 'string' || !['html', 'image', undefined].includes(row.kind as string | undefined)) throw new SharedWorkspaceError('A shared library item is incomplete.', 'invalid-data');
   } else {
+    for (const store of ['icons', 'savedIcons']) {
+      const filenames = rows[store].map(row => String(row.filename).normalize('NFC').toLowerCase());
+      if (new Set(filenames).size !== filenames.length) throw new SharedWorkspaceError('Shared SVG download filenames must be unique within each Icons view.', 'invalid-data');
+    }
     const folders = new Map(rows.folders.map(row => [String(row.id), row]));
     for (const row of rows.folders) {
       if (typeof row.name !== 'string' || !(row.parentId === null || folders.has(String(row.parentId)))) throw new SharedWorkspaceError('The shared icon folders are incomplete.', 'invalid-data');
@@ -172,10 +177,13 @@ export function reconcileDatasets(base: DatasetData, candidate: DatasetData, lat
       const old = before.get(key), next = after.get(key), now = current.get(key);
       if (stableJson(old) === stableJson(next)) continue;
       if (stableJson(now) === stableJson(next)) continue;
+      // A prior retry may have committed while its response was lost after allocating collision suffixes.
+      if (candidate.kind === 'icons' && ['folders', 'icons', 'savedIcons'].includes(name) && now && next && stableJson(withoutManagedIconNames(now)) === stableJson(withoutManagedIconNames(next))) continue;
       if (stableJson(now) !== stableJson(old)) throw new SharedWorkspaceError('The same record changed on another device. The staged changes are retained; review the current workspace before retrying.', 'conflict', 409);
       if (next) current.set(key, next); else current.delete(key);
     }
     stores[name] = [...current.values()];
   }
-  return validateDataset({schema: 1, kind: candidate.kind, stores, migrations: [...new Set([...(latest.migrations ?? []), ...(candidate.migrations ?? [])])].slice(-256)}, candidate.kind);
+  const migrations = [...new Set([...(latest.migrations ?? []), ...(candidate.migrations ?? [])])].slice(-256);
+  return validateDataset(resolveIconNameCollisions({schema: 1, kind: candidate.kind, stores, ...(migrations.length ? {migrations} : {})}, latest), candidate.kind);
 }

@@ -56,3 +56,11 @@ Every shared route requires active app membership. All members read the same thr
 Bindings: `env.DB` D1, existing `env.BUCKET` R2. Secrets/configuration: `FOLIO_AUTH_SECRET` (random >=32 characters), `FOLIO_OWNER_SITE_USER_ID` (trusted actual owner subject, never committed), optional `FOLIO_APP_ORIGIN` (the existing exact Site origin). Root owns those settings, manifest/build integration and migrations publication. No production password or teammate is supplied by code.
 
 The actual Better Auth compatibility spike and server implementation/tests are separate evidence; this contract is not a claim they already pass.
+
+## Client metadata extension — revision 10
+
+The generic server document/blob contract is unchanged. The completed Library and Icons adapters may store either the inline versioned dataset or a compact index `{schema:1,kind,manifest:BlobReference}` in `data`. The index points to immutable `application/json` dataset metadata uploaded through the same authenticated chunk API. The adapter uses this form above 384 KiB of serialized metadata and bounds the expanded metadata at 64 MiB. Appearance remains its validated six-field palette directly.
+
+For a manifest index, the server document's `blobs` contains the exact unique union of metadata-chunk and asset-chunk hashes. Client reads verify immutable bytes and dataset schema, then require that exact reference union before installing the dataset. A single revision CAS publishes the complete index and all its references. The root request still has the same 1 MiB body and 10,000-hash limits; each immutable chunk is still at most 8 MiB.
+
+File BlobReferences may additionally use `{hash,size,offset,length}` for a bounded slice within a fully hash-verified chunk, allowing many small files to share one chunk. Both offset and length are required together, are bounded integers, and may not exceed the chunk's verified size; descriptor file size must equal the sum of selected slice lengths. References without slices remain supported. No new public route, R2 path, identity source or weaker authorization is introduced. Implementation/large-dataset and independent shared-client evidence are in the corresponding revision-10 shared reports.

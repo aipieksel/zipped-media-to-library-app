@@ -42,7 +42,9 @@ export async function createQaWorkspaceFixture(projectRoot:string):Promise<QaWor
         const fixtureRequest=new Request(request,{headers});
         return await handlePrivateApi(fixtureRequest,env)||new Response('Missing fixture API',{status:404});
       }};`,resolveDir:projectRoot,sourcefile:'folio-development-qa-worker.mjs'},
-    bundle:true,platform:'browser',format:'esm',target:'es2022',external:['node:*'],outfile:output,
+    // Select Better Auth's native AsyncLocalStorage implementation. Its browser
+    // fallback is a single global context and cannot isolate concurrent requests.
+    bundle:true,platform:'browser',conditions:['workerd'],format:'esm',target:'es2022',external:['node:*'],outfile:output,
   });
   const mf=new Miniflare({
     modules:[{type:'ESModule',path:output,contents:await readFile(output,'utf8')}],

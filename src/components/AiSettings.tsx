@@ -11,7 +11,7 @@ export function AiSettings({ai}: {ai: AiSettingsController}) {
   const busy = ai.connecting || !!ai.activeRequestId;
   return <div className="modal-body ai-settings-panel">
     <section className="settings-section">
-      <h3>AI connection</h3>
+      <h2>AI connection</h2>
       <p className="form-note">Use your ChatGPT account through Codex on this computer. Connect the Folio companion once per session.</p>
       <div className="ai-connection-status" role="status"><span className={`connection-dot ${ai.connection ? 'connected' : ''}`}/>{ai.connecting ? 'Connecting to this computer…' : ai.connection ? 'Local companion connected' : 'Not connected'}{ai.provider?.auth === 'chatgpt' && <span className="settings-badge">ChatGPT sign-in confirmed</span>}</div>
       {!ai.connection ? <form className="ai-pair-form" onSubmit={event => {event.preventDefault(); void ai.connect(token, Number(port)).then(connected => {if (connected) {setToken(''); requestAnimationFrame(() => modelSelect.current?.focus());}});}}>
@@ -21,7 +21,7 @@ export function AiSettings({ai}: {ai: AiSettingsController}) {
       {ai.error && <p className="inline-error" role="alert">{ai.error}</p>}
     </section>
     <section className="settings-section">
-      <h3>Provider & model</h3>
+      <h2>Provider & model</h2>
       <label className="setting-row"><span>Provider</span><PopoverSelect aria-label="AI provider" value={ai.preferences.provider} disabled={busy || !ai.loaded} onValueChange={value => {
         const provider = ai.status?.providers.find(item => item.id === value); const model = provider?.models[0];
         void ai.setPreferences({provider: value as AiPreferences['provider'], model: model?.id ?? null, reasoning: model?.defaultReasoning ?? null});

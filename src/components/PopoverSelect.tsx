@@ -43,6 +43,9 @@ export function isFolioSelectEvent(event: Event | SyntheticEvent): boolean {
 function stopWorkspaceShortcuts(event: KeyboardEvent<HTMLElement>) {
   // Let Base UI handle navigation, typeahead and dismissal before the event can
   // reach the library's Arrow/Home/End or search shortcuts. Do not cancel Tab.
+  // Once the selection is closed, Escape belongs to its containing dialog,
+  // settings popover or mobile drawer. The first Escape still closes the list.
+  if(event.key === 'Escape' && event.currentTarget.hasAttribute('data-folio-select-trigger') && event.currentTarget.getAttribute('aria-expanded') !== 'true') return;
   event.stopPropagation();
 }
 
@@ -98,7 +101,7 @@ export const PopoverSelect = forwardRef<HTMLButtonElement, PopoverSelectProps>(f
       {selected?.count !== undefined && <span className="folio-select-count" aria-hidden="true">{selected.count.toLocaleString()}</span>}
       <Select.Icon className="folio-select-chevron"><ChevronDown size={13} aria-hidden="true"/></Select.Icon>
     </Select.Trigger>
-    <Select.Portal container={portalContainer}>
+    <Select.Portal container={portalContainer ?? undefined}>
       <Select.Positioner className="folio-select-positioner" side="bottom" align="start" sideOffset={5} collisionPadding={8} alignItemWithTrigger={false} positionMethod="fixed">
         <Select.Popup className="folio-select-popup" data-folio-select-popup="" onKeyDown={stopWorkspaceShortcuts}>
           <Select.List className="folio-select-list">

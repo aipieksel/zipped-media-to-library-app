@@ -31,7 +31,7 @@ export function ProfileSettings({controller}: {controller: FolioAccountControlle
 
   return <div className="account-settings">
     <section className="settings-section">
-      <h3>Your profile</h3><p className="form-note">Your account signs in to the shared workspace. All members see the same files and folders.</p>
+      <h2>Your profile</h2><p className="form-note">Your account signs in to the shared workspace. All members see the same files and folders.</p>
       <form className="account-form" onSubmit={event => void saveProfile(event)}>
         <label className="form-field" htmlFor={nameId}><span>Name</span><input id={nameId} name="name" autoComplete="name" value={name} onChange={event => setName(event.target.value)} maxLength={80} required disabled={busy}/></label>
         <label className="form-field" htmlFor={emailId}><span>Email</span><input id={emailId} value={account.email} readOnly type="email" aria-describedby={emailId + '-note'}/><small id={emailId + '-note'}>Your sign-in email. Email changes are not available here.</small></label>
@@ -39,7 +39,7 @@ export function ProfileSettings({controller}: {controller: FolioAccountControlle
       </form>
     </section>
     <section className="settings-section">
-      <h3>Password</h3><p className="form-note" id={passwordNoteId}>Enter your current password to change it. Use 12–128 characters for the new password. Changing it logs out your other sessions.</p>
+      <h2>Password</h2><p className="form-note" id={passwordNoteId}>Enter your current password to change it. Use 12–128 characters for the new password. Changing it logs out your other sessions.</p>
       <form className="account-form" onSubmit={event => void changePassword(event)}>
         <input type="text" name="username" autoComplete="username" value={account.email} readOnly className="account-autofill-username" tabIndex={-1} aria-hidden="true"/>
         <label className="form-field" htmlFor={currentId}><span>Current password</span><input id={currentId} name="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} minLength={12} maxLength={128} required disabled={busy}/></label>
@@ -49,6 +49,6 @@ export function ProfileSettings({controller}: {controller: FolioAccountControlle
     </section>
     {(error || controller.error) && <p className="inline-error" role="alert">{error || controller.error}</p>}
     {controller.notice && <p className="account-notice" role="status">{controller.notice}</p>}
-    <section className="settings-section account-signout"><div><h3>This session</h3><p className="form-note">Log out of Folio on this browser.</p></div><button className="button" type="button" disabled={busy} onClick={() => void controller.logout()}><LogOut size={13} aria-hidden="true"/>Log out</button></section>
+    <section className="settings-section account-signout"><div><h2>This session</h2><p className="form-note">Log out of Folio on this browser.</p></div><button className="button" type="button" disabled={busy} onClick={() => void controller.logout()}><LogOut size={13} aria-hidden="true"/>Log out</button></section>
   </div>;
 }

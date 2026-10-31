@@ -1,7 +1,8 @@
 import {createEmbeddedRasterSvg, inspectRaster, rasterMimeHint} from './raster-input';
 import {openDB} from 'idb';
-import {isSharedWorkspaceEnabled, registerSharedDatabase, resolveSharedRecord, sharedDatabaseName, SHARED_ICONS_DB, subscribeSharedWorkspace, withSharedWrite} from './shared/runtime';
+import {isSharedWorkspaceEnabled, registerSharedDatabase, resolveSharedRecord, sharedDatabaseName, sharedWorkspaceEpoch, SHARED_ICONS_DB, subscribeSharedWorkspace, withSharedWrite} from './shared/runtime';
 import {sharedIconIdentity, validateSharedIconSvg} from './shared/icon-trust';
+import {allocateIconName} from './shared/icon-names';
 import type {DBSchema, IDBPDatabase, IDBPTransaction} from 'idb';
 import {uniqueId} from './identity';
 import {allocateSvgFilename, PNG_SVG_LIMITS} from './png-svg';
@@ -60,21 +61,7 @@ function assertMode(mode: ConversionMode): void {
   if (!modeNames.includes(mode)) throw new Error('Choose a supported icon conversion mode.');
 }
 
-/** Shared sibling namespace: a folder and an icon cannot silently shadow each other. */
-export function allocateIconName(source: string, used: Set<string>, file = false): string {
-  let clean = source.normalize('NFC').replace(/[<>:"/\\|?*\u0000-\u001f\u007f-\u009f]/g, '_').trim().replace(/[. ]+$/g, '');
-  if (!clean || /^\.+$/.test(clean)) clean = file ? 'icon.png' : 'Folder';
-  if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(clean)) clean = '_' + clean;
-  clean = Array.from(clean).slice(0, 150).join('');
-  const extension = file ? /\.[^.]+$/.exec(clean)?.[0] ?? '' : '';
-  const stem = extension ? clean.slice(0, -extension.length) : clean;
-  const keys = new Set([...used].map(nameKey));
-  let name = clean;
-  let suffix = 2;
-  while (keys.has(nameKey(name))) name = `${stem} (${suffix++})${extension}`;
-  used.add(nameKey(name));
-  return name;
-}
+export {allocateIconName} from './shared/icon-names';
 
 interface PreparedImport extends IconImportBatch {files: IconImportFile[]; notices: string[]; skipped: number}
 
@@ -692,6 +679,7 @@ export class IconCollectionStore {
 
 /** Each call returns an independent handle; QA may use a dedicated database name. */
 async function openIconDatabase(name: string): Promise<IDBPDatabase<IconSchema>> {
+  const generation = sharedWorkspaceEpoch();
   name = sharedDatabaseName(name);
   if (!name || name.length > 180) throw new Error('Invalid local Icons database name.');
   let db: IDBPDatabase<IconSchema>;
@@ -714,10 +702,12 @@ async function openIconDatabase(name: string): Promise<IDBPDatabase<IconSchema>>
     },
     blocking() {db?.close();},
   });
+  if (generation !== sharedWorkspaceEpoch()) {db.close(); throw new Error('The workspace session changed while opening Icons storage.');}
   const tx = db.transaction('folders', 'readwrite');
   try {
     if (!await tx.store.getKey(UNCATEGORIZED_ICON_FOLDER_ID)) await tx.store.add({id: UNCATEGORIZED_ICON_FOLDER_ID, parentId: null, name: 'Uncategorized', createdAt: Date.now(), favorite: false});
     await tx.done;
+    if (generation !== sharedWorkspaceEpoch()) throw new Error('The workspace session changed while opening Icons storage.');
     registerSharedDatabase('icons', db);
     return db;
   } catch (error) {

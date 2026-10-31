@@ -26,7 +26,7 @@ export function SharedWorkspaceSettings() {
   }
   return <div className="shared-workspace-settings">
     <section className="settings-section">
-      <h3>Browser files</h3>
+      <h2>Browser files</h2>
       <p className="form-note">Share files saved in this browser with everyone in this workspace. Your original browser copies are kept. The existing cloud collection is already shared.</p>
       {!inventory ? <p className="form-note" role="status">Checking browser storage…</p> : <>
         <dl className="shared-inventory">
@@ -41,7 +41,7 @@ export function SharedWorkspaceSettings() {
         {!enabled && <p className="form-note">Sign in to the hosted workspace to share these files.</p>}
       </>}
     </section>
-    {retained.length > 0 && <section className="settings-section"><h3>Retained changes</h3><p className="form-note">These changes did not receive a complete shared save. Retry checks the current server version before applying them.</p>
+    {retained.length > 0 && <section className="settings-section"><h2>Retained changes</h2><p className="form-note">These changes did not receive a complete shared save. Retry checks the current server version before applying them.</p>
       <ul className="shared-retained-list">{retained.map(change => <li key={change.id}>
         <div><strong>{change.kind === 'icons' ? 'Icons' : 'Library'} change</strong><p>{change.error}</p></div>
         <div className="shared-settings-actions">

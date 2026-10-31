@@ -12,7 +12,8 @@ export class SharedWorkspaceError extends Error {
 }
 
 export async function hashBytes(bytes: ArrayBuffer): Promise<string> {
-  return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), byte => byte.toString(16).padStart(2, '0')).join('');
+  const digest = globalThis.crypto?.subtle ? new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)) : (await import('@noble/hashes/sha2.js')).sha256(new Uint8Array(bytes));
+  return Array.from(digest, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 export function validateBlobReference(value: unknown): SharedBlobReference {
@@ -72,8 +73,10 @@ export class SharedWorkspaceClient {
   private async request<T>(path: string, init: RequestInit, consume: (response: Response) => Promise<T>): Promise<T> {
     this.assertOpen();
     const controller = new AbortController(); this.requests.add(controller);
+    let timedOut = false;
+    const timer = setTimeout(() => {timedOut = true; controller.abort();}, 25_000);
     try {
-      const response = await this.fetcher(path, {...init, credentials: 'same-origin', cache: 'no-store', signal: controller.signal});
+      const response = await this.fetcher(path, {...init, credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal});
       if (!response.ok) {
         let detail: {error?: string; code?: string} = {};
         try {detail = JSON.parse(new TextDecoder().decode(await limitedBytes(response, 16 * 1024)));} catch { /* A non-JSON hosting error remains bounded. */ }
@@ -85,9 +88,10 @@ export class SharedWorkspaceClient {
       return result;
     } catch (error) {
       this.assertOpen();
+      if (timedOut) throw new SharedWorkspaceError('The shared workspace request timed out. Retry when the connection is available.', 'timeout');
       if (error instanceof SharedWorkspaceError) throw error;
       throw new SharedWorkspaceError('The shared workspace connection was interrupted. Retry when the connection is available.', 'network');
-    } finally {this.requests.delete(controller);}
+    } finally {clearTimeout(timer); this.requests.delete(controller);}
   }
 
   private async json(path: string, init?: RequestInit): Promise<unknown> {
@@ -103,7 +107,7 @@ export class SharedWorkspaceClient {
   async write(name: DocumentName, data: unknown, blobs: readonly string[], expectedRevision: number): Promise<SharedDocument> {
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0 || !(data === null || object(data)) || blobs.length > 10000 || blobs.some(hash => !HASH.test(hash)) || new Set(blobs).size !== blobs.length) throw new SharedWorkspaceError('The shared workspace update is invalid.', 'invalid-data');
     const body = JSON.stringify({expectedRevision, data, blobs});
-    if (new TextEncoder().encode(body).byteLength > SHARED_DOCUMENT_BYTES) throw new SharedWorkspaceError('This collection exceeds the 1 MiB shared metadata limit. Split or reduce the import before retrying; your staged files are retained.', 'limit');
+    if (new TextEncoder().encode(body).byteLength > SHARED_DOCUMENT_BYTES) throw new SharedWorkspaceError('This shared index exceeds the 1 MiB publication limit. Your staged files are retained for recovery.', 'limit');
     const document = validateDocument(await this.json(`/api/workspace/documents/${name}`, {method: 'PUT', headers: {'content-type': 'application/json'}, body}), name);
     if (document.revision !== expectedRevision + 1) throw new SharedWorkspaceError('The server did not acknowledge the expected workspace revision.', 'invalid-response');
     return document;

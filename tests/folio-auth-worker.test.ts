@@ -6,7 +6,9 @@ import {Miniflare} from 'miniflare';
 import {createHash} from 'node:crypto';
 
 test('Better Auth credentials, D1, native scrypt and secure cookies execute in workerd',async t=>{
-  const compiled=await build({stdin:{contents:'import {handlePrivateApi} from "./worker/dispatch.mjs"; export default {async fetch(request,env){return await handlePrivateApi(request,env)||new Response("Missing",{status:404});}};',resolveDir:process.cwd(),sourcefile:'folio-auth-worker-spike.mjs'},bundle:true,platform:'browser',format:'esm',target:'es2022',external:['node:*'],write:false});
+  const compiled=await build({stdin:{contents:'import {handlePrivateApi} from "./worker/dispatch.mjs"; export default {async fetch(request,env){return await handlePrivateApi(request,env)||new Response("Missing",{status:404});}};',resolveDir:process.cwd(),sourcefile:'folio-auth-worker-spike.mjs'},bundle:true,platform:'browser',conditions:['workerd'],format:'esm',target:'es2022',external:['node:*'],metafile:true,write:false});
+  assert.ok(Object.keys(compiled.metafile!.inputs).some(path=>path.endsWith('@better-auth/core/dist/async_hooks/index.mjs')));
+  assert.ok(!Object.keys(compiled.metafile!.inputs).some(path=>path.endsWith('@better-auth/core/dist/async_hooks/pure.index.mjs')));
   // Better Auth contains unused optional adapters with dynamic imports. Explicit
   // modules exercise the bundle in workerd without Miniflare's static scanner
   // trying to resolve those non-D1 branches as project files.
@@ -37,6 +39,23 @@ test('Better Auth credentials, D1, native scrypt and secure cookies execute in w
   const invite=await (await owner(base+'/invitations','POST',{email:'worker-member@example.test'})).json() as any;
   const joined=await member(base+'/register','POST',{email:invite.email,token:invite.token,name:'Workerd member',password:'Synthetic Workerd member 888!'});
   assert.equal(joined.status,201,await joined.clone().text());
+  // App startup loads all three documents concurrently; real account contexts
+  // must remain isolated both across those reads and across distinct users.
+  for(let round=0;round<3;round++) {
+    await Promise.all([
+      ...['library','icons','appearance'].map(async name=>{
+        const response=await owner('/api/workspace/documents/'+name);
+        assert.equal(response.status,200,await response.clone().text());
+        assert.deepEqual(await response.json(),{name,revision:0,data:null,blobs:[],updatedAt:null});
+      }),
+      ...[[owner,'worker-owner@example.test','owner'],[member,'worker-member@example.test','member']].map(async([call,email,role])=>{
+        const response=await (call as typeof owner)(base+'/session');
+        assert.equal(response.status,200,await response.clone().text());
+        const body=await response.json() as any;
+        assert.equal(body.account.email,email);assert.equal(body.account.role,role);
+      }),
+    ]);
+  }
   const bytes=new Uint8Array([1,3,5,7,9]),hash=createHash('sha256').update(bytes).digest('hex');
   const uploaded=await owner('/api/workspace/blobs/'+hash,'PUT',bytes);assert.equal(uploaded.status,200,await uploaded.clone().text());
   assert.equal((await member('/api/workspace/blobs/'+hash)).status,404);

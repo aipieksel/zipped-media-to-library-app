@@ -1,5 +1,6 @@
 import {deleteDB, openDB} from 'idb';
 import type {IDBPDatabase} from 'idb';
+import {uniqueId} from '../identity';
 import {DEFAULT_APPEARANCE, normalizeAppearance, validateAppearance} from '../appearance';
 import type {AppearancePalette} from '../appearance';
 import {SharedWorkspaceClient, SharedWorkspaceError} from './client';
@@ -67,7 +68,7 @@ async function serial<T>(key: string, action: () => Promise<T>): Promise<T> {
 }
 
 export async function readDatabase(db: SharedDatabase): Promise<DatasetRecords> {
-  const names = Array.from(db.objectStoreNames), tx = db.transaction(names, 'readonly');
+  const names = Array.from(db.objectStoreNames).filter(name => name !== 'galleryThumbnails'), tx = db.transaction(names, 'readonly');
   const records = Object.fromEntries(await Promise.all(names.map(async name => [name, await tx.objectStore(name).getAll() as DataRecord[]])));
   await tx.done; return records;
 }
@@ -78,7 +79,7 @@ async function cloneDatabase(source: SharedDatabase, name: string): Promise<Shar
     const store = tx.objectStore(storeName);
     return {name: storeName, keyPath: store.keyPath, autoIncrement: store.autoIncrement, indexes: Array.from(store.indexNames).map(indexName => {const index = store.index(indexName); return {name: indexName, keyPath: index.keyPath, unique: index.unique, multiEntry: index.multiEntry};})};
   });
-  const records = Object.fromEntries(await Promise.all(names.map(async store => [store, await tx.objectStore(store).getAll()])));
+  const records = Object.fromEntries(await Promise.all(names.map(async store => [store, store === 'galleryThumbnails' ? [] : await tx.objectStore(store).getAll()])));
   await tx.done;
   const copy = await openDB(name, 1, {upgrade(db) {
     for (const definition of schema) {
@@ -145,7 +146,7 @@ export async function withSharedWrite<T, D extends SharedDatabase>(kind: Dataset
     const baseDocument = documents.get(kind);
     if (!baseDocument) throw new SharedWorkspaceError('Load the shared workspace before editing it.', 'not-ready');
     if ((await listRecoveryChanges()).length >= 20) throw new SharedWorkspaceError('Review the retained changes in Settings before creating more shared changes.', 'recovery-limit');
-    const id = crypto.randomUUID(), stageName = `folio-shared-stage-${kind}-${id}`;
+    const id = uniqueId(), stageName = `folio-shared-stage-${kind}-${id}`;
     const stage = await cloneDatabase(db, stageName);
     const base = baseDocument.data ? validateDataset(baseDocument.data, kind, baseDocument.blobs) : emptyDataset(kind);
     const retained: RecoveryChange = {id, kind, createdAt: Date.now(), error: 'This change was interrupted before it finished.', stageName, base, baseRevision: baseDocument.revision};

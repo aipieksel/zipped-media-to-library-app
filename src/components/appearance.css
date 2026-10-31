@@ -1,6 +1,6 @@
 .appearance-settings{display:flex;flex-direction:column;gap:16px;max-width:680px;color:var(--text)}
 .appearance-settings .settings-section{border:0;margin:0;padding:0}
-.appearance-settings h3{font-size:13px;font-weight:600;margin:0 0 7px}
+.appearance-settings h2{font-size:13px;font-weight:600;margin:0 0 7px}
 .appearance-settings .form-note{line-height:1.6}
 .appearance-fields{display:flex;flex-direction:column;margin-top:15px;border-top:1px solid var(--line)}
 .appearance-field{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:5px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center}
