@@ -1,13 +1,10 @@
-import { handleCollection } from './cloud.mjs';
-import { handleAccount } from './account.mjs';
+import {handlePrivateApi} from './dispatch.mjs';
 import assets from '../.sites-runtime/frontend-assets.json';
 
 export default {
   async fetch(request, env) {
-    const account = handleAccount(request);
-    if (account) return account;
-    const collection = await handleCollection(request, env);
-    if (collection) return collection;
+    const api = await handlePrivateApi(request, env);
+    if (api) return api;
     if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405 });
     const pathname = new URL(request.url).pathname;
     const asset = assets[pathname === '/' ? '/index.html' : pathname];

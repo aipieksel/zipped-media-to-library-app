@@ -20,5 +20,5 @@ await rm('dist', { recursive: true });
 await mkdir('dist/server', { recursive: true });
 await mkdir('dist/.openai', { recursive: true });
 await copyFile('.openai/hosting.json', 'dist/.openai/hosting.json');
-await build({ entryPoints: ['worker/index.js'], bundle: true, platform: 'browser', format: 'esm', target: 'es2022', outfile: 'dist/server/index.js', minify: true });
+await build({ entryPoints: ['worker/index.js'], bundle: true, platform: 'browser', format: 'esm', target: 'es2022', external: ['node:*'], outfile: 'dist/server/index.js', minify: true });
 console.log(`Packaged existing frontend (${Object.keys(assets).length} assets) with private collection Worker.`);

@@ -11,7 +11,8 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "check:privacy": "node scripts/check-repository-privacy.mjs",
     "prebuild": "npm run check:privacy",
-    "pretest": "npm run check:privacy && node --test tests/repository-privacy.test.mjs"
+    "pretest": "npm run check:privacy && node --test tests/repository-privacy.test.mjs",
+    "db:generate": "drizzle-kit generate --config db/drizzle.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",

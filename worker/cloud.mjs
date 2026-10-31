@@ -177,7 +177,7 @@ async function resourceResponse(request, bucket, index, url) {
   const filename = path.split('/').at(-1).replace(/[\x00-\x1f\x7f"\\]/g, '_');
   const responseHeaders = { ...headers, 'content-type': file.mime, 'content-length': String(file.size), 'x-content-sha256': file.sha256, 'content-security-policy': "sandbox; default-src 'none'", 'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}` };
   if (url.searchParams.get('v') === file.sha256 && file.mime.startsWith('image/')) {
-    responseHeaders['cache-control'] = 'private, max-age=31536000, immutable';
+    responseHeaders['cache-control'] = 'private, no-store';
     responseHeaders.etag = `"${file.sha256}"`;
   }
   return streamResource(request, bucket, file, responseHeaders);
@@ -193,7 +193,7 @@ async function imageResponse(request, bucket, index, url) {
   const asset = Object.hasOwn(index.imageAssets ?? {}, hash) ? index.imageAssets[hash] : undefined;
   if (!asset) fail('Image preview not found.', 404);
   if (asset.sha256 !== hash || asset.mime !== 'image/webp' || !integer(asset.size) || asset.size < 1 || asset.size > MAX_IMAGE_BYTES) fail('Image preview is unavailable.', 503);
-  const responseHeaders = { ...headers, 'cache-control': 'private, max-age=31536000, immutable', 'content-type': 'image/webp', 'content-length': String(asset.size), 'x-content-sha256': hash, etag: `"${hash}"`, 'content-security-policy': "sandbox; default-src 'none'", 'content-disposition': `inline; filename="${hash}.webp"` };
+  const responseHeaders = { ...headers, 'cache-control': 'private, no-store', 'content-type': 'image/webp', 'content-length': String(asset.size), 'x-content-sha256': hash, etag: `"${hash}"`, 'content-security-policy': "sandbox; default-src 'none'", 'content-disposition': `inline; filename="${hash}.webp"` };
   return streamResource(request, bucket, asset, responseHeaders);
 }
 
