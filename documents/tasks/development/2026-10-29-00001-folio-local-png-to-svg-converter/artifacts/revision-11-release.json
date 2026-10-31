@@ -1,0 +1,80 @@
+{
+  "project_id": "appgprj_6adf889bceb8819185995cc72b70be04",
+  "version": 15,
+  "version_id": "appgprj_6adf889bceb8819185995cc72b70be04~appgver_28e836b3c9a4819195bf4aadc113b7fa",
+  "deployment_id": "appgdep_6ae655af04a0819180ab9644817e9f1a",
+  "status": "succeeded",
+  "url": "https://folio-html-workspace.byronjacobs.chatgpt.site",
+  "updated_at": "2026-10-31T20:55:29.288481+00:00",
+  "env_set_revision": 3,
+  "native_source": "d1e4f98d57f2de2b2f784eb88613668305ede782",
+  "github_runtime_checkpoint": "8ef61948cc553a34ef22822d18ec2957ebc95923",
+  "audience": {
+    "access_mode": "custom",
+    "roles": [
+      "owner"
+    ],
+    "external_visitors": 0
+  },
+  "package": {
+    "verifiedAssets": 13,
+    "frontend": "/assets/index-BxDdEF5W.js",
+    "workerSha256": "f7a33b924c736977466459dcf6405083530ca6186ac0efd216ea0c4ed83a6bea",
+    "workerBytes": 3029944,
+    "archiveSha256": "30aa636cccf926f27528b9bb59b1798cfedae28e284d0306724b9edef4e01535",
+    "archiveMatchesWorker": true,
+    "matchingSourceFiles": 133
+  },
+  "production_reads": [
+    {
+      "path": "/api/folio-auth/session",
+      "status": 200,
+      "outcome": "ok",
+      "scriptVersion": "83244c88-2572-4478-b9c3-218566f90f79"
+    },
+    {
+      "path": "/api/workspace/documents/library",
+      "status": 200,
+      "outcome": "ok",
+      "scriptVersion": "83244c88-2572-4478-b9c3-218566f90f79"
+    },
+    {
+      "path": "/api/workspace/documents/icons",
+      "status": 200,
+      "outcome": "ok",
+      "scriptVersion": "83244c88-2572-4478-b9c3-218566f90f79"
+    },
+    {
+      "path": "/api/workspace/documents/appearance",
+      "status": 200,
+      "outcome": "ok",
+      "scriptVersion": "83244c88-2572-4478-b9c3-218566f90f79"
+    }
+  ],
+  "browser_verification": {
+    "native_frontend": "/assets/index-BxDdEF5W.js",
+    "workspace_sidebar_visible": true,
+    "workspace_alerts": [],
+    "profile_route": "#settings/profile",
+    "appearance_route": "#settings/appearance",
+    "settings_alerts": [],
+    "password_or_cookie_values_read": false
+  },
+  "checks": {
+    "shared_and_account_tests": {
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    },
+    "worker_repeat_build_test": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "typescript": "passed",
+    "vite": "passed",
+    "worker_build": "passed",
+    "independent_review": "approved"
+  },
+  "remaining_inherited_check": "R29 real user-local OpenAI/Codex image inference is not_run"
+}

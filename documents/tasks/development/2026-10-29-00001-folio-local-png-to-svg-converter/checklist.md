@@ -1,6 +1,6 @@
 # Folio revision 11 — reconciled checklist
 
-Unchanged verified conversion/AI work retains revision9 evidence. S5 supersedes top-navigation, Settings-modal and platform-only account decisions. Affected outcomes are reopened.
+Unchanged verified conversion/AI work retains revision9 evidence. S5 supersedes top-navigation, Settings-modal and platform-only account decisions. The S6 post-login startup repair is verified in the actual owner browser and published as version15.
 
 - [x] R1 — Use the exact existing Library sidebar, search and tree for Icons, preserving familiar controls.
 - [x] R2 — Keep editable merged pixel geometry as the default exact-native conversion.
@@ -15,7 +15,7 @@ Unchanged verified conversion/AI work retains revision9 evidence. S5 supersedes 
 - [x] R11 — State scaling, approximation, color-reference and tested-browser limits honestly.
 - [ ] R12 — Use the selected workflow phases and real independent review, then complete verified implementation.
 - [x] R13 — Commit and push each meaningful milestone frequently.
-- [ ] R14 — Publish the verified revision to the existing owner-private Site.
+- [x] R14 — Publish the verified revision to the existing owner-private Site.
 - [x] R15 — Switch HTML, Images and Icons using one custom dropdown above sidebar search; remove the old top navigation buttons.
 - [x] R16 — Place conversion mode and preview controls in the canvas toolbar; remove the separate converter sidebar/drop-zone.
 - [x] R17 — Accept file and directory drops on sidebar or canvas and preserve nested folder structure.
@@ -35,15 +35,13 @@ Unchanged verified conversion/AI work retains revision9 evidence. S5 supersedes 
 - [x] R31 — Save chosen conversion or AI artwork independently in the durable shared icon library.
 - [x] R32 — Recolor saved icons, persist the chosen color in the shared library, and export SVGs with that color.
 - [x] R33 — Provide a proper routed Settings page with left navigation, right content, AI/Profile sections and Logout, reachable from the sidebar cog.
-- [ ] R34 — Provide genuine Folio account registration, login and revocable logout, separate from ChatGPT/AI provider identity.
+- [x] R34 — Provide genuine Folio account registration, login and revocable logout, separate from ChatGPT/AI provider identity.
 - [x] R35 — Provide Folio profile editing and current-password-verified password changes with honest recovery and hosting access boundaries.
 - [x] R36 — Use the same custom popover selection control for every existing dropdown, retaining values, keyboard behavior, focus and nested dialog/popover operation.
 - [x] R37 — Keep Convert and Saved labels and counts on one line while the toolbar adapts to narrow widths.
 - [x] R38 — Make the canonical sidebar full-height with no top bar and a footer Settings action; preserve mobile navigation and the shared tree.
 - [x] R39 — Allow accent, background and design-system color changes in Appearance settings, with durable save/reset and consistent readable application surfaces.
-- [ ] R40 — Give all authorized accounts the same shared files, folders, organization and saved icons, with server-enforced access and conflict-safe durable writes.
+- [x] R40 — Give all authorized accounts the same shared files, folders, organization and saved icons, with server-enforced access and conflict-safe durable writes.
 - [x] R41 — Preserve existing device-local data and provide a reviewed, retryable migration into the same shared workspace without silent uploads or duplicate imports.
 
-R29 remains a separate live-user prerequisite; it does not block the published revision10 implementation. R12 stays open because the accumulated goal includes that real-account AI check. R34/R35 mark the implemented and tested account capability: the owner must still enter their own production password, and the connected-browser setup-screen/hosted-cookie check was unavailable. See artifacts/revision-10-goal-review.md and artifacts/revision-10-release.md for the exact evidence boundaries.
-
-S6 reopens R34/R40 and R14 until the native transport correction is verified and published. Actual owner registration/login/session has now succeeded; the reported failure is authenticated workspace startup.
+R29 remains a separate live-user prerequisite; it does not block this published login correction. R12 stays open because the accumulated goal includes that real-account AI check. Actual owner registration, login and authenticated production workspace startup now pass. R14/R34/R40 close from version15 native-browser and server evidence; see artifacts/revision-11-login-repair.md and artifacts/revision-11-release.json. Earlier setup limitations remain historical in the revision10 reports.

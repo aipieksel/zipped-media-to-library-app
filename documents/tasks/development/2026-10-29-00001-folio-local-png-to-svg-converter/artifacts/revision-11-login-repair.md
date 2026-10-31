@@ -33,3 +33,15 @@ The bounded release-gate repair captures one frontend manifest, supplies that ex
 Independent build diagnosis: `/root/r10_accounts_architecture` confirmed the stale manifest/output mismatch and recommended explicit input/output handling. Final diff review and the corrected publication/native-browser result follow below when complete.
 
 The independent diff review identified one additional build precondition: a second packaging-only invocation could otherwise accept an empty asset map. The script now rejects a missing fresh `dist/index.html` before deleting output. The regression also checks that rejection and preservation of the last valid Worker.
+
+## Verified release and real-browser result
+
+The reviewer `/root/r10_ui_audit` confirmed that finding closed and approved the final build repair without remaining findings. The focused repeat-build test passed again1/1 after the negative case was added. The privacy-gated checkpoint was pushed as `8ef61948cc553a34ef22822d18ec2957ebc95923` after the transport checkpoint `be8bb9af4e91c1199f2ec24442af1a9da3d7e383`.
+
+The official Site build passed TypeScript, Vite and Worker packaging from native source `d1e4f98d57f2de2b2f784eb88613668305ede782`. All13 frontend asset keys and exact bodies are present in the Worker. The archive contains exactly those Worker bytes, SHA256 `f7a33b924c736977466459dcf6405083530ca6186ac0efd216ea0c4ed83a6bea`, and133 selected runtime/build/companion/database/CI files match the GitHub checkpoint. The archive SHA256 is `30aa636cccf926f27528b9bb59b1798cfedae28e284d0306724b9edef4e01535`.
+
+The same owner-private Site published **version15**, deployment `appgdep_6ae655af04a0819180ab9644817e9f1a`, successfully at2026-10-31T20:55:29.288481+00:00, environment revision3. Access remains custom/owner-only with zero external visitors. No authentication settings, password, session policy, database schema or media were changed by this repair.
+
+The actual owner Chrome browser reloaded the published app with native fetch, loaded `/assets/index-BxDdEF5W.js`, and displayed the Library sidebar and workspace switcher with no alert. Settings opened its real Profile page and Appearance page; both had no alert. The production logs independently show status200 for the session endpoint and all three shared startup documents (library, icons and appearance) on the new Worker version. Successful legacy collection reads were also observed. The sanitized provider/build/browser receipt is `revision-11-release.json`; no account identifier, cookie, password, private filename or private screenshot is committed.
+
+S6 is resolved. R14/R34/R40 close again from the actual production evidence. The owner has already completed real registration and login, so the old first-activation handoff is no longer current. R29 remains not_run because real image-to-SVG inference through the user's local authenticated OpenAI/Codex companion was not part of this login correction; aggregate R12 stays open for that precise inherited requirement. Original revision11 admission hashes remain unchanged.
