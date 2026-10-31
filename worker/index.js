@@ -1,8 +1,11 @@
 import { handleCollection } from './cloud.mjs';
+import { handleAccount } from './account.mjs';
 import assets from '../.sites-runtime/frontend-assets.json';
 
 export default {
   async fetch(request, env) {
+    const account = handleAccount(request);
+    if (account) return account;
     const collection = await handleCollection(request, env);
     if (collection) return collection;
     if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405 });

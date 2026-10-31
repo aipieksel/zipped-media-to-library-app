@@ -1,4 +1,4 @@
-# Revision 8 verification
+# Revision 9 verification
 
 Retain prior checks T1–T19 where unchanged. Affected prior outcomes require the following new targeted evidence. Run test/build/privacy after stable inputs; no duplicated full builds.
 
@@ -49,3 +49,7 @@ Method: Independent review, repository/privacy/build, remote readback and privat
 Expected: Pushed milestone SHAs, package/source license/closure, verified deployment version; real inference separately checked or blocked with exact local activation prerequisite.
 
 Boundary: Prepared/pushed/deployed/real-account-tested are distinct states.
+
+## Required F9–F11 assertions
+
+T20: unsupported controls, effective inherited/legacy conflicts, incomplete generation, tool-event termination, and zero inference calls before successful isolation gate. T22: immutable saved source/base independent of conversion and folder deletion, no orphaned records, forced transaction abort/no false success, embedded-only trusted save with recolor disabled, and exact reset bytes. T23: late results after navigation/retry/cancel/discard/deletion never attach to a new source. Each real account/installed CLI assertion must have separate nonfixture evidence.

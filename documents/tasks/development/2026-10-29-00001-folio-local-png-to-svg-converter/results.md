@@ -160,3 +160,10 @@ Independent final readback resolved README finding D1 and found no remaining doc
 ## Revision 8 opened — 2026-10-31
 
 S4 supersedes only affected prior outcomes. Baseline ca95e01 clean. Read-only agents /root/ai_app_assessment, /root/ai_package_audit and /root/ai_auth_research supplied current evidence; no app mutations or account requests yet. Site version11 identity/audience preserved. Source helper initially failed under restricted Node subprocess; approved source access opened exact1e84baac. User browser currently presents Site sign-in; real-account and production identity test remain pending. Tasks panel tool is unavailable; full Markdown fallback is used.
+
+
+## Execution admission — revision9, attempt ai-1
+
+Owner /root coordinates disjoint companion and saved-data executors. Independent reviewer /root/ai_package_audit approved revision9. Resolver --execution --require-critique exit0. Original admission: {"planRevision": 9, "definitionHash": "1cada159b1e2a4d36291ca3d5aebd5ff92497a0df06a6721c8209d0278c68019", "critiqueHash": "97a0b6af0680ff1249d8677ceefc549b6ea8abb9fd3c8e0fdc75abbbbb44b42f", "planHashes": {"checklist.md": "7c92251f1e31272cd28dbde63bd390254aac239a32efa4c773ab9829cc948780", "fix-plan.md": "785a316c3aad2420eaafd2ae656bed1ac9222e3c29ddba51a6b4f97d0ec09085", "test-plan.md": "22a181b962ae10d9ef5acea1dbaf9723754432aee85b67be0584055e3eec9bb7"}}
+
+Source checkpoint939688e0a514cd2aa03c8b06af8daf06cf3a7d6d pushed viaGitHubconnector; identical tree to local first commit7d1cefb, local branch reconciled without changing pending source. Normal execution will not restamp admission hashes.

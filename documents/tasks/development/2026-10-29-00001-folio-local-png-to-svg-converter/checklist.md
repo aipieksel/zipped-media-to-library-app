@@ -1,4 +1,4 @@
-# Folio AI amendment — revision 8 checklist
+# Folio AI amendment — revision 9 checklist
 
 Prior release evidence is retained in artifacts/revision-7-release. Affected outcomes are reopened; unchanged conversions retain their verified state. New AI/account claims require their own evidence.
 

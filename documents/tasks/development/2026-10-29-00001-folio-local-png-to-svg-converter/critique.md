@@ -63,3 +63,11 @@ Reviewed SHA-256: `fix-plan.md` = `c1804f4db03baad895d40010ba2321a6695b9bde17a26
 ## Revision 8 — review pending
 
 Current S4 plan awaits independent review of scope, source ownership, local companion/auth, SVG safety and saved data migration. Prior revision7 review does not admit new implementation.
+
+
+## Revision 9 — coordinator reconciliation
+
+Independent reviewer /root/ai_package_audit identified F9 effective isolation and F10 saved source/folder ownership as blockers. Both are fixed_in_plan in the explicit review reconciliation and matching T20/T22/T23 metadata; F11 trusted embedded save/recolor state is also clarified. No extra user approval needed. Independent readback pending before finalization. Raw review retained in artifacts/revision-8-plan-review.md.
+
+
+Independent readback by /root/ai_package_audit: revision9 revised/ready, F9/F10/F11 resolved in plan, no material blockers. See artifacts/revision-9-plan-review.md for reviewed hashes. Real user account test remains a later completion dependency, not execution admission.

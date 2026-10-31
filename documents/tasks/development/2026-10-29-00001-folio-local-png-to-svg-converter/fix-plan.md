@@ -1,4 +1,4 @@
-# Implementation plan — revision 8
+# Implementation plan — revision 9
 
 ## Authority and outcome
 
@@ -37,3 +37,13 @@ Actual user OpenAI test requires a running paired companion on that user's compu
 ## Rollback / data safety
 
 Add stores/version upgrade guarded by oldVersion; no deleting legacy stores. Retain base SVG and current conversion until confirmed save. Companion cancellation kills/settles child before removing temporary files; bounded errors redact auth/raw stderr. Revert source/deployment if needed without destroying persisted artwork. No live collection migration or automated profile-password changes.
+
+## Review reconciliation — F9–F11 (revision 9)
+
+F9: Require a real effective-configuration check before inference readiness, using documented Codex app-server config/read and the fixed restricted filesystem permission profile. Version/help alone cannot mark ready. Explicitly disable all discovered MCP names, command/web/apps/plugins/hooks/view_image tools; ignore user config and reject legacy sandbox_mode or managed overrides that prevent the restricted profile. Do not invent codex config read. Fail closed with an actionable setup reason if the installed CLI cannot prove compatible effective controls; no weaker fallback. Consume structured generation events and terminate immediately on unexpected tool use; require successful terminal completion before accepting otherwise parseable output. Actual installed-runtime support and real account inference remain separate from protocol fixtures. Tests must cover every rejection and prove no inference starts before preflight.
+
+F10: Saved artwork includes its own immutable source Blob snapshot, base/output SVG and provenance in one atomic transaction. Saved records therefore survive original conversion deletion/retry. Removing a conversion folder reparents affected curated artwork to permanent Uncategorized with safe filename collision allocation; it does not delete saved records. In Saved view, omit destructive folder deletion while preserving individual saved removal and shared folder selection/move/create/favorite logic. Do not show saved success after failed commits. Test save→delete conversion→delete containing folder→reload→reset/recolor/export and source/base equality, forced transaction failure, stale result after navigation/retry/deletion/cancel/discard.
+
+F11: Save remains available for trusted local embedded conversion outputs through a dedicated original-byte validation path bound to a current successful conversion. Label saved bitmap results clearly and disable recoloring. AI and generic saveArtwork still reject images and active content. Recolor clears old match status/count and marks the color variant unverified until real comparison; Reset restores exact base bytes and that base's own recorded check.
+
+Shared parser: pin @xmldom/xmldom0.9.12 for the same bounded parser/allowlist in Node and browser; retain MIT notices. The maintained parser is necessary to validate model XML consistently without unsafe string replacement. AI2MiB bounds; local-vector24MiB and existing geometry limits. Node companion response/request caps accommodate the same explicit AI limit.

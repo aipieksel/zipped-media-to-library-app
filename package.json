@@ -12,6 +12,7 @@
     "pretest": "npm run check:privacy && node --test tests/repository-privacy.test.mjs"
   },
   "dependencies": {
+    "@xmldom/xmldom": "0.9.12",
     "es-module-lexer": "1.7.0",
     "fit-curve": "0.2.0",
     "html-to-image": "1.11.13",
@@ -21,7 +22,8 @@
     "lucide-react": "0.468.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "vtracer-browser": "0.0.3"
+    "vtracer-browser": "0.0.3",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "22.15.30",

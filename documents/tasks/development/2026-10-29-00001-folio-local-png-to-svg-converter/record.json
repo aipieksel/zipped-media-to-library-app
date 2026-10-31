@@ -5,12 +5,12 @@
   "title": "Folio AI icon studio and shared account settings",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
-  "status": "planned",
-  "readiness": "not_ready",
+  "status": "executing",
+  "readiness": "ready",
   "blockers": [],
-  "planRevision": 8,
+  "planRevision": 9,
   "critiqueOutcome": "revised",
-  "reviewedPlanRevision": null,
+  "reviewedPlanRevision": 9,
   "sourceBaseline": {
     "description": "Clean GitHub main ca95e01; existing owner-private Site version11 source 1e84baac. Three independent current source/package/auth assessments. New scope only; previous completed release preserved.",
     "revision": "ca95e01eec08cc9607f3dff3e6693e77785bbe94",
@@ -60,7 +60,8 @@
     "S1": "f8d247c5ffb4b9570ca8bcdef14cedcbcf695b5f914180eda290dac85f3b41c0",
     "CA1": "2c2c3a9b1a35f91c614909e50fda8bc973409b2d8420ec0186e072f0ce4c6139",
     "S2": "e716595ea1378a39f7257bf18ecdc9137d038f22b1a102807e5ac2a2a8222a0a",
-    "S3": "3250fb3562dd3ed5afd38d277822bfd77ff3035f85c61da4ee3c5ec3aca447b6"
+    "S3": "3250fb3562dd3ed5afd38d277822bfd77ff3035f85c61da4ee3c5ec3aca447b6",
+    "S4": "1c3f1953344f182fb38c0ba40ff019104a893815472de4f01fbdaa8ba149395a"
   },
   "requirements": [
     {
@@ -848,7 +849,7 @@
         "R8"
       ],
       "method": "Companion Node integration with injected fake executable, plus explicit real-host test",
-      "expected": "Origin/Host/token and bad-body/model/engine rejected before subprocess; bound output/files/time/concurrency, kill escalation and cleanup; package source integration and capability gating. Real authentication/inference remains separately witnessed.",
+      "expected": "Origin/Host/token and bad-body/model/engine rejected before subprocess; bound output/files/time/concurrency, kill escalation and cleanup; package source integration and capability gating. Real authentication/inference remains separately witnessed. Effective configuration must establish restricted reads and disabled integrations; reject unsupported/legacy conflicts before inference, abort unexpected tools and incomplete output.",
       "boundary": "Fixtures prove adapter/security behavior, not the user’s OpenAI entitlement or local installation."
     },
     {
@@ -873,7 +874,7 @@
         "R19"
       ],
       "method": "Real IndexedDB v1-to-v2 preservation, save/reload/recolor/reset/delete/export tests",
-      "expected": "Saved artwork survives conversion retry/deletion/navigation/reload, retains source identity and favorite/folder operations; actual download bytes match preview color, including alpha/none/gradient behavior and collision-safe ZIP.",
+      "expected": "Saved artwork survives conversion retry/deletion/navigation/reload, retains source identity and favorite/folder operations; actual download bytes match preview color, including alpha/none/gradient behavior and collision-safe ZIP. Saved source Blob and base remain byte-identical after original and folder removal; reparent to Uncategorized; transaction failure leaves previous state intact; embedded saved results remain labeled non-recolorable.",
       "boundary": "Browser persistence remains subject to clearing/quota; no cross-device cloud sync promised."
     },
     {
@@ -890,7 +891,7 @@
         "R33"
       ],
       "method": "Browser desktop/narrow journeys and focused regression checks",
-      "expected": "Single shared tree and existing conversion controls retained; settings keyboard/focus/errors/loading; no auto AI transmission; deliberate source-action preview; safe stale/cancel results and original preservation.",
+      "expected": "Single shared tree and existing conversion controls retained; settings keyboard/focus/errors/loading; no auto AI transmission; deliberate source-action preview; safe stale/cancel results and original preservation. Late results after selection/retry/cancel/discard/deletion must never attach to another source.",
       "boundary": "Published loopback permissions require the user’s actual browser/companion."
     },
     {
@@ -918,12 +919,12 @@
     }
   ],
   "planHashes": {
-    "checklist.md": "5f0e8e8a12db6606c8a4563849b10c99de54f07937b8774b9b5159e8188ac91a",
-    "fix-plan.md": "c1804f4db03baad895d40010ba2321a6695b9bde17a26ce1dc3620af6399456c",
-    "test-plan.md": "e33338cb4511e4dc295937006180eee75848e9ff277cc951eb2e54e905f1f926"
+    "checklist.md": "7c92251f1e31272cd28dbde63bd390254aac239a32efa4c773ab9829cc948780",
+    "fix-plan.md": "785a316c3aad2420eaafd2ae656bed1ac9222e3c29ddba51a6b4f97d0ec09085",
+    "test-plan.md": "22a181b962ae10d9ef5acea1dbaf9723754432aee85b67be0584055e3eec9bb7"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-31T15:36:55.359581+00:00",
+  "updatedAt": "2026-10-31T16:00:00.851809+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",
@@ -931,6 +932,6 @@
     "critique.md",
     "results.md"
   ],
-  "definitionHash": "0a78ebc792b4fe2717f7659915ddf9b56b70a82d9fe13e15d16d1255605fcb85",
-  "critiqueHash": "7c246d7428091745cd51a72fc9966013c3df4b1c6b3d1f6cdcf4fb2234c0d173"
+  "definitionHash": "1cada159b1e2a4d36291ca3d5aebd5ff92497a0df06a6721c8209d0278c68019",
+  "critiqueHash": "97a0b6af0680ff1249d8677ceefc549b6ea8abb9fd3c8e0fdc75abbbbb44b42f"
 }
