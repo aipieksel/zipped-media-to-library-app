@@ -5,9 +5,11 @@
   "title": "Folio AI icon studio and shared account settings",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
-  "status": "executing",
-  "readiness": "ready",
-  "blockers": [],
+  "status": "blocked",
+  "readiness": "blocked",
+  "blockers": [
+    "R29: A real attached-image SVG request through the user’s own ChatGPT-authenticated Codex companion has not run. The user must start the companion on their computer and pair the browser; this environment cannot start that local process or supply their login. R12 overall completion remains open."
+  ],
   "planRevision": 9,
   "critiqueOutcome": "revised",
   "reviewedPlanRevision": 9,
@@ -924,7 +926,7 @@
     "test-plan.md": "22a181b962ae10d9ef5acea1dbaf9723754432aee85b67be0584055e3eec9bb7"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-31T16:33:51.646111+00:00",
+  "updatedAt": "2026-10-31T16:44:29.172720+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",

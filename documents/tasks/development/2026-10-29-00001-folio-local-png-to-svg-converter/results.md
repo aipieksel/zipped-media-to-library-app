@@ -195,3 +195,29 @@ Actual user-account image inference R29 is not run. Live signed-in Profile/sign-
 R34/R35 are not run because the connected browser is at the Site sign-in wall.
 R12 overall completion remains open. R14 publication follows the final checkpoint.
 The existing reviewed plan/provenance/admission hashes are unchanged.
+
+
+## Revision 9 release and live account addendum — 2026-10-31
+
+Private Site version12 published successfully at2026-10-31T16:38:07.474175+00:00.
+Native source3727e256a986867ef9ecec416b6ebff0a13d52f4, deployment
+appgdep_6ae6195e30b881919d645ef81d171f30, environment revision2, same owner-private
+project and R2 binding.108runtime/build/companion files match the pushed GitHub
+checkpointef4c3c41a4f16f9b90f84f301cd5cf6e4e196dd6 exactly. Main advanced from
+ca95e01 to that checkpoint with an expected-head lease and no force. See the
+full release report for the native privacy-gate failure/correction/build receipt.
+
+Root subsequently completed the normal ChatGPT account chooser in the connected
+user browser. The published Profile loaded matching authenticated name/email;
+sign-out returned to the private gate, and sign-in restored the workspace.
+The actual published AI settings showed disconnected model/effort placeholders
+correctly. Existing Library and icon conversions remained visible. Private names,
+email, catalogue details and media are excluded from the public evidence.
+R14/R34/R35 now close based on this later live evidence; earlier pending reports
+remain intact and link forward to this addendum.
+
+R29 actual local-account image inference remains not_run. R12 remains open.
+Final status blocked reflects that explicit local activation prerequisite, not
+unfinished implementation, a deployment failure or an additional permission gate.
+The user’s browser can remain at the AI setup screen for handoff. Final record
+changes do not modify published runtime bytes or restamp admission hashes.

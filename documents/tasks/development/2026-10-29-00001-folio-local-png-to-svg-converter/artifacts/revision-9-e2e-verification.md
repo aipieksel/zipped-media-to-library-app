@@ -117,3 +117,13 @@ T21 and T22 pass within their declared fixture/native-render/storage boundaries.
 T23 passes the listed desktop/narrow and keyboard journeys; unexecuted accessibility
 and delivery boundaries remain disclosed. T20/T24/T25 retain their live-user
 prerequisites. This report does not close R29 or claim overall task completion.
+
+
+## Coordinator release addendum — 2026-10-31
+
+The later [revision-9-release.md](revision-9-release.md) records successful private
+version12 publication and real connected-browser ChatGPT sign-in, authenticated
+Profile, sign-out and sign-in again. R14/R34/R35 are now verified. Earlier pending
+observations above remain the accurate record of when this report was written.
+R29 real local-account image inference and therefore R12 overall completion remain
+open. No fixture or Site sign-in is represented as a Codex inference test.
