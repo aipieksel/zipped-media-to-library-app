@@ -1,0 +1,139 @@
+.folio-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 4px 7px;
+  border: 1px solid var(--line, #dce2d6);
+  border-radius: 4px;
+  background: var(--field-background, var(--surface, #fff));
+  color: var(--text, #252a2d);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.folio-select-trigger:hover:not(:disabled) {
+  background: var(--surface-hover, #f6f7f5);
+  border-color: var(--border-strong, #b8c1bc);
+}
+
+.folio-select-trigger:focus-visible,
+.folio-select-trigger[data-popup-open] {
+  outline: 2px solid var(--focus, var(--accent, #b94c2d));
+  outline-offset: 2px;
+}
+
+.folio-select-trigger:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.folio-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folio-select-option-icon,
+.folio-select-chevron,
+.folio-select-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.folio-select-option-icon > svg { width: 14px; height: 14px; }
+.folio-select-chevron { color: var(--muted, #626c69); }
+
+.folio-select-count {
+  flex: none;
+  min-width: 16px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--surface-soft, #f3f4f2);
+  color: var(--muted, #626c69);
+  font-size: 9px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.folio-select-positioner {
+  z-index: 100;
+  outline: 0;
+}
+
+.folio-select-popup {
+  box-sizing: border-box;
+  width: max-content;
+  min-width: var(--anchor-width);
+  max-width: min(var(--available-width), calc(100vw - 16px));
+  border: 1px solid var(--line, #dce2db);
+  border-radius: 6px;
+  background: var(--surface, #fff);
+  color: var(--text, #252a2d);
+  box-shadow: 0 8px 28px var(--shadow, #25322726);
+  outline: 0;
+  overflow: hidden;
+}
+
+.folio-select-list {
+  box-sizing: border-box;
+  max-height: min(320px, calc(var(--available-height) - 2px));
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.folio-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 29px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1.4;
+  outline: 0;
+  cursor: default;
+  user-select: none;
+}
+
+.folio-select-option-content {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.folio-select-option-label { overflow-wrap: anywhere; }
+.folio-select-check { width: 14px; color: var(--accent-text, var(--accent)); }
+.folio-select-option[data-highlighted] { background: var(--surface-hover, #f6f7f5); }
+.folio-select-option[data-selected] { background: var(--selection-background, var(--accent-soft)); color: var(--selection-text, var(--accent)); }
+.folio-select-option[data-highlighted] { box-shadow: inset 0 0 0 1px var(--focus, var(--accent)); }
+.folio-select-option[data-disabled] { opacity: .45; cursor: not-allowed; }
+
+.setting-row > .folio-select-trigger { max-width: 134px; font-size: 10px; }
+.ai-settings-panel .setting-row > .folio-select-trigger { max-width: 68%; }
+.form-field > .folio-select-trigger { width: 100%; min-height: 33px; padding: 7px 9px; }
+.form-grid .folio-select-trigger { width: 100%; padding: 8px 7px; }
+.canvas-controls .folio-select-trigger { max-width: 160px; min-height: 24px; padding: 2px 4px; font-size: 10px; }
+.icon-conversion-toolbar .folio-select-trigger { max-width: 230px; min-height: 28px; padding: 4px 6px; font-size: 10px; }
+.icon-mode-field > .folio-select-trigger { min-width: 0; }
+
+@media (max-width: 650px) {
+  .canvas-controls .folio-select-trigger { max-width: 135px; }
+  .icon-mode-field > .folio-select-trigger { flex: 1; max-width: none; }
+}

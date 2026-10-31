@@ -1,0 +1,21 @@
+.appearance-settings{display:flex;flex-direction:column;gap:16px;max-width:680px;color:var(--text)}
+.appearance-settings .settings-section{border:0;margin:0;padding:0}
+.appearance-settings h3{font-size:13px;font-weight:600;margin:0 0 7px}
+.appearance-settings .form-note{line-height:1.6}
+.appearance-fields{display:flex;flex-direction:column;margin-top:15px;border-top:1px solid var(--line)}
+.appearance-field{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:5px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center}
+.appearance-label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:500;line-height:1.4;cursor:pointer;min-width:0}
+.appearance-label small{color:var(--muted);font-size:11px;font-weight:400}
+.appearance-color-inputs{display:flex;align-items:center;gap:7px}
+.appearance-color-inputs input{border:1px solid var(--line);border-radius:4px;background:var(--field-background,var(--surface,#fff));color:var(--text);height:30px}
+.appearance-color-inputs input[type=color]{width:33px;padding:3px;cursor:pointer}
+.appearance-color-inputs input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.appearance-color-inputs input[type=color]::-webkit-color-swatch{border:0;border-radius:2px}
+.appearance-color-inputs input[type=color]::-moz-color-swatch{border:0;border-radius:2px}
+.appearance-color-inputs input[type=text]{width:86px;padding:5px 7px;font:11px ui-monospace,SFMono-Regular,Consolas,monospace}
+.appearance-color-inputs input[aria-invalid=true]{border-color:var(--danger-text,#a34432)}
+.appearance-color-inputs input:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:2px}
+.appearance-field-error{grid-column:1/-1;color:var(--danger-text,#a34432);font-size:11px;line-height:1.5}
+.appearance-actions{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.appearance-save-status{min-height:18px}
+@media(max-width:420px){.appearance-field{column-gap:9px}.appearance-label small{font-size:10px}.appearance-color-inputs{gap:5px}.appearance-color-inputs input[type=text]{width:77px}.appearance-actions .flex-space{display:none}.appearance-actions{justify-content:flex-end}.appearance-actions>button:first-child{margin-right:auto}}

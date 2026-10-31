@@ -5,12 +5,12 @@
   "title": "Folio sidebar, routed settings, accounts and shared workspace",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
-  "status": "draft",
-  "readiness": "not_ready",
+  "status": "executing",
+  "readiness": "ready",
   "blockers": [],
   "planRevision": 10,
   "critiqueOutcome": "revised",
-  "reviewedPlanRevision": 9,
+  "reviewedPlanRevision": 10,
   "sourceBaseline": {
     "description": "Clean GitHub main and feature branch at bdf7330; existing owner-private Site version12. Three independent current revision-10 source/research/architecture assessments. No application edits before admission.",
     "revision": "bdf73305ff51dcd59c2b7c9a94a66501845ca560",
@@ -67,7 +67,8 @@
     "CA1": "2c2c3a9b1a35f91c614909e50fda8bc973409b2d8420ec0186e072f0ce4c6139",
     "S2": "e716595ea1378a39f7257bf18ecdc9137d038f22b1a102807e5ac2a2a8222a0a",
     "S3": "3250fb3562dd3ed5afd38d277822bfd77ff3035f85c61da4ee3c5ec3aca447b6",
-    "S4": "1c3f1953344f182fb38c0ba40ff019104a893815472de4f01fbdaa8ba149395a"
+    "S4": "1c3f1953344f182fb38c0ba40ff019104a893815472de4f01fbdaa8ba149395a",
+    "S5": "8c3cf1c48cbe837de62917b8069f8eff333e0d82a80336eb9e3c523d8054b997"
   },
   "requirements": [
     {
@@ -1286,12 +1287,12 @@
     }
   ],
   "planHashes": {
-    "checklist.md": "7c92251f1e31272cd28dbde63bd390254aac239a32efa4c773ab9829cc948780",
-    "fix-plan.md": "785a316c3aad2420eaafd2ae656bed1ac9222e3c29ddba51a6b4f97d0ec09085",
-    "test-plan.md": "22a181b962ae10d9ef5acea1dbaf9723754432aee85b67be0584055e3eec9bb7"
+    "checklist.md": "3a263b23f4f63abae3e3a234989ba6aa7f7f6b5f60497a23387d1359c21c145d",
+    "fix-plan.md": "8d96e81a25d40d65ad87427236ed4aab457b9911865c165dc6235e9b85ade503",
+    "test-plan.md": "3c56115bba24e83b3366aad75091650218f89eeaf32891682d019fe86936cbb2"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-31T18:12:35.085144+00:00",
+  "updatedAt": "2026-10-31T18:15:29.089775+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",
@@ -1299,6 +1300,6 @@
     "critique.md",
     "results.md"
   ],
-  "definitionHash": "1cada159b1e2a4d36291ca3d5aebd5ff92497a0df06a6721c8209d0278c68019",
-  "critiqueHash": "97a0b6af0680ff1249d8677ceefc549b6ea8abb9fd3c8e0fdc75abbbbb44b42f"
+  "definitionHash": "1142b2b9eb58135c79a023612616abf89b3bbaea748a323fa48df5c3049f0859",
+  "critiqueHash": "27dfd409330c024eba066951b6a058a0bf1570157e521ef421c2b7988279e302"
 }

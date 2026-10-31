@@ -4,6 +4,7 @@ import type {useIconCollection} from '../useIconCollection';
 import {checkArtworkPixels, describeFidelity} from '../ai/fidelity';
 import {buildSvgZip} from '../png-svg-download';
 import {IconViews} from './IconViews';
+import {PopoverSelect} from './PopoverSelect';
 
 type Collection = ReturnType<typeof useIconCollection>;
 interface Props {collection: Collection; selectedId: string | null; filteredIds: string[]; onViewChange: (view: 'convert' | 'saved') => void}
@@ -64,8 +65,8 @@ export function SavedIconsWorkspace({collection, selectedId, filteredIds, onView
   return <section className="png-converter-canvas" aria-label="Saved icon library">
     <div className="icon-conversion-toolbar">
       <IconViews view="saved" savedCount={collection.saved.length} onChange={onViewChange}/>
-      <label><span>Zoom</span><select aria-label="Saved icon zoom" value={zoom} onChange={event => setZoom(event.target.value as typeof zoom)}><option value="fit">Fit</option><option value="1">100% · native</option><option value="2">200%</option><option value="4">400%</option></select></label>
-      <label><span>Background</span><select aria-label="Saved icon background" value={background} onChange={event => setBackground(event.target.value)}><option value="checker">Checkerboard</option><option value="light">Light</option><option value="dark">Dark</option></select></label><span className="flex-space"/>
+      <label><span>Zoom</span><PopoverSelect aria-label="Saved icon zoom" value={zoom} onValueChange={value => setZoom(value as typeof zoom)} options={[{value:'fit',label:'Fit'},{value:'1',label:'100% · native'},{value:'2',label:'200%'},{value:'4',label:'400%'}]}/></label>
+      <label><span>Background</span><PopoverSelect aria-label="Saved icon background" value={background} onValueChange={setBackground} options={[{value:'checker',label:'Checkerboard'},{value:'light',label:'Light'},{value:'dark',label:'Dark'}]}/></label><span className="flex-space"/>
       <button className="button icon-toolbar-button" disabled={!filteredIds.length || packing} onClick={() => void exportZip()}>{packing ? <LoaderCircle className="spin" size={13}/> : <Download size={13}/>}Download ZIP ({filteredIds.length})</button>
     </div>
     <div className="icon-collection-status"><ShieldCheck size={12}/><span>{collection.saved.length} chosen icon{collection.saved.length === 1 ? '' : 's'} saved on this device</span><span className="icon-mode-scope">Independent of your conversion queue.</span></div>

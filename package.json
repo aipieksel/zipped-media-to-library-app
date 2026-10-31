@@ -14,7 +14,9 @@
     "pretest": "npm run check:privacy && node --test tests/repository-privacy.test.mjs"
   },
   "dependencies": {
+    "@base-ui/react": "1.9.0",
     "@xmldom/xmldom": "0.9.12",
+    "better-auth": "1.7.14",
     "es-module-lexer": "1.7.0",
     "fit-curve": "0.2.0",
     "html-to-image": "1.11.13",
@@ -32,7 +34,10 @@
     "@types/react": "19.1.10",
     "@types/react-dom": "19.1.9",
     "@vitejs/plugin-react": "4.5.2",
+    "drizzle-kit": "0.31.11",
+    "drizzle-orm": "0.45.4",
     "esbuild": "0.25.5",
+    "miniflare": "4.20260730.0",
     "tsx": "4.20.3",
     "typescript": "5.8.3",
     "vite": "6.3.5"

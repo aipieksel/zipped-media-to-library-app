@@ -11,6 +11,7 @@ import type {PngSvgFidelity, PngSvgResult} from '../png-svg-browser';
 import {allocateSvgFilename} from '../png-svg';
 import {uniqueId} from '../identity';
 import {normalizeValidatedAiSource} from '../ai/source';
+import {PopoverSelect} from './PopoverSelect';
 
 export interface AiAsset {
   key: string;
@@ -112,7 +113,7 @@ export function AiSvgPanel({ai, asset, onSettings, onSave, onSaved, onClose}: Pr
     <p className="form-note">Rebuild the same design with clean, editable shapes and curves. The selected original and SVG go to your AI provider when you generate. Review the result before saving.</p>
     {!canGenerate && <div className="ai-connect-prompt"><p>{ai.selection && !ai.model?.supportsImages ? 'Choose a model that supports images in AI settings.' : ai.provider?.reason ?? 'Connect your local companion and choose a model to use AI here.'}</p><button className="button" onClick={onSettings}><Settings2 size={13}/>AI settings</button></div>}
     <div className="ai-prompt-controls">
-      <label className="form-field"><span>Task</span><select aria-label="AI SVG task" value={operation} disabled={busy} onChange={event => setOperation(event.target.value as AiOperation)}><option value="recreate-svg">Recreate from the image</option><option value="clean-svg" disabled={!asset.getCurrentSvg}>Clean up the current SVG</option></select></label>
+      <label className="form-field"><span>Task</span><PopoverSelect aria-label="AI SVG task" value={operation} disabled={busy} onValueChange={value => setOperation(value as AiOperation)} options={[{value:'recreate-svg',label:'Recreate from the image'},{value:'clean-svg',label:'Clean up the current SVG',disabled:!asset.getCurrentSvg}]}/></label>
       <label className="form-field ai-instructions"><span>Instructions <small>optional</small></span><textarea aria-label="AI SVG instructions" rows={2} maxLength={AI_LIMITS.instructions} value={instructions} disabled={busy} onChange={event => setInstructions(event.target.value)} placeholder="For example: smooth the circular edges, preserve the spacing and keep the original colors."/></label>
     </div>
     <div className="ai-generate-actions"><button className="button primary" disabled={!canGenerate || busy || saving || !!ai.activeRequestId} onClick={() => void generate()}>{busy ? <LoaderCircle className="spin" size={13}/> : <Sparkles size={13}/>}Generate SVG</button>{busy && <button className="button" onClick={cancel}><Square size={12}/>Cancel</button>}<span role="status">{stage}</span></div>

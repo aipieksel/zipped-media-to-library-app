@@ -2,11 +2,12 @@ import {useRef, useState} from 'react';
 import {CheckCircle2, ExternalLink, LoaderCircle, Plug, ShieldCheck, Unplug} from 'lucide-react';
 import type {AiPreferences} from '../ai/contracts';
 import type {AiSettingsController} from '../ai/useAiSettings';
+import {PopoverSelect} from './PopoverSelect';
 
 export function AiSettings({ai}: {ai: AiSettingsController}) {
   const [token, setToken] = useState('');
   const [port, setPort] = useState(String(ai.preferences.port));
-  const modelSelect = useRef<HTMLSelectElement>(null);
+  const modelSelect = useRef<HTMLButtonElement>(null);
   const busy = ai.connecting || !!ai.activeRequestId;
   return <div className="modal-body ai-settings-panel">
     <section className="settings-section">
@@ -21,12 +22,12 @@ export function AiSettings({ai}: {ai: AiSettingsController}) {
     </section>
     <section className="settings-section">
       <h3>Provider & model</h3>
-      <label className="setting-row"><span>Provider</span><select aria-label="AI provider" value={ai.preferences.provider} disabled={busy || !ai.loaded} onChange={event => {
-        const provider = ai.status?.providers.find(item => item.id === event.target.value); const model = provider?.models[0];
-        void ai.setPreferences({provider: event.target.value as AiPreferences['provider'], model: model?.id ?? null, reasoning: model?.defaultReasoning ?? null});
-      }}><option value="codex">OpenAI · ChatGPT / Codex</option><option value="grok">Grok · capability check pending</option><option value="deepseek" disabled>DeepSeek · not in this package</option></select></label>
-      <label className="setting-row"><span>Model</span><select ref={modelSelect} aria-label="AI model" value={ai.model?.id ?? ''} disabled={busy || !ai.provider?.models.length} onChange={event => {const model = ai.provider?.models.find(item => item.id === event.target.value); void ai.setPreferences({model: model?.id ?? null, reasoning: model?.defaultReasoning ?? null});}}><option value="" disabled>{ai.connection ? 'No model available' : 'Connect to load models'}</option>{ai.provider?.models.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <label className="setting-row"><span>Reasoning</span><select aria-label="AI reasoning effort" value={ai.model ? ai.preferences.reasoning ?? '' : ''} disabled={busy || !ai.model} onChange={event => void ai.setPreferences({reasoning: event.target.value as AiPreferences['reasoning']})}><option value="" disabled>Choose a model</option>{ai.model?.reasoning.map(item => <option key={item.id} value={item.id}>{item.id}</option>)}</select></label>
+      <label className="setting-row"><span>Provider</span><PopoverSelect aria-label="AI provider" value={ai.preferences.provider} disabled={busy || !ai.loaded} onValueChange={value => {
+        const provider = ai.status?.providers.find(item => item.id === value); const model = provider?.models[0];
+        void ai.setPreferences({provider: value as AiPreferences['provider'], model: model?.id ?? null, reasoning: model?.defaultReasoning ?? null});
+      }} options={[{value:'codex',label:'OpenAI · ChatGPT / Codex'},{value:'grok',label:'Grok · capability check pending'},{value:'deepseek',label:'DeepSeek · not in this package',disabled:true}]}/></label>
+      <label className="setting-row"><span>Model</span><PopoverSelect ref={modelSelect} aria-label="AI model" value={ai.model?.id ?? ''} disabled={busy || !ai.provider?.models.length} onValueChange={value => {const model = ai.provider?.models.find(item => item.id === value); void ai.setPreferences({model: model?.id ?? null, reasoning: model?.defaultReasoning ?? null});}} options={[{value:'',label:ai.connection ? 'No model available' : 'Connect to load models',disabled:true},...(ai.provider?.models.map(item=>({value:item.id,label:item.name}))??[])]}/></label>
+      <label className="setting-row"><span>Reasoning</span><PopoverSelect aria-label="AI reasoning effort" value={ai.model ? ai.preferences.reasoning ?? '' : ''} disabled={busy || !ai.model} onValueChange={value => void ai.setPreferences({reasoning: value as AiPreferences['reasoning']})} options={[{value:'',label:'Choose a model',disabled:true},...(ai.model?.reasoning.map(item=>({value:item.id,label:item.id}))??[])]}/></label>
       {ai.provider?.reason && <p className="form-note ai-capability-note" role="status">{ai.provider.reason}</p>}
       {ai.preferences.provider === 'grok' && <p className="form-note">The supplied adapter includes Grok discovery. SVG generation is unavailable until its image input and execution restrictions are verified.</p>}
       {ai.model?.description && <p className="form-note">{ai.model.description}</p>}

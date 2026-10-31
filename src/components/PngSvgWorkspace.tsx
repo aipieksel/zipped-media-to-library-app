@@ -6,6 +6,7 @@ import {buildSvgZip} from '../png-svg-download';
 import './png-svg.css';
 import {IconViews} from './IconViews';
 import {AiSvgPanel} from './AiSvgPanel';
+import {PopoverSelect} from './PopoverSelect';
 import type {AiSettingsController} from '../ai/useAiSettings';
 import type {SavedIconRecord} from '../icon-types';
 
@@ -40,7 +41,7 @@ export function PngSvgWorkspace({collection,selectedId,filteredIds,onImport,onIm
   const [urls,setUrls]=useState<{id:string;revision:number;source:string;output:string}|null>(null);
   const [previewError,setPreviewError]=useState(''),[actionError,setActionError]=useState('');
   const [packing,setPacking]=useState(false),[fitScale,setFitScale]=useState(1);
-  const originalSurface=useRef<HTMLDivElement>(null),outputSurface=useRef<HTMLDivElement>(null),modeSelect=useRef<HTMLSelectElement>(null);
+  const originalSurface=useRef<HTMLDivElement>(null),outputSurface=useRef<HTMLDivElement>(null),modeSelect=useRef<HTMLButtonElement>(null);
   const batchStopFocused=useRef(false);
   const progress=selectedId?collection.progress.get(selectedId):undefined;
   const busy=item?.status==='queued'||item?.status==='processing';
@@ -90,9 +91,9 @@ export function PngSvgWorkspace({collection,selectedId,filteredIds,onImport,onIm
   return <section className="png-converter-canvas" aria-label="Icon conversion canvas">
     <div className="icon-conversion-toolbar" aria-label="Conversion and preview controls">
       <IconViews view="convert" savedCount={collection.saved.length} onChange={onViewChange}/>
-      <label className="icon-mode-field"><span>Mode</span><select ref={modeSelect} aria-label="Conversion mode" value={mode} onChange={event=>void setMode(event.target.value as ConversionMode)}><option value="pixels">Pixel vectors · exact grid</option><option value="smooth">Smooth curves · approximate</option><option value="embedded">Embedded bitmap · original bytes</option></select></label>
-      <label><span>Zoom</span><select aria-label="Preview zoom" value={zoom} onChange={event=>{const value=event.target.value as Zoom;setZoom(value);void collection.setPreferences({zoom:value});}}><option value="fit">Fit</option><option value="1">100% · native</option><option value="2">200%</option><option value="4">400%</option></select></label>
-      <label><span>Background</span><select aria-label="Preview background" value={background} onChange={event=>{const value=event.target.value as Background;setBackground(value);void collection.setPreferences({background:value});}}><option value="checker">Checkerboard</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <label className="icon-mode-field"><span>Mode</span><PopoverSelect ref={modeSelect} aria-label="Conversion mode" value={mode} onValueChange={value=>void setMode(value as ConversionMode)} options={[{value:'pixels',label:'Pixel vectors · exact grid'},{value:'smooth',label:'Smooth curves · approximate'},{value:'embedded',label:'Embedded bitmap · original bytes'}]}/></label>
+      <label><span>Zoom</span><PopoverSelect aria-label="Preview zoom" value={zoom} onValueChange={next=>{const value=next as Zoom;setZoom(value);void collection.setPreferences({zoom:value});}} options={[{value:'fit',label:'Fit'},{value:'1',label:'100% · native'},{value:'2',label:'200%'},{value:'4',label:'400%'}]}/></label>
+      <label><span>Background</span><PopoverSelect aria-label="Preview background" value={background} onValueChange={next=>{const value=next as Background;setBackground(value);void collection.setPreferences({background:value});}} options={[{value:'checker',label:'Checkerboard'},{value:'light',label:'Light'},{value:'dark',label:'Dark'}]}/></label>
       <span className="flex-space"/>
       {pending>0&&<button className="button icon-toolbar-button" onFocus={()=>{batchStopFocused.current=true;}} onBlur={()=>{batchStopFocused.current=false;}} onClick={()=>{void collection.cancelAll();modeSelect.current?.focus();}}><Square size={12}/>Stop ({pending})</button>}
       <button className="button icon-toolbar-button" disabled={!ready.length||packing} onClick={()=>void exportZip()}>{packing?<LoaderCircle size={13} className="spin"/>:<Download size={13}/>}<span>{packing?'Preparing…':`Download ZIP (${ready.length})`}</span></button>
