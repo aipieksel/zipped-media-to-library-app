@@ -58,3 +58,8 @@ The alpha-contour method is concrete and bounded: native pixel-center interpolat
 S3 is the sole added request source; earlier request objects and stored hashes match baseline `af5614eb49c19878480437d84f20d66e8435ab53`. WebP uses the same persistent local Icons workflow, actual-byte recognition, browser-decoded native reference and original-byte MIME embedding. T8 covers real lossy/lossless/alpha files, renamed inputs, animation/malformed failures, old PNG records, mixed folder/drop, same-stem names, reload, exports and final production routes. The clarified ownership makes root the sole editor of the shared browser adapter. The updated checklist correctly retains unaffected baseline evidence while leaving combined regression, quality and release outcomes open.
 
 Reviewed SHA-256: `fix-plan.md` = `c1804f4db03baad895d40010ba2321a6695b9bde17a26ce1dc3620af6399456c`; `test-plan.md` = `e33338cb4511e4dc295937006180eee75848e9ff277cc951eb2e54e905f1f926`; `checklist.md` = `5f0e8e8a12db6606c8a4563849b10c99de54f07937b8774b9b5159e8188ac91a`; `record.json` before coordinator finalization = `ac40f2752ab5db61808754b1281abd789eeb43dd216afa394aac87c41b0d7357`. No app/test/package/build/browser mutation or new runtime pass is claimed by this review.
+
+
+## Revision 8 — review pending
+
+Current S4 plan awaits independent review of scope, source ownership, local companion/auth, SVG safety and saved data migration. Prior revision7 review does not admit new implementation.

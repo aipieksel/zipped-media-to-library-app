@@ -1,0 +1,496 @@
+{
+  "catalogueFingerprint": "438486f892fa59c209076f271c549404e3ed50ace35fd38505d470b4d4004ca3",
+  "intent": "implement",
+  "request": "Integrate a device-local PNG-to-SVG converter into the existing Folio repository and hosted app. Preserve the accepted UI and collection state; provide merged editable pixel geometry by default, clearly labeled original-PNG embedding, batch import/previews, collision-safe individual/ZIP downloads, actual native-dimension RGBA fidelity checks for all specified PNG categories, honest limits and frequent pushed recovery checkpoints.",
+  "evaluated": [
+    {
+      "id": "command:G0",
+      "disposition": "not-applicable",
+      "reason": "The two-mode batch feature and render-based accuracy claims require researched planning and independent verification beyond a quick change."
+    },
+    {
+      "id": "command:GS",
+      "disposition": "not-applicable",
+      "reason": "Equivalent assess/plan/review/build operations are supplied by GAS, GPP, GPR and stage:execute-plan, with explicit fidelity and UI checks."
+    },
+    {
+      "id": "command:GPL",
+      "disposition": "not-applicable",
+      "reason": "The desired outcome is already concrete; GPP supplies requirements and dependencies from inspected code without a second goal-planning pass."
+    },
+    {
+      "id": "command:GCP",
+      "disposition": "not-applicable",
+      "reason": "Equivalent code planning is supplied by GPP consuming actual assessment and research, avoiding a duplicate starter record."
+    },
+    {
+      "id": "command:GA",
+      "disposition": "not-applicable",
+      "reason": "No service or framework redesign is requested; GAS/GRS/GPP resolve the client/worker boundaries without a separate architecture pipeline."
+    },
+    {
+      "id": "command:G1",
+      "disposition": "not-applicable",
+      "reason": "Equivalent reviewed implementation is supplied by the composed atomic chain, which adds the explicit fidelity research needed for this request."
+    },
+    {
+      "id": "command:GB",
+      "disposition": "not-applicable",
+      "reason": "A separate fast-build pipeline would duplicate execution and consolidate milestones that the user asked to preserve individually."
+    },
+    {
+      "id": "command:GT",
+      "disposition": "not-applicable",
+      "reason": "Meaningful tests are required, but formal RED/GREEN was not selected; use reviewed execution with actual unit and browser verification."
+    },
+    {
+      "id": "command:G7",
+      "disposition": "not-applicable",
+      "reason": "Existing-UI inspection and specification are supplied by GAS/design-ui, with rendered checks in GVE/GVA; a second visual rebuild pipeline is unnecessary."
+    },
+    {
+      "id": "command:GEA",
+      "disposition": "not-applicable",
+      "reason": "Keep the E2E reviewer independent from implementation; execute-plan owns changes and GVE verifies journeys."
+    },
+    {
+      "id": "command:GCA",
+      "disposition": "not-applicable",
+      "reason": "Keep code review independent from source ownership; execute-plan implements and GVR reviews."
+    },
+    {
+      "id": "command:GR",
+      "disposition": "not-applicable",
+      "reason": "Broad cleanup is not requested; ordinary scoped organization belongs to the single implementation."
+    },
+    {
+      "id": "command:GH",
+      "disposition": "not-applicable",
+      "reason": "Repository-wide reorganization is outside scope. Existing source-privacy checks remain enforced without a hygiene pipeline."
+    },
+    {
+      "id": "command:GF",
+      "disposition": "not-applicable",
+      "reason": "Root already owns milestone completion, package verification and release reconciliation in the chosen chain."
+    },
+    {
+      "id": "command:GC",
+      "disposition": "not-applicable",
+      "reason": "Equivalent implementation and code review are supplied by execute-plan and GVR without repeating the build."
+    },
+    {
+      "id": "command:GX",
+      "disposition": "not-applicable",
+      "reason": "Equivalent bounded security verification is supplied by GVS after the single implementation pass."
+    },
+    {
+      "id": "command:GU",
+      "disposition": "not-applicable",
+      "reason": "Equivalent accessibility and interaction verification is supplied by GVA after implementation and browser checks."
+    },
+    {
+      "id": "command:GE",
+      "disposition": "not-applicable",
+      "reason": "Equivalent implementation and E2E work are supplied by execute-plan and GVE with separate evidence."
+    },
+    {
+      "id": "command:GJ",
+      "disposition": "not-applicable",
+      "reason": "A broad customer/admin test automation program is outside scope; GVE covers the concrete converter and existing-workspace journeys."
+    },
+    {
+      "id": "command:GP",
+      "disposition": "not-applicable",
+      "reason": "Practical geometry limits, queue responsiveness and cancellation are acceptance checks in GUT/GVE; no general performance build program is needed."
+    },
+    {
+      "id": "command:GD",
+      "disposition": "not-applicable",
+      "reason": "Equivalent documentation maintenance is supplied by GVD after implementation and verification."
+    },
+    {
+      "id": "command:G6",
+      "disposition": "not-applicable",
+      "reason": "The selected atomic chain already provides implementation, tests, docs and review plus the missing fidelity/privacy checks."
+    },
+    {
+      "id": "command:GAS",
+      "disposition": "selected",
+      "reason": "Inspect the actual React owners, collection state, import/download paths, privacy rules and existing UI. This read is independent of GRS."
+    },
+    {
+      "id": "command:GRS",
+      "disposition": "selected",
+      "reason": "Research browser PNG decoding, SVG geometry, alpha/color fidelity and practical size limits. This read runs in parallel with GAS."
+    },
+    {
+      "id": "command:GDA",
+      "disposition": "not-applicable",
+      "reason": "GAS plus actual UI inspection supply the existing design evidence consumed by design-ui; a separate audit record is unnecessary."
+    },
+    {
+      "id": "command:GAA",
+      "disposition": "not-applicable",
+      "reason": "GAS and fidelity research already resolve the relevant app/worker boundaries for GPP; no independent architecture advisory is necessary."
+    },
+    {
+      "id": "command:GDS",
+      "disposition": "not-applicable",
+      "reason": "Equivalent scoped design specification is supplied by stage:design-ui from source and actual UI inspection."
+    },
+    {
+      "id": "command:GPP",
+      "disposition": "selected",
+      "reason": "Derive one file-owned implementation plan and decisive test plan from the assessment, fidelity research and UI specification."
+    },
+    {
+      "id": "command:GPR",
+      "disposition": "selected",
+      "reason": "Independently critique the current plan for full brief coverage, local-only data flow, true browser raster comparison, cancellation and collision-safe downloads before execution admission."
+    },
+    {
+      "id": "command:GTF",
+      "disposition": "not-applicable",
+      "reason": "No formal TDD RED gate is selected. Tests are implemented under the reviewed execution assignment without claiming intentional RED evidence."
+    },
+    {
+      "id": "command:GEX",
+      "disposition": "not-applicable",
+      "reason": "Equivalent reviewed implementation uses stage:execute-plan through the portable adapter with root coordination and disjoint source owners."
+    },
+    {
+      "id": "command:GTE",
+      "disposition": "not-applicable",
+      "reason": "There is no demonstrated RED prerequisite; the selected ordinary execution stage consumes the independently reviewed plan."
+    },
+    {
+      "id": "command:GUT",
+      "disposition": "selected",
+      "reason": "Verify geometry, opacity, names, validation and integration using the existing Node/TypeScript tests; do not substitute these results for browser fidelity evidence."
+    },
+    {
+      "id": "command:GVE",
+      "disposition": "selected",
+      "reason": "Exercise native-dimension raster comparison across every requested PNG category, both modes, batch/drop import, previews, downloads, navigation and existing workspace preservation."
+    },
+    {
+      "id": "command:GVR",
+      "disposition": "selected",
+      "reason": "Independently review the delivered diff and evidence for correctness, async races, resource lifetime and honest verified-status claims."
+    },
+    {
+      "id": "command:GVS",
+      "disposition": "selected",
+      "reason": "Check device-local file handling, safe generated SVG and ZIP paths, no converter uploads and preserved repository/private collection boundaries."
+    },
+    {
+      "id": "command:GVA",
+      "disposition": "selected",
+      "reason": "Verify keyboard scope, focus, native controls, status semantics and responsive navigation in the rendered converter and existing workspace."
+    },
+    {
+      "id": "command:GVP",
+      "disposition": "not-applicable",
+      "reason": "GUT/GVE cover bounded size and cancellation behavior. An additional performance study would not establish a distinct requested outcome."
+    },
+    {
+      "id": "command:GVD",
+      "disposition": "selected",
+      "reason": "Document tested behavior, editable pixel geometry versus embedded bitmap, session lifetime, limits and actual browser/profile coverage."
+    },
+    {
+      "id": "command:GCL",
+      "disposition": "not-applicable",
+      "reason": "No post-delivery refactor is requested. Necessary in-scope corrections remain with the reviewed implementation owner."
+    },
+    {
+      "id": "command:GRC",
+      "disposition": "not-applicable",
+      "reason": "The user specified one feature; ranking unrelated repository contributions would add no needed evidence."
+    },
+    {
+      "id": "stage:research-technical",
+      "disposition": "not-applicable",
+      "reason": "Equivalent technical research is supplied by command:GRS with a real research agent."
+    },
+    {
+      "id": "stage:discover-contributions",
+      "disposition": "not-applicable",
+      "reason": "Repository-wide contribution discovery is unrelated to the concrete converter request."
+    },
+    {
+      "id": "stage:assess-codebase",
+      "disposition": "not-applicable",
+      "reason": "Equivalent source assessment is supplied by command:GAS and the actual codebase assessor."
+    },
+    {
+      "id": "stage:diagnose-failure",
+      "disposition": "not-applicable",
+      "reason": "This is a new feature, not an existing reproduced failure requiring a separate root-cause stage."
+    },
+    {
+      "id": "stage:extract-behaviour-spec",
+      "disposition": "not-applicable",
+      "reason": "No system migration is requested; GAS documents the existing workspace invariants protected by targeted regression checks."
+    },
+    {
+      "id": "stage:plan-goals",
+      "disposition": "not-applicable",
+      "reason": "The brief already specifies modes and acceptance criteria; GPP maps those to requirements, dependencies and checks."
+    },
+    {
+      "id": "stage:design-architecture",
+      "disposition": "not-applicable",
+      "reason": "The client-local feature fits inspected app/worker patterns; GAS/GRS/GPP resolve boundaries without another ADR operation."
+    },
+    {
+      "id": "stage:design-ui",
+      "disposition": "selected",
+      "reason": "Specify compact converter navigation and interaction states using existing tokens and controls, preserving the HTML/Images workspace."
+    },
+    {
+      "id": "stage:review-ui-spec",
+      "disposition": "not-applicable",
+      "reason": "The independent GPR critique includes the scoped UI contract, responsive states and ownership alongside the code plan; avoid duplicating the review."
+    },
+    {
+      "id": "stage:plan-code",
+      "disposition": "not-applicable",
+      "reason": "Equivalent evidence-based code planning is supplied by command:GPP."
+    },
+    {
+      "id": "stage:plan-tests",
+      "disposition": "not-applicable",
+      "reason": "GPP includes the required test plan for algorithm fidelity, PNG categories, filenames and workspace regressions; no second strategy artifact is needed."
+    },
+    {
+      "id": "stage:review-plan",
+      "disposition": "not-applicable",
+      "reason": "Equivalent independent plan critique is supplied by command:GPR before execution."
+    },
+    {
+      "id": "stage:write-red-tests",
+      "disposition": "not-applicable",
+      "reason": "Formal RED/GREEN is not the chosen workflow; meaningful tests belong to reviewed implementation and GUT/GVE verification."
+    },
+    {
+      "id": "stage:execute-plan",
+      "disposition": "selected",
+      "reason": "Implement the reviewed plan through the portable adapter: root coordinates mutations, shared integration, checkpoints and the build; disjoint engine/UI/test owners may work in parallel."
+    },
+    {
+      "id": "stage:fix-reviewed-defects",
+      "disposition": "not-applicable",
+      "reason": "No code-review findings exist at selection time. Later in-scope repairs remain with the authorized execution owner, refreshing material plan changes as required."
+    },
+    {
+      "id": "stage:run-tests",
+      "disposition": "not-applicable",
+      "reason": "Equivalent unit/integration verification is supplied by command:GUT against delivered code."
+    },
+    {
+      "id": "stage:run-e2e",
+      "disposition": "not-applicable",
+      "reason": "Equivalent native-raster and browser-journey verification is supplied by command:GVE."
+    },
+    {
+      "id": "stage:review-code",
+      "disposition": "not-applicable",
+      "reason": "Equivalent independent diff/evidence review is supplied by command:GVR."
+    },
+    {
+      "id": "stage:review-ui",
+      "disposition": "not-applicable",
+      "reason": "GVE compares rendered navigation/layout with the existing reference and UI spec, while GVA checks interaction; no separate rebuild fidelity pass is needed."
+    },
+    {
+      "id": "stage:review-accessibility",
+      "disposition": "not-applicable",
+      "reason": "Equivalent keyboard, focus and responsive accessibility verification is supplied by command:GVA."
+    },
+    {
+      "id": "stage:review-security",
+      "disposition": "not-applicable",
+      "reason": "Equivalent local-data, generated-content and repository privacy verification is supplied by command:GVS."
+    },
+    {
+      "id": "stage:review-dependencies",
+      "disposition": "not-applicable",
+      "reason": "The installed React/JSZip stack and browser APIs suffice; no new runtime dependency is planned. GVR/GVS can flag an unexpected dependency change."
+    },
+    {
+      "id": "stage:verify-goal",
+      "disposition": "not-applicable",
+      "reason": "Root reconciles each source-linked outcome with GUT/GVE/review evidence before final handoff; an additional role would duplicate that acceptance task."
+    },
+    {
+      "id": "stage:update-docs",
+      "disposition": "not-applicable",
+      "reason": "Equivalent documentation updates are supplied by command:GVD."
+    },
+    {
+      "id": "stage:verify-docs",
+      "disposition": "not-applicable",
+      "reason": "GVD checks new claims against actual implementation/test results; a separate verifier is disproportionate to the bounded README/help changes."
+    },
+    {
+      "id": "stage:verify-performance",
+      "disposition": "not-applicable",
+      "reason": "GUT/GVE cover practical resource limits and cancellation responsiveness; a general benchmark project is outside scope."
+    },
+    {
+      "id": "pipeline:quick-safe-change",
+      "disposition": "not-applicable",
+      "reason": "The equivalent atomic sequence is extended with research, UI specification, security and accessibility; the quick recipe alone is insufficient."
+    },
+    {
+      "id": "pipeline:standard-verified-build",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operations use selected G commands and execute-plan; running the complete recipe would duplicate assessment, planning and checks."
+    },
+    {
+      "id": "pipeline:test-first-feature",
+      "disposition": "not-applicable",
+      "reason": "Formal RED evidence is not selected; reviewed implementation with targeted unit and browser checks meets this new-feature acceptance contract."
+    },
+    {
+      "id": "pipeline:ui-design-fidelity",
+      "disposition": "covered",
+      "reason": "Borrow design-ui and execute-plan; equivalent assessment, planning, critique, browser, accessibility and documentation operations are supplied by the selected G commands.",
+      "coveredBy": [
+        "stage:design-ui",
+        "stage:execute-plan"
+      ]
+    },
+    {
+      "id": "pipeline:high-assurance-delivery",
+      "disposition": "not-applicable",
+      "reason": "No database migration, billing or access-policy change is involved. Targeted research/privacy/browser checks cover the concrete risks without all broad recipe stages."
+    },
+    {
+      "id": "specialist:react-frontend",
+      "disposition": "selected",
+      "reason": "The actual runtime is React 19/TypeScript/Vite; apply existing component ownership, state lifecycle, design tokens and responsive controls."
+    },
+    {
+      "id": "specialist:editor-schema",
+      "disposition": "selected",
+      "reason": "Protect current archive IDs, saved selection, folders, favorites and import/export semantics; keep transient conversion data outside the existing persistence schema."
+    },
+    {
+      "id": "specialist:wordpress-woocommerce",
+      "disposition": "not-applicable",
+      "reason": "The feature path is React/Vite/Worker, with no WordPress or WooCommerce extension."
+    },
+    {
+      "id": "specialist:whmcs",
+      "disposition": "not-applicable",
+      "reason": "There is no WHMCS module, billing hook or account lifecycle in the converter."
+    },
+    {
+      "id": "specialist:vscode-agents-pro",
+      "disposition": "not-applicable",
+      "reason": "This is a browser application, not a VS Code extension or native workflow-host integration."
+    },
+    {
+      "id": "specialist:plugins-mcp",
+      "disposition": "not-applicable",
+      "reason": "Existing plugins are tools for the task; no plugin manifest, skill router or MCP server is being changed."
+    },
+    {
+      "id": "specialist:browser-extraction",
+      "disposition": "not-applicable",
+      "reason": "Source is available and no external site extraction/rebuild is requested; existing UI and browser evidence are covered by React/design-ui/GVE."
+    },
+    {
+      "id": "specialist:native-yaml-archives",
+      "disposition": "not-applicable",
+      "reason": "The output is plain SVG/ZIP, not a native editor YAML package; existing JSZip and focused download tests cover the archive boundary."
+    },
+    {
+      "id": "specialist:content-seo",
+      "disposition": "not-applicable",
+      "reason": "No marketing migration, metadata, canonical URLs or SEO schema is affected."
+    },
+    {
+      "id": "specialist:python-data",
+      "disposition": "not-applicable",
+      "reason": "Runtime conversion is TypeScript in the browser; incidental workflow/fixture scripts do not make a Python pipeline part of the product."
+    },
+    {
+      "id": "specialist:database",
+      "disposition": "not-applicable",
+      "reason": "The converter adds no SQL or IndexedDB schema migration. Editor-schema protects the existing workspace invariants."
+    },
+    {
+      "id": "specialist:infrastructure",
+      "disposition": "not-applicable",
+      "reason": "Existing Worker/hosting configuration is preserved. Migration-release covers publication reconciliation without provisioning changes."
+    },
+    {
+      "id": "specialist:migration-release",
+      "disposition": "selected",
+      "reason": "The user explicitly requires repeated recovery commits/pushes and complete repository/hosted delivery; reconcile local, committed, remote, packaged and deployed states."
+    },
+    {
+      "id": "specialist:realtime-native",
+      "disposition": "not-applicable",
+      "reason": "There is no WebRTC, streaming or native app lifecycle; asynchronous browser work is covered by the React/worker ownership."
+    }
+  ],
+  "chain": [
+    {
+      "id": "command:GAS",
+      "why": "Inspect the actual React owners, collection state, import/download paths, privacy rules and existing UI. This read is independent of GRS."
+    },
+    {
+      "id": "command:GRS",
+      "why": "Research browser PNG decoding, SVG geometry, alpha/color fidelity and practical size limits. This read runs in parallel with GAS."
+    },
+    {
+      "id": "stage:design-ui",
+      "why": "Specify compact converter navigation and interaction states using existing tokens and controls, preserving the HTML/Images workspace."
+    },
+    {
+      "id": "command:GPP",
+      "why": "Derive one file-owned implementation plan and decisive test plan from the assessment, fidelity research and UI specification."
+    },
+    {
+      "id": "command:GPR",
+      "why": "Independently critique the current plan for full brief coverage, local-only data flow, true browser raster comparison, cancellation and collision-safe downloads before execution admission."
+    },
+    {
+      "id": "stage:execute-plan",
+      "why": "Implement the reviewed plan through the portable adapter: root coordinates mutations, shared integration, checkpoints and the build; disjoint engine/UI/test owners may work in parallel."
+    },
+    {
+      "id": "command:GUT",
+      "why": "Verify geometry, opacity, names, validation and integration using the existing Node/TypeScript tests; do not substitute these results for browser fidelity evidence."
+    },
+    {
+      "id": "command:GVE",
+      "why": "Exercise native-dimension raster comparison across every requested PNG category, both modes, batch/drop import, previews, downloads, navigation and existing workspace preservation."
+    },
+    {
+      "id": "command:GVR",
+      "why": "Independently review the delivered diff and evidence for correctness, async races, resource lifetime and honest verified-status claims."
+    },
+    {
+      "id": "command:GVS",
+      "why": "Check device-local file handling, safe generated SVG and ZIP paths, no converter uploads and preserved repository/private collection boundaries."
+    },
+    {
+      "id": "command:GVA",
+      "why": "Verify keyboard scope, focus, native controls, status semantics and responsive navigation in the rendered converter and existing workspace."
+    },
+    {
+      "id": "command:GVD",
+      "why": "Document tested behavior, editable pixel geometry versus embedded bitmap, session lifetime, limits and actual browser/profile coverage."
+    }
+  ],
+  "specialists": [
+    "specialist:react-frontend",
+    "specialist:editor-schema",
+    "specialist:migration-release"
+  ]
+}

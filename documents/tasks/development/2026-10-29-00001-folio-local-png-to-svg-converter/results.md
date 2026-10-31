@@ -155,3 +155,8 @@ Remaining product limits are deliberate and visible: pixel geometry enlarges as 
 Production verification/documentation checkpoint local `1c905f055ed0b7d4e637da9bf930cac83b3b3213` was pushed as `ed332f5d90c907cf38c063d26fa01890d76e3681`, with identical tree `b67cfcdf4c739cc2b9f4dd154ebf9e566f07ca3b`. A fresh read showed main still at `4c4966012679012ca5915c090d27e334f0d4dab3`; a leased, non-forced update advanced it successfully to that verified checkpoint. The final metadata/review closeout commit follows on both branches.
 
 Independent final readback resolved README finding D1 and found no remaining documentation correction. The published HTML and Images tabs each selected successfully, displayed the shared sidebar and nonempty existing tree, and returned to Icons with saved results intact. Both recovered WebPs are ready. Original transient-input tab remains untouched. All24 acceptance rows are complete based on the cited evidence; admission/request hashes are retained unchanged, without restamping. The Tasks panel API was unavailable, so the complete checklist is rendered directly in the final user handoff rather than claiming a Tasks publication.
+
+
+## Revision 8 opened — 2026-10-31
+
+S4 supersedes only affected prior outcomes. Baseline ca95e01 clean. Read-only agents /root/ai_app_assessment, /root/ai_package_audit and /root/ai_auth_research supplied current evidence; no app mutations or account requests yet. Site version11 identity/audience preserved. Source helper initially failed under restricted Node subprocess; approved source access opened exact1e84baac. User browser currently presents Site sign-in; real-account and production identity test remain pending. Tasks panel tool is unavailable; full Markdown fallback is used.
