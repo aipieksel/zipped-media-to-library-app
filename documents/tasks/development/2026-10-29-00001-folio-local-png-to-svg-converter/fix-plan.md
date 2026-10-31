@@ -1,49 +1,81 @@
-# Implementation plan — revision 9
+# Revision 10 — implementation plan
 
-## Authority and outcome
+## Authority, baseline and completion
 
-S4 is the current user request. Amend the existing complete record, preserving S1/CA1/S2/S3 and all release history. The requested deliverable is working shared AI, same-page icon cleanup, saved/recolorable artwork and account/settings UI, verified and published to the same private Site. User authority includes implementation, frequent commits/pushes and publication from prior instructions. No additional approval gate is required for those actions.
+S5 is the current amendment; S1–S4 are retained constraints and completed history. Source baseline is bdf73305ff51dcd59c2b7c9a94a66501845ca560. Existing same record and Site are retained. Execution, frequent commits/pushes and existing-Site publication are already authorized. Earlier P1–P13 are historical implementations; their topbar/modal/device-only constraints are superseded by P14–P20 where S5 explicitly changes them.
 
-## Evidence and architecture
+The deliverable is functioning UI and shared authenticated data, not a design report or login mock. Existing R29 requires the user's local authenticated AI companion and is not an execution prerequisite for this amendment. Production owner-password activation and named teammate Site access cannot be fabricated; build and test everything independently and hand off only the actual user-controlled activation.
 
-Baseline ca95e01; Site source 1e84baac, version11, owner-private. Existing React19/TS5.8/Vite6/IDB8; one App sidebar and ArchiveTree, canvas-only PngSvgWorkspace. Imported originals and one current conversion are already durable in folio-icons v1. retry() deletes current output, so curated saved artwork needs independent records. Library v3 and private R2 collection stay unchanged. worker/index.js is canonical Worker. Site platform owns auth; use trusted request identity headers and normal top-level /signin-with-chatgpt and /signout-with-chatgpt links. Password/security remains with ChatGPT; local display-name preference is labeled a Folio preference, not an identity change.
+## Evidence and design
 
-Attached @codraoss/ai-cli-integration0.1.0 is AGPL-3.0-only and contains Codex/Grok contracts/catalog parsers, Node adapters and a catalog-only loopback server. Preserve license and source attribution. The Worker cannot spawn local CLIs. Adapt the source-only package in a vendored directory, with a buildable Node companion. Fix the observed SVG-envelope, answer-file-size and SIGTERM-hang defects. Root owns dependency install/build/push and record. Bounded disjoint implementation assignments cover companion and saved-library modules.
+Read artifacts/revision-10-ui-assessment.md (C1–C10), revision-10-ui-research.md and revision-10-account-architecture.md. The UI plan reuses App, ArchiveTree, current import/controllers, compact styles and component roles. A Folio PopoverSelect wraps pinned Base UI1.9.0 with plain CSS. All19 native selects and the workspace switcher use it. Rich menus remain command/panel popovers with the same surface styles. Select portals go inside the closest native dialog; parent dismissal and global file shortcuts yield to active custom selection. Remove the topbar and its height reservation; add footer Settings. Convert/Saved remain a single nonwrapping group.
 
-Companion binds127.0.0.1 only, accepts exact configured Folio origin and Host, and requires a high-entropy per-run pairing token for all data/exec endpoints; pairing token is entered by user, stays in browser session memory/storage, and never reaches Folio server or GitHub. Restart rotates/revokes. Settings persists only nonsecret provider/model/reasoning/port preferences. No browser-supplied executable/path/argv/cwd. Connection is explicit; no network probing on page load. Use bounded fixed POST SVG jobs, job identity and AbortSignal cancellation; one active model request, no background auto-retry. Limit decoded source and request/output sizes and validate runtime schemas. Fresh catalog determines actual model/effort options; available catalog is distinct from auth and inference.
+Settings uses #settings/profile, #settings/ai, #settings/appearance and owner Accounts routes. Keep App-owned collection/AI state mounted, disable file-drop/keyboard actions on settings/auth screens, retain previous workspace for return, and preserve #png-to-svg alias. Left navigation is real links with current-page indication. Profile edits app account details and password; AI stays an independent per-device connection.
 
-Codex first enabled SVG vision provider, using CLI-owned ChatGPT login, prompt stdin, PNG attachment, structured JSON and minimal restricted permission profile. Feature/help capability probe must fail closed on unsupported isolation; ignore inherited user config, disable command/web/apps/MCP/custom tools and broad filesystem access. Do not use undocumented sandbox keys or bypass credentials. Grok catalog may be visible but execution disabled until its image/no-tools contract is verified; DeepSeek unavailable because package has no adapter. No API-key fallback. Scope supports future image/HTML tasks through capability/asset contracts; current Images action sends the original selected supported PNG/WebP/JPEG through image-to-SVG. General bitmap editing is not claimed, because the supplied package has no raster output capability.
+## Server and storage contract
 
-AI action explicitly sends selected content to provider, with clear adjacent copy. Preserve converter output. Prompt requests visual reconstruction of supplied image and existing SVG, accurate proportions/colors/negative space/viewport, smooth editable geometry and no scripts/external resources/raster embedding, with optional user directions. Treat embedded SVG/text as data. Return candidate, compare original/current/AI on existing canvas, independently render candidate at native size, and let user save/download or discard. New selection/retry/cancel must not associate late results with a different icon. No universal pixel-perfect claim.
+Use Better Auth1.7.14 only after a narrow real Worker-compatible build/D1/cookie/hash probe. Pin exact dependency and avoid Node compatibility guesses. A vetted slow password implementation, strict origin/CSRF boundary, bounded request bodies, persistent attempt limits and opaque revocable server sessions are required. No fallback to a fast password hash. If the supported library/runtime path fails, retain an explicit auth blocker and re-review the affected implementation choice before replacing it.
 
-Curated library uses an additive migration and independent artwork/blob stores in existing icon DB, reusing folder IDs/tree projection/favorites/search/order. Store immutable base SVG + derived color version/metadata/source identity. Save candidate explicitly and retain across conversion deletion; no reset of v1 data. Validate SVG with a strict bounded XML/geometry subset before use: no DOCTYPE/entities, script/events, foreignObject, external href/url, image, CSS imports/styles or active/animated content. Preserve legitimate fills, none, opacity, gradient stops and transforms under validated grammar. Preview only Blob image; never inject model markup. Recolor actual visible fills/strokes/gradient stops; preserve none/alpha and base for Reset; recheck changed result or clear earlier match state. Embedded bitmap results cannot be recolored as if vector geometry. Downloads and ZIP use exactly the rendered saved bytes and unique filenames. Browser quota errors are visible; explain local persistence and clearing-data limits. Ask persistent-storage permission only through explicit save/storage action as supported.
+Owner creation must atomically match a configured trusted Site owner subject, never first-signup wins. Subsequent registration uses owner-created recipient-bound expiring single-use copy links. No email is sent. A password change verifies current password and revokes other sessions. Recovery must be a real owner-controlled action with single-use reset capability, not an unsent email. No production credential or test account is created by the agent. Keep Sites auth endpoints and owner-private audience unchanged. Every legacy collection and new shared-storage route requires active Folio membership, except independently authenticated ingestion routes.
 
-## UI contract
+One workspace is server-defined. D1 owns accounts/sessions/membership and revisioned shared metadata; R2 owns immutable hash-addressed media. Upload and verify all bytes before atomically publishing metadata/references; stale expected revisions return409. A bounded manifest-per-library-root or dataset service is acceptable if it preserves atomicity, deduplication, documented size bounds and server acknowledgement; no speculative multitenancy/realtime service. Use a separate shared IDB cache so existing local originals remain recoverable. Resolve original/new blobs lazily where possible and avoid copying the existing3.55GB R2 collection. Folder, favorite, hide/remove and saved-artwork state are shared; selection/scroll/conversion worker/AI pairing stay device-local. Reconcile server revisions on visibility and bounded refresh. Failed writes must not show shared-success; retain recoverable local inputs and never silently overwrite conflicts.
 
-Reuse existing top HTML/Images/Icons, sidebar/search/ArchiveTree, modal/dialog behavior, button/menu-row/popover classes, typography/colors/spacing. Add small top-right menu→Settings. Settings uses AI/Profile tabs, model/provider selection, Connect/Test connection, paired companion setup instructions and clear statuses. Leave View/capture popover in place. Profile shows actual identity, local display-name preference, sign-out/sign-in and account password/security guidance/links. No false local password form.
+Existing device files need explicit migration with record/byte inventory and destination. Preserve stable IDs, folder relations, original bytes, saved base/current SVG/recolor, fidelity provenance and retry idempotency. Keep originals until explicit removal. Default new imports use the shared workspace after Folio login. Conversion remains local; sharing is storage, not automatic AI upload.
 
-Icons toolbar adds Convert/Saved view selector; App owns corresponding selection and projection into the same tree. Conversion mode remains a toolbar control. Add AI clean-up/recreate panel on selected conversion, optional instruction, generate/cancel status, candidate comparison/save/discard/download. Saved view supports selection, recolor/reset, filename/export and removal through current confirmation pattern. Images selected-item action uses shared AI surface; no second sidebar or blanket automatic uploads. Narrow screens wrap compact toolbar and stack comparison; native dialog traps focus/returns focus and suppresses canvas keyboard shortcuts.
+## Appearance
 
-## Scope delta and alternatives
+One validated palette owns background, surface, accent, text, muted text and border colors, with derived selection/hover/accent foreground. Preserve current defaults; expose clear save/reset controls. Shared settings are server-authoritative; temporary preview stays local until Save. Extend hardcoded UI surfaces to semantic variables without changing source images, imported HTML, SVG artwork or explicit checker/light/dark preview colors. Reject unsafe strings and unreadable foreground pairs with a useful validation message.
 
-Retain: shared AI explicitly requested; local companion necessary because Node subprocess cannot run in Worker and CLI credentials must stay on the user device; high-entropy pairing/Origin/Host/bounds needed for the exposed execution endpoint, not a new user approval ceremony. Retain explicit AI upload exception to R8 because S4 directly asks send to AI; default conversions remain local. Retain independently saved records because user chooses what persists despite conversion retries. Retain real Site identity/password delegation because account login/profile is requested and platform already owns credentials. Reject browser-cookie scraping, server copying CLI credentials, paid API key fallback, second identity provider, fake password UI, new public Site, arbitrary raster editor, unsupported provider execution, auto uploads, and unrelated redesign. Hosted cloud sync of user icons is not requested; keep existing browser-local ownership and clear limits.
+## Execution ownership and ordering
 
-## Ordered execution, review and evidence
+Root is the sole coordinator, plan/Git/package/build/release owner. Delegated implementations receive disjoint file ownership: dropdown primitive plus non-App consumers; auth/shared server modules/schema/tests; appearance module/component and bounded CSS tokens. Root owns App/routes/auth gate and shared browser adapters. No overlapping builds or automated Git mutations by agents. Commit and push after reviewed plan, navigation/dropdowns, server/shared storage, appearance integration, verified release.
 
-P8 capture/research/architecture/design and independent review → P9 companion/shared AI plus P10 safe saved artwork in disjoint modules → P11 UI/account integration → P12 focused checks and independent code/security/a11y review → P13 docs/commits/private deployment. Save milestone commits after plan, companion, storage, UI and verification; push each. Source/privacy hook remains enforced.
+### P14
 
-Actual user OpenAI test requires a running paired companion on that user's computer, CLI ChatGPT sign-in, and browser loopback permission. This environment cannot start software on their computer. Build and test all available work first; expose concrete setup/Test action and record real test as blocked if unavailable, never substitute cloud-agent credentials or fake results. Browser production currently shows a real sign-in wall; no account bypass will be used as user identity. Internal preview and source tests can continue.
+Requirements: R12, R13, R15, R33, R34, R35, R36, R37, R38, R39, R40, R41. Dependencies: none.
 
-## Rollback / data safety
+Capture S5, preserve revision9, source/design/account assessment, primary shadcn/Base UI/auth research, concrete design and server/client contracts, independent current-revision critique and pushed checkpoint.
 
-Add stores/version upgrade guarded by oldVersion; no deleting legacy stores. Retain base SVG and current conversion until confirmed save. Companion cancellation kills/settles child before removing temporary files; bounded errors redact auth/raw stderr. Revert source/deployment if needed without destroying persisted artwork. No live collection migration or automated profile-password changes.
+### P15
 
-## Review reconciliation — F9–F11 (revision 9)
+Requirements: R1, R5, R15, R16, R17, R23, R33, R36, R37, R38. Dependencies: P14.
 
-F9: Require a real effective-configuration check before inference readiness, using documented Codex app-server config/read and the fixed restricted filesystem permission profile. Version/help alone cannot mark ready. Explicitly disable all discovered MCP names, command/web/apps/plugins/hooks/view_image tools; ignore user config and reject legacy sandbox_mode or managed overrides that prevent the restricted profile. Do not invent codex config read. Fail closed with an actionable setup reason if the installed CLI cannot prove compatible effective controls; no weaker fallback. Consume structured generation events and terminate immediately on unexpected tool use; require successful terminal completion before accepting otherwise parseable output. Actual installed-runtime support and real account inference remain separate from protocol fixtures. Tests must cover every rejection and prove no inference starts before preflight.
+Pin Base UI1.9.0, create Folio PopoverSelect and migrate all19 consumers plus workspace switcher. Keep App controller ownership, remove topbar, add sidebar footer/settings hash routes, keyboard/portal coordination and no-wrap segmented control. Central installer/build ownership.
 
-F10: Saved artwork includes its own immutable source Blob snapshot, base/output SVG and provenance in one atomic transaction. Saved records therefore survive original conversion deletion/retry. Removing a conversion folder reparents affected curated artwork to permanent Uncategorized with safe filename collision allocation; it does not delete saved records. In Saved view, omit destructive folder deletion while preserving individual saved removal and shared folder selection/move/create/favorite logic. Do not show saved success after failed commits. Test save→delete conversion→delete containing folder→reload→reset/recolor/export and source/base equality, forced transaction failure, stale result after navigation/retry/deletion/cancel/discard.
+### P16
 
-F11: Save remains available for trusted local embedded conversion outputs through a dedicated original-byte validation path bound to a current successful conversion. Label saved bitmap results clearly and disable recoloring. AI and generic saveArtwork still reject images and active content. Recolor clears old match status/count and marks the color variant unverified until real comparison; Reset restores exact base bytes and that base's own recorded check.
+Requirements: R8, R23, R34, R35, R40. Dependencies: P14.
 
-Shared parser: pin @xmldom/xmldom0.9.12 for the same bounded parser/allowlist in Node and browser; retain MIT notices. The maintained parser is necessary to validate model XML consistently without unsafe string replacement. AI2MiB bounds; local-vector24MiB and existing geometry limits. Node companion response/request caps accommodate the same explicit AI limit.
+Bounded Better Auth1.7.14 Worker/D1 compatibility spike; use vetted slow hash and database-backed sessions. Configure additive D1 migrations, trusted-owner bootstrap, invitation registration, login/logout/profile/password/recovery and membership checks on all private APIs. Preserve outer Site privacy; do not create production credentials or invite anyone.
+
+### P17
+
+Requirements: R5, R7, R8, R17, R18, R19, R20, R23, R31, R32, R40, R41. Dependencies: P16.
+
+Implement one workspace shared storage service: D1 revisioned metadata, R2 immutable checksummed blobs; atomic manifest/reference publication, expected-revision conflicts, unchanged legacy collection. Browser adapters preserve existing methods and use separate shared caches, hydrate server truth, await server acknowledgement and retain failure data. Explicit reviewed migration preserves local originals, stable IDs, folders, recolor and provenance; retry idempotently. Shared refresh on visibility and bounded polling.
+
+### P18
+
+Requirements: R33, R39, R40. Dependencies: P15, P17.
+
+One typed hex-color palette with current defaults; accent foreground/hover pairs derived, semantic surfaces/text/borders. Appearance draft preview, save/reset through shared settings owner; keep artwork, imported HTML and checker/light/dark preview palettes independent.
+
+### P19
+
+Requirements: R1, R5, R7, R8, R9, R12, R15, R17, R19, R23, R24, R25, R26, R28, R31, R32, R33, R34, R35, R36, R37, R38, R39, R40, R41. Dependencies: P15, P16, P17, P18.
+
+Focused auth/shared-store/UI regressions, actual dropdown and routed-page browser journeys, two isolated member clients, conflict/migration/logout tests, independent code/security/accessibility review and current build/privacy gates. Preserve explicit distinction between fixture and live production credential/inference evidence.
+
+### P20
+
+Requirements: R8, R11, R12, R13, R14, R29, R34, R35, R40, R41. Dependencies: P19.
+
+Document current features/account setup and data ownership. Commit/push milestones with leases, same private Site native-source build/migrations/publication and verification. User enters owner password; a real teammate needs named Site access. Preserve R29 live-companion prerequisite as a separate open goal.
+
+## Scope delta and risks
+
+S5 explicitly replaces top buttons, modal settings and platform-only account handling. Shared persistence is necessary for same-data accounts and is the material backend expansion. No private-media migration is performed by this coding session. Existing Site audience cannot be widened just to make a test pass; a real teammate needs named access. Hash/runtime compatibility and hosted migration/cookie behavior require decisive checks; a successful frontend build is not proof. Preserve all original conversion limits and native-difference claims. No new provider/model capability claims.
+
+## Independent review refinements (pre-admission)
+
+F-R10-01: The existing immutable media cache is incompatible with session revocation. Protected media responses, including HEAD/conditional requests, will use private,no-store; logout removes rendered content and object URLs. Original device-only imports are retained. F-R10-02: Recovery authority is an authenticated owner with current-password step-up for member resets, or the configured trusted Site owner for owner recovery. Generate a single-use recipient-bound expiring reset token, store only its hash, and revoke existing account sessions when consumed. No email or fake delivery.

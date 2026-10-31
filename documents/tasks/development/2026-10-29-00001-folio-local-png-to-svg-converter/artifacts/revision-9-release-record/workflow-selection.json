@@ -1,0 +1,608 @@
+{
+  "catalogueFingerprint": "d63fbcf49cfaa9b52b23f035c1496263a66709e786ecb7803354a66fd562e0e7",
+  "intent": "implement",
+  "request": "Extend existing Folio with supplied CLI-based shared AI, same-page SVG cleanup, saved/recolorable icons and real Site account/settings; preserve UI and frequently push checkpoints.",
+  "evaluated": [
+    {
+      "id": "command:G0",
+      "disposition": "not-applicable",
+      "reason": "Multi-runtime execution, untrusted model output and persistent saved data exceed a quick isolated change."
+    },
+    {
+      "id": "command:GS",
+      "disposition": "not-applicable",
+      "reason": "Assess, plan, review and build is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GPL",
+      "disposition": "not-applicable",
+      "reason": "Goals are explicit; source-owner planning GPP supplies the same needed plan without an additional goal-planning pass."
+    },
+    {
+      "id": "command:GCP",
+      "disposition": "not-applicable",
+      "reason": "Use GPP with the completed current assessments rather than duplicate code planning."
+    },
+    {
+      "id": "command:GA",
+      "disposition": "not-applicable",
+      "reason": "Architecture, plan and build is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:G1",
+      "disposition": "not-applicable",
+      "reason": "Standard plan and build is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GB",
+      "disposition": "not-applicable",
+      "reason": "Fast full build is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GT",
+      "disposition": "not-applicable",
+      "reason": "Full test-first build is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:G7",
+      "disposition": "not-applicable",
+      "reason": "Visual Fidelity is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GEA",
+      "disposition": "not-applicable",
+      "reason": "Delegate to E2E Agent is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GCA",
+      "disposition": "not-applicable",
+      "reason": "Delegate to Code Reviewer is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GR",
+      "disposition": "not-applicable",
+      "reason": "Build and Cleanup is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GH",
+      "disposition": "not-applicable",
+      "reason": "AI Repository Hygiene is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GF",
+      "disposition": "not-applicable",
+      "reason": "AI Feature Finalisation is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GC",
+      "disposition": "not-applicable",
+      "reason": "Build and Code Review is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GX",
+      "disposition": "not-applicable",
+      "reason": "AI Security Verification is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GU",
+      "disposition": "not-applicable",
+      "reason": "AI Accessibility and Interaction QA is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GE",
+      "disposition": "not-applicable",
+      "reason": "Build and E2E Tests is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GJ",
+      "disposition": "not-applicable",
+      "reason": "AI Journey Test Automation is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GP",
+      "disposition": "not-applicable",
+      "reason": "AI Performance and Resilience is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GD",
+      "disposition": "not-applicable",
+      "reason": "Build and Documentation is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:G6",
+      "disposition": "not-applicable",
+      "reason": "Build, Docs, E2E and Review is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "command:GAS",
+      "disposition": "selected",
+      "reason": "Trace the current shared App/sidebar, icon storage, Worker identity and supplied package before additions."
+    },
+    {
+      "id": "command:GRS",
+      "disposition": "selected",
+      "reason": "Verify current Codex account/vision/permissions, provider capability and hosted loopback constraints from primary docs."
+    },
+    {
+      "id": "command:GDA",
+      "disposition": "selected",
+      "reason": "Map existing menu, Modal, toolbar and tree; distinguish source audit from live sign-in-blocked UI."
+    },
+    {
+      "id": "command:GAA",
+      "disposition": "selected",
+      "reason": "Resolve the real browser/Worker/Node/CLI authentication and execution boundary."
+    },
+    {
+      "id": "command:GDS",
+      "disposition": "selected",
+      "reason": "Specify a compact shared AI/Profile dialog, Convert/Saved view and same-page candidate review."
+    },
+    {
+      "id": "command:GPP",
+      "disposition": "selected",
+      "reason": "Map S4 and retained constraints into implementation steps and decisive checks on existing owners."
+    },
+    {
+      "id": "command:GPR",
+      "disposition": "selected",
+      "reason": "Independently review AI scope, auth, SVG handling, data migration and real-account verification before implementation."
+    },
+    {
+      "id": "command:GTF",
+      "disposition": "not-applicable",
+      "reason": "Process/SVG/migration checks accompany implementation; separate intentional red-only stage adds no necessary acceptance evidence."
+    },
+    {
+      "id": "command:GEX",
+      "disposition": "selected",
+      "reason": "Implement reviewed shared AI, saved artwork, UI and platform-account integration with partitioned ownership."
+    },
+    {
+      "id": "command:GTE",
+      "disposition": "not-applicable",
+      "reason": "Execution is GEX, not a separately staged red/green cycle."
+    },
+    {
+      "id": "command:GUT",
+      "disposition": "selected",
+      "reason": "Verify process/body/schema/auth bounds and actual storage/recolor logic with focused regression checks."
+    },
+    {
+      "id": "command:GVE",
+      "disposition": "selected",
+      "reason": "Exercise same-page SVG candidate, settings, save/reload/recolor/download and existing categories in supported browser."
+    },
+    {
+      "id": "command:GVR",
+      "disposition": "selected",
+      "reason": "Independently review the implemented diff and original preservation/cancellation across modules."
+    },
+    {
+      "id": "command:GVS",
+      "disposition": "selected",
+      "reason": "Verify concrete local execution authentication, credential handling and untrusted SVG boundaries."
+    },
+    {
+      "id": "command:GVA",
+      "disposition": "selected",
+      "reason": "Check new modal/menu keyboard focus and responsive controls using existing accessible patterns."
+    },
+    {
+      "id": "command:GVP",
+      "disposition": "not-applicable",
+      "reason": "No measured performance regression; bounded SVG/process workloads are checked within implementation/unit review."
+    },
+    {
+      "id": "command:GVD",
+      "disposition": "selected",
+      "reason": "Document actual companion setup, supported providers, account distinction, privacy and storage limits."
+    },
+    {
+      "id": "command:GCL",
+      "disposition": "not-applicable",
+      "reason": "No cleanup request; fix only scoped implementation defects."
+    },
+    {
+      "id": "command:GRC",
+      "disposition": "not-applicable",
+      "reason": "Repository contribution scouting is unrelated to the explicit feature scope."
+    },
+    {
+      "id": "stage:research-technical",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GRS."
+    },
+    {
+      "id": "stage:discover-contributions",
+      "disposition": "not-applicable",
+      "reason": "No contribution opportunity search requested."
+    },
+    {
+      "id": "stage:assess-codebase",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GAS."
+    },
+    {
+      "id": "stage:diagnose-failure",
+      "disposition": "not-applicable",
+      "reason": "New AI behavior is absent rather than a reproduced current bug; concrete package defects are in current assessment."
+    },
+    {
+      "id": "stage:extract-behaviour-spec",
+      "disposition": "selected",
+      "reason": "Preserve source/result identities, retry invalidation, local privacy, zero-difference verification and shared navigation."
+    },
+    {
+      "id": "stage:plan-goals",
+      "disposition": "not-applicable",
+      "reason": "Existing precise requirements plus GPP suffice."
+    },
+    {
+      "id": "stage:design-architecture",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GAA."
+    },
+    {
+      "id": "stage:design-ui",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GDS."
+    },
+    {
+      "id": "stage:review-ui-spec",
+      "disposition": "not-applicable",
+      "reason": "Independent GPR already reviews the small reused-component design specification."
+    },
+    {
+      "id": "stage:plan-code",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GPP."
+    },
+    {
+      "id": "stage:plan-tests",
+      "disposition": "not-applicable",
+      "reason": "Test planning is mapped in GPP, avoiding a second plan owner."
+    },
+    {
+      "id": "stage:review-plan",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GPR."
+    },
+    {
+      "id": "stage:write-red-tests",
+      "disposition": "not-applicable",
+      "reason": "Focused regression assertions will be written by the execution owner; no required standalone red gate."
+    },
+    {
+      "id": "stage:execute-plan",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GEX."
+    },
+    {
+      "id": "stage:fix-reviewed-defects",
+      "disposition": "not-applicable",
+      "reason": "Any scoped review repair returns to the existing GEX owner rather than starting another stage."
+    },
+    {
+      "id": "stage:run-tests",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GUT."
+    },
+    {
+      "id": "stage:run-e2e",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GVE."
+    },
+    {
+      "id": "stage:review-code",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GVR."
+    },
+    {
+      "id": "stage:review-ui",
+      "disposition": "not-applicable",
+      "reason": "Retained design and new UI are checked in GVE/GVA; not a screenshot reconstruction task."
+    },
+    {
+      "id": "stage:review-accessibility",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GVA."
+    },
+    {
+      "id": "stage:review-security",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GVS."
+    },
+    {
+      "id": "stage:review-dependencies",
+      "disposition": "not-applicable",
+      "reason": "Only supplied source package and necessary maintained parser dependency; license/process review already covered by GAS/GRS/GVS."
+    },
+    {
+      "id": "stage:verify-goal",
+      "disposition": "selected",
+      "reason": "Separate implementation, fixture tests, pushed/private release and actual user-account inference evidence."
+    },
+    {
+      "id": "stage:update-docs",
+      "disposition": "not-applicable",
+      "reason": "Equivalent operation is performed once through command:GVD."
+    },
+    {
+      "id": "stage:verify-docs",
+      "disposition": "not-applicable",
+      "reason": "GVD and final goal check verify actual setup instructions; separate doc-only pass not needed."
+    },
+    {
+      "id": "stage:verify-performance",
+      "disposition": "not-applicable",
+      "reason": "No new performance optimization; bounded output/queue checks are part of GUT."
+    },
+    {
+      "id": "pipeline:quick-safe-change",
+      "disposition": "not-applicable",
+      "reason": "Quick Safe Change is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "pipeline:standard-verified-build",
+      "disposition": "not-applicable",
+      "reason": "Standard Verified Build is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "pipeline:test-first-feature",
+      "disposition": "not-applicable",
+      "reason": "Test-First Feature is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "pipeline:ui-design-fidelity",
+      "disposition": "not-applicable",
+      "reason": "UI & Design Fidelity is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "pipeline:high-assurance-delivery",
+      "disposition": "not-applicable",
+      "reason": "High Assurance Delivery is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "specialist:react-frontend",
+      "disposition": "selected",
+      "reason": "Shared React App settings/modal/candidate UI state and cleanup."
+    },
+    {
+      "id": "specialist:editor-schema",
+      "disposition": "selected",
+      "reason": "Independent saved artwork identities, additive IDB migration, recolor round trips."
+    },
+    {
+      "id": "specialist:wordpress-woocommerce",
+      "disposition": "not-applicable",
+      "reason": "No WordPress or WooCommerce runtime."
+    },
+    {
+      "id": "specialist:whmcs",
+      "disposition": "not-applicable",
+      "reason": "No billing/WHMCS module."
+    },
+    {
+      "id": "specialist:vscode-agents-pro",
+      "disposition": "not-applicable",
+      "reason": "No extension or Agents Pro host is being changed."
+    },
+    {
+      "id": "specialist:plugins-mcp",
+      "disposition": "not-applicable",
+      "reason": "Supplied package is a Node library, not a plugin/MCP product; integration uses infrastructure lens."
+    },
+    {
+      "id": "specialist:browser-extraction",
+      "disposition": "not-applicable",
+      "reason": "No website extraction or browser-extension changes."
+    },
+    {
+      "id": "specialist:native-yaml-archives",
+      "disposition": "not-applicable",
+      "reason": "No native YAML or archive reconstruction requested."
+    },
+    {
+      "id": "specialist:content-seo",
+      "disposition": "not-applicable",
+      "reason": "No SEO or content migration."
+    },
+    {
+      "id": "specialist:python-data",
+      "disposition": "not-applicable",
+      "reason": "Product runtime is TypeScript/Node, not a Python pipeline."
+    },
+    {
+      "id": "specialist:database",
+      "disposition": "not-applicable",
+      "reason": "Additive IndexedDB saved document schema is covered by editor-schema; no SQL/query migration."
+    },
+    {
+      "id": "specialist:infrastructure",
+      "disposition": "selected",
+      "reason": "Paired loopback Node execution and existing Cloudflare/Sites identity/release boundaries."
+    },
+    {
+      "id": "specialist:migration-release",
+      "disposition": "not-applicable",
+      "reason": "Root Sites/source helper owns same-site release; existing record/checkpoint rules cover resume without a separate migration specialist."
+    },
+    {
+      "id": "specialist:realtime-native",
+      "disposition": "not-applicable",
+      "reason": "No device-media/native app integration; subprocess lifecycle covered by infrastructure."
+    },
+    {
+      "id": "specialist:reference-fidelity",
+      "disposition": "not-applicable",
+      "reason": "No new screenshot reconstruction; existing components remain canonical."
+    },
+    {
+      "id": "specialist:design-system",
+      "disposition": "not-applicable",
+      "reason": "No new theme/preset rollout; React lens reuses existing styles."
+    },
+    {
+      "id": "specialist:image-art-direction",
+      "disposition": "not-applicable",
+      "reason": "No generated raster asset set; SVG candidates are user-triggered product outputs."
+    },
+    {
+      "id": "specialist:motion-interaction",
+      "disposition": "not-applicable",
+      "reason": "No requested motion reconstruction."
+    },
+    {
+      "id": "specialist:media-library",
+      "disposition": "selected",
+      "reason": "Reuse existing tree/source blobs/folders and exact fidelity/privacy contract."
+    },
+    {
+      "id": "specialist:artifact-delivery",
+      "disposition": "not-applicable",
+      "reason": "Root existing Sites packaging provides release closure; no separate multi-format artifact bundle."
+    },
+    {
+      "id": "specialist:usage-learning",
+      "disposition": "not-applicable",
+      "reason": "No plugin/workflow learning update requested."
+    },
+    {
+      "id": "recipe:reference-rebuild",
+      "disposition": "not-applicable",
+      "reason": "Rebuild from a supplied reference is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "recipe:visual-correction",
+      "disposition": "not-applicable",
+      "reason": "Repair precise visual feedback is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "recipe:design-system-rollout",
+      "disposition": "not-applicable",
+      "reason": "Roll out shared design changes is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "recipe:native-yaml-conversion",
+      "disposition": "not-applicable",
+      "reason": "Convert to native editable YAML is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "recipe:asset-production",
+      "disposition": "not-applicable",
+      "reason": "Produce or edit a visual asset set is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "recipe:motion-reconstruction",
+      "disposition": "not-applicable",
+      "reason": "Reconstruct and verify motion is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "recipe:media-library-extension",
+      "disposition": "covered",
+      "coveredBy": [
+        "stage:extract-behaviour-spec",
+        "stage:verify-goal"
+      ],
+      "reason": "Borrow preservation and final outcome checks; equivalent assessment/plan/build/test operations use atomic G commands once."
+    },
+    {
+      "id": "recipe:content-site-delivery",
+      "disposition": "not-applicable",
+      "reason": "Deliver a source-grounded content site is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "recipe:artifact-handoff",
+      "disposition": "not-applicable",
+      "reason": "Verify and deliver an artifact is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    },
+    {
+      "id": "recipe:plugin-evolution",
+      "disposition": "not-applicable",
+      "reason": "Improve a plugin from actual usage is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+    }
+  ],
+  "chain": [
+    {
+      "id": "command:GAS",
+      "why": "Trace the current shared App/sidebar, icon storage, Worker identity and supplied package before additions."
+    },
+    {
+      "id": "command:GRS",
+      "why": "Verify current Codex account/vision/permissions, provider capability and hosted loopback constraints from primary docs."
+    },
+    {
+      "id": "stage:extract-behaviour-spec",
+      "why": "Preserve source/result identities, retry invalidation, local privacy, zero-difference verification and shared navigation."
+    },
+    {
+      "id": "command:GAA",
+      "why": "Resolve the real browser/Worker/Node/CLI authentication and execution boundary."
+    },
+    {
+      "id": "command:GDA",
+      "why": "Map existing menu, Modal, toolbar and tree; distinguish source audit from live sign-in-blocked UI."
+    },
+    {
+      "id": "command:GDS",
+      "why": "Specify a compact shared AI/Profile dialog, Convert/Saved view and same-page candidate review."
+    },
+    {
+      "id": "command:GPP",
+      "why": "Map S4 and retained constraints into implementation steps and decisive checks on existing owners."
+    },
+    {
+      "id": "command:GPR",
+      "why": "Independently review AI scope, auth, SVG handling, data migration and real-account verification before implementation."
+    },
+    {
+      "id": "command:GEX",
+      "why": "Implement reviewed shared AI, saved artwork, UI and platform-account integration with partitioned ownership."
+    },
+    {
+      "id": "command:GUT",
+      "why": "Verify process/body/schema/auth bounds and actual storage/recolor logic with focused regression checks."
+    },
+    {
+      "id": "command:GVE",
+      "why": "Exercise same-page SVG candidate, settings, save/reload/recolor/download and existing categories in supported browser."
+    },
+    {
+      "id": "command:GVR",
+      "why": "Independently review the implemented diff and original preservation/cancellation across modules."
+    },
+    {
+      "id": "command:GVS",
+      "why": "Verify concrete local execution authentication, credential handling and untrusted SVG boundaries."
+    },
+    {
+      "id": "command:GVA",
+      "why": "Check new modal/menu keyboard focus and responsive controls using existing accessible patterns."
+    },
+    {
+      "id": "command:GVD",
+      "why": "Document actual companion setup, supported providers, account distinction, privacy and storage limits."
+    },
+    {
+      "id": "stage:verify-goal",
+      "why": "Separate implementation, fixture tests, pushed/private release and actual user-account inference evidence."
+    }
+  ],
+  "specialists": [
+    "specialist:react-frontend",
+    "specialist:editor-schema",
+    "specialist:media-library",
+    "specialist:infrastructure"
+  ],
+  "existingEvidence": [
+    {
+      "artifact": "request",
+      "record": "../request.md"
+    },
+    {
+      "artifact": "repo.snapshot",
+      "record": "GitHub ca95e01eec08cc9607f3dff3e6693e77785bbe94"
+    }
+  ]
+}

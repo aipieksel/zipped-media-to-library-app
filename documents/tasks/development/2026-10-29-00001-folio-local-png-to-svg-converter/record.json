@@ -2,28 +2,26 @@
   "schema": "project-development-plan/v1",
   "contractVersion": 2,
   "workflowPreset": "GAS",
-  "title": "Folio AI icon studio and shared account settings",
+  "title": "Folio sidebar, routed settings, accounts and shared workspace",
   "projectRoot": "/workspace/scratch/6d5f921cc245/folio",
   "recordPath": "documents/tasks/development/2026-10-29-00001-folio-local-png-to-svg-converter",
-  "status": "blocked",
-  "readiness": "blocked",
-  "blockers": [
-    "R29: A real attached-image SVG request through the user’s own ChatGPT-authenticated Codex companion has not run. The user must start the companion on their computer and pair the browser; this environment cannot start that local process or supply their login. R12 overall completion remains open."
-  ],
-  "planRevision": 9,
+  "status": "draft",
+  "readiness": "not_ready",
+  "blockers": [],
+  "planRevision": 10,
   "critiqueOutcome": "revised",
   "reviewedPlanRevision": 9,
   "sourceBaseline": {
-    "description": "Clean GitHub main ca95e01; existing owner-private Site version11 source 1e84baac. Three independent current source/package/auth assessments. New scope only; previous completed release preserved.",
-    "revision": "ca95e01eec08cc9607f3dff3e6693e77785bbe94",
+    "description": "Clean GitHub main and feature branch at bdf7330; existing owner-private Site version12. Three independent current revision-10 source/research/architecture assessments. No application edits before admission.",
+    "revision": "bdf73305ff51dcd59c2b7c9a94a66501845ca560",
     "dirtyPaths": []
   },
   "scope": {
     "in": [
-      "S1–S3 existing accepted app; S4 shared AI companion/package integration, same-page SVG review, original Images to SVG entry, curated device-local icon library and recolor/export, compact shared settings/profile with existing Site authentication, tests and frequent commits/pushes/private publication."
+      "S5 supersedes placement/modal/provider-only account decisions: shared custom dropdown, full-height canonical sidebar, routed Settings, independent Folio credentials, one shared private workspace and semantic appearance colors. Preserve S1–S4 accepted conversion, AI and library behavior, privacy, frequent checkpoints and same Site."
     ],
     "out": [
-      "Private source media or credentials in public GitHub; automatic AI uploads; unsupported DeepSeek adapter; paid API-key fallback; raster-image generation not provided by this package; separate OAuth/password store; new Site or broader audience; hidden account/credential extraction."
+      "No new Site or automatic audience expansion; no teammate email/invitation sending; no production password invented; no unrequested provider/API integration; no private media, account IDs, tokens or credentials in public GitHub; no implicit upload of pre-existing device-local files."
     ]
   },
   "requestSources": [
@@ -56,6 +54,12 @@
       "role": "user",
       "origin": "Current conversation, 31 October 2026, Africa/Johannesburg; attached ai-cli-integration.zip and AI integration amendment",
       "text": "[$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) Okay, so what I want us to do now is I want us to integrate AI into the system, especially for the icons, so that when I convert to SVG, I can then also, on that exact page where I convert it, send it to AI to create it as an SVG, to recreate it or clean it up as an SVG. Now, you'll see that I've added a package here, which allows me to use my OpenAI account to use AI instead of the API, right? So you must integrate that into our app, and not just for the icons, but as a whole, so that future features and other things, such as the images, can also use it. Because what I want to do is I also want to have AI fix images or HTML— well, specifically images, you know, like in my images library. I want to be able to select an image and send it to the AI to do whatever. So just keep that in mind. So we should probably also then add a settings page from the menu that goes to settings, and then there should be the AI settings and model settings, I would think, and also which one to use: Grok, DeepSeek, OpenAI, etc., because I think the package does have those options, right? So yeah, please do that, test that you can test the AI with my OpenAI account, right? So the goal then is: so what I did previously is I went and I cleaned, or I converted icons to SVG, and they weren't perfect. Then I downloaded those and I gave it to you in another chat to clean up and improve, and then you gave me back perfect SVGs, which you recreated. Now I want to repeat that logic through our app every time. So please make sure that your prompt is according to that, etc., etc. And what we should also do is have an icon library, you know, so I can choose which to save to our library, and they will always persist, right? So that is important to do that. So you should update the UI accordingly. Yeah, please do that. And then for all of these ones that are saved, I want to be able to change the color of them and download them with that saved color. So you must make provision for that, please, and update it accordingly. Now once again, please keep our UI as clean and as beautiful as possible. Don't add or invent things that is not really needed if we can use existing components that we have, please. Yeah, just perhaps, I think we can add a menu, because we are going to need to have a settings menu, and actually we need to add a login, an account login for this, please. And that will also require then a password page or a profile page, right? So while you make the settings page for the AI, you can as well add a profile tab for the profile settings and password, etc., etc., please."
+    },
+    {
+      "id": "S5",
+      "role": "user",
+      "origin": "Current conversation amendment, 31 October 2026 UTC; full-height sidebar, custom dropdowns, Settings page, Folio accounts/shared data and appearance",
+      "text": "[$ai-development-workflow](app://plugins_6ac8be18596c8191a207070d92097236) Okay, so, yeah, a couple of things that we need to do. So instead of having the HTML images and the icons buttons there, let's do this. Above the search menu, sorry, above the search item in the sidebar, where it says for the sidebar top section, right? Let's add a drop-down there instead that allows me to switch between HTML images and icons, right? That would be great. Use our own custom pop-over as a drop-down, which you need to create, and always use that for all of the drop-downs that we have. You need to replace that. Then I've noticed that on the icons tab where it says convert and save, the save is going onto two lines. Fix that. Yeah. So then when you have moved those three buttons into the drop-down, you should then make the entire left sidebar from top to bottom, right, without anything on top of it. So what I mean by that is we should then get rid of that top bar, and for the settings, there should be a cogwheel button or a buttons section in the left sidebar, right, where you can click on the settings or whatever. It's standard industry practice, so I'm sure that you'll be able to find out what I mean and implement accordingly. You can look at shared CDN UI. Please do that and use that for your research. Then when I said I wanted a settings page, I didn't say I want a settings pop-up, right? When you click on settings, it should take you to a proper page with a left sidebar, with tabs and the content on the right, and a logout button. Users need to be able to log out and log in. Well, not users, but just for security. I want that, because I am going to extend this to do other features as well. So the profile that I see you have here looks like it is using my ChatGPT login details, but I want users to be able to register. Well, not users, just user accounts, right? For example, if I want my teammate to also use this. But it's not individual data for each user. I mean, it's still the exact same data. Everyone sees the exact same thing, the exact same files, but it's just a different account that can log in and out. Please. And then in the settings, I also want to be able to change the accent color and the background color and the design system colors of the build, please."
     }
   ],
   "requestHashes": {
@@ -127,11 +131,12 @@
     },
     {
       "id": "R8",
-      "text": "Keep ordinary conversion and stored media device-local; send only explicitly selected AI inputs through the paired CLI to the selected provider; keep private media and credentials out of GitHub.",
+      "text": "Keep conversion local and AI sends explicit; use the private shared workspace for team files, preserve existing device-only files until deliberate migration, and keep media/credentials out of GitHub.",
       "sources": [
         "S1",
         "S2",
-        "S4"
+        "S4",
+        "S5"
       ],
       "kind": "requested"
     },
@@ -190,9 +195,10 @@
     },
     {
       "id": "R15",
-      "text": "Move HTML and Images to top navigation and add Icons alongside them.",
+      "text": "Switch HTML, Images and Icons using one custom dropdown above sidebar search; remove the old top navigation buttons.",
       "sources": [
-        "S2"
+        "S2",
+        "S5"
       ],
       "kind": "requested"
     },
@@ -222,9 +228,10 @@
     },
     {
       "id": "R19",
-      "text": "Persist original icons, folders and completed results locally across navigation and reload.",
+      "text": "Preserve original icon sources, folders and completed conversions across navigation/reload while integrating shared storage without loss of existing local data.",
       "sources": [
-        "S2"
+        "S2",
+        "S5"
       ],
       "kind": "requested"
     },
@@ -255,10 +262,11 @@
     },
     {
       "id": "R23",
-      "text": "Preserve existing HTML/Image Library data, backend contracts and interactions.",
+      "text": "Preserve existing HTML/Image Library data and interactions while adding authenticated shared persistence.",
       "sources": [
         "S1",
-        "S2"
+        "S2",
+        "S5"
       ],
       "kind": "requested"
     },
@@ -320,43 +328,97 @@
     },
     {
       "id": "R31",
-      "text": "Allow explicit saving of chosen conversion or AI results into a durable icon library independent of temporary conversion results.",
+      "text": "Save chosen conversion or AI artwork independently in the durable shared icon library.",
       "sources": [
-        "S4"
+        "S4",
+        "S5"
       ],
       "kind": "requested"
     },
     {
       "id": "R32",
-      "text": "Recolor saved vector icons, persist the selected color, and download individual or ZIP SVGs containing that same color.",
+      "text": "Recolor saved icons, persist the chosen color in the shared library, and export SVGs with that color.",
       "sources": [
-        "S4"
+        "S4",
+        "S5"
       ],
       "kind": "requested"
     },
     {
       "id": "R33",
-      "text": "Add a compact global menu and Settings with AI and Profile tabs using the established components and shared sidebar.",
+      "text": "Provide a proper routed Settings page with left navigation, right content, AI/Profile sections and Logout, reachable from the sidebar cog.",
       "sources": [
-        "S4"
+        "S4",
+        "S5"
       ],
       "kind": "requested"
     },
     {
       "id": "R34",
-      "text": "Expose real account sign-in/sign-out through the existing Site authentication boundary.",
+      "text": "Provide genuine Folio account registration, login and revocable logout, separate from ChatGPT/AI provider identity.",
       "sources": [
-        "S4"
+        "S4",
+        "S5"
       ],
       "kind": "requested"
     },
     {
       "id": "R35",
-      "text": "Show the authenticated profile and profile preferences, with accurate password/security management through the account provider.",
+      "text": "Provide Folio profile editing and current-password-verified password changes with honest recovery and hosting access boundaries.",
       "sources": [
-        "S4"
+        "S4",
+        "S5"
       ],
       "kind": "requested"
+    },
+    {
+      "id": "R36",
+      "text": "Use the same custom popover selection control for every existing dropdown, retaining values, keyboard behavior, focus and nested dialog/popover operation.",
+      "sources": [
+        "S5"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R37",
+      "text": "Keep Convert and Saved labels and counts on one line while the toolbar adapts to narrow widths.",
+      "sources": [
+        "S5"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R38",
+      "text": "Make the canonical sidebar full-height with no top bar and a footer Settings action; preserve mobile navigation and the shared tree.",
+      "sources": [
+        "S5"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R39",
+      "text": "Allow accent, background and design-system color changes in Appearance settings, with durable save/reset and consistent readable application surfaces.",
+      "sources": [
+        "S5"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R40",
+      "text": "Give all authorized accounts the same shared files, folders, organization and saved icons, with server-enforced access and conflict-safe durable writes.",
+      "sources": [
+        "S5"
+      ],
+      "kind": "requested"
+    },
+    {
+      "id": "R41",
+      "text": "Preserve existing device-local data and provide a reviewed, retryable migration into the same shared workspace without silent uploads or duplicate imports.",
+      "sources": [
+        "S5"
+      ],
+      "kind": "necessary",
+      "justification": "C6/C7 and architecture assessment: current IndexedDB imports and icons are device-local. Sharing requires a deliberate transfer and stable IDs while preserving existing files under the original local-only promise."
     }
   ],
   "steps": [
@@ -723,6 +785,199 @@
       "dependsOn": [
         "P12"
       ]
+    },
+    {
+      "id": "P14",
+      "requirements": [
+        "R12",
+        "R13",
+        "R15",
+        "R33",
+        "R34",
+        "R35",
+        "R36",
+        "R37",
+        "R38",
+        "R39",
+        "R40",
+        "R41"
+      ],
+      "paths": [
+        "documents/tasks/development"
+      ],
+      "change": "Capture S5, preserve revision9, source/design/account assessment, primary shadcn/Base UI/auth research, concrete design and server/client contracts, independent current-revision critique and pushed checkpoint.",
+      "dependsOn": []
+    },
+    {
+      "id": "P15",
+      "requirements": [
+        "R1",
+        "R5",
+        "R15",
+        "R16",
+        "R17",
+        "R23",
+        "R33",
+        "R36",
+        "R37",
+        "R38"
+      ],
+      "paths": [
+        "src/App.tsx",
+        "src/components",
+        "src/styles.css",
+        "package.json",
+        "package-lock.json",
+        "tests"
+      ],
+      "change": "Pin Base UI1.9.0, create Folio PopoverSelect and migrate all19 consumers plus workspace switcher. Keep App controller ownership, remove topbar, add sidebar footer/settings hash routes, keyboard/portal coordination and no-wrap segmented control. Central installer/build ownership.",
+      "dependsOn": [
+        "P14"
+      ]
+    },
+    {
+      "id": "P16",
+      "requirements": [
+        "R8",
+        "R23",
+        "R34",
+        "R35",
+        "R40"
+      ],
+      "paths": [
+        "worker",
+        "src/account",
+        "src/components/ProfileSettings.tsx",
+        "src/components/AuthPage.tsx",
+        "db",
+        "scripts/build-worker.mjs",
+        ".openai/hosting.json",
+        "package.json",
+        "package-lock.json",
+        "tests"
+      ],
+      "change": "Bounded Better Auth1.7.14 Worker/D1 compatibility spike; use vetted slow hash and database-backed sessions. Configure additive D1 migrations, trusted-owner bootstrap, invitation registration, login/logout/profile/password/recovery and membership checks on all private APIs. Preserve outer Site privacy; do not create production credentials or invite anyone. Protected collection/media responses must be private,no-store (including HEAD/conditional responses), and logout clears UI/object URLs without erasing legacy imports. Recovery is a single-use expiring reset token created only by an authenticated owner (current-password step-up) for a member, or by the configured trusted Site owner for the owner account; tokens are hashed and changing a password revokes existing sessions.",
+      "dependsOn": [
+        "P14"
+      ]
+    },
+    {
+      "id": "P17",
+      "requirements": [
+        "R5",
+        "R7",
+        "R8",
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R23",
+        "R31",
+        "R32",
+        "R40",
+        "R41"
+      ],
+      "paths": [
+        "worker/workspace.mjs",
+        "src/shared",
+        "src/db.ts",
+        "src/icon-collection.ts",
+        "src/useIconCollection.ts",
+        "src/App.tsx",
+        "tests"
+      ],
+      "change": "Implement one workspace shared storage service: D1 revisioned metadata, R2 immutable checksummed blobs; atomic manifest/reference publication, expected-revision conflicts, unchanged legacy collection. Browser adapters preserve existing methods and use separate shared caches, hydrate server truth, await server acknowledgement and retain failure data. Explicit reviewed migration preserves local originals, stable IDs, folders, recolor and provenance; retry idempotently. Shared refresh on visibility and bounded polling.",
+      "dependsOn": [
+        "P16"
+      ]
+    },
+    {
+      "id": "P18",
+      "requirements": [
+        "R33",
+        "R39",
+        "R40"
+      ],
+      "paths": [
+        "src/appearance.ts",
+        "src/components/AppearanceSettings.tsx",
+        "src/styles.css",
+        "src/components/*.css",
+        "src/App.tsx",
+        "tests"
+      ],
+      "change": "One typed hex-color palette with current defaults; accent foreground/hover pairs derived, semantic surfaces/text/borders. Appearance draft preview, save/reset through shared settings owner; keep artwork, imported HTML and checker/light/dark preview palettes independent.",
+      "dependsOn": [
+        "P15",
+        "P17"
+      ]
+    },
+    {
+      "id": "P19",
+      "requirements": [
+        "R1",
+        "R5",
+        "R7",
+        "R8",
+        "R9",
+        "R12",
+        "R15",
+        "R17",
+        "R19",
+        "R23",
+        "R24",
+        "R25",
+        "R26",
+        "R28",
+        "R31",
+        "R32",
+        "R33",
+        "R34",
+        "R35",
+        "R36",
+        "R37",
+        "R38",
+        "R39",
+        "R40",
+        "R41"
+      ],
+      "paths": [
+        "tests",
+        "documents/tasks/development"
+      ],
+      "change": "Focused auth/shared-store/UI regressions, actual dropdown and routed-page browser journeys, two isolated member clients, conflict/migration/logout tests, independent code/security/accessibility review and current build/privacy gates. Preserve explicit distinction between fixture and live production credential/inference evidence.",
+      "dependsOn": [
+        "P15",
+        "P16",
+        "P17",
+        "P18"
+      ]
+    },
+    {
+      "id": "P20",
+      "requirements": [
+        "R8",
+        "R11",
+        "R12",
+        "R13",
+        "R14",
+        "R29",
+        "R34",
+        "R35",
+        "R40",
+        "R41"
+      ],
+      "paths": [
+        "README.md",
+        "PRIVACY.md",
+        "THIRD_PARTY_NOTICES.md",
+        "documents/tasks/development",
+        ".openai/hosting.json"
+      ],
+      "change": "Document current features/account setup and data ownership. Commit/push milestones with leases, same private Site native-source build/migrations/publication and verification. User enters owner password; a real teammate needs named Site access. Preserve R29 live-companion prerequisite as a separate open goal.",
+      "dependsOn": [
+        "P19"
+      ]
     }
   ],
   "checks": [
@@ -918,6 +1173,116 @@
       "method": "Independent review, repository/privacy/build, remote readback and private Site release, real user-account SVG test",
       "expected": "Pushed milestone SHAs, package/source license/closure, verified deployment version; real inference separately checked or blocked with exact local activation prerequisite.",
       "boundary": "Prepared/pushed/deployed/real-account-tested are distinct states."
+    },
+    {
+      "id": "T26",
+      "requirements": [
+        "R1",
+        "R15",
+        "R16",
+        "R33",
+        "R36",
+        "R37",
+        "R38"
+      ],
+      "method": "Desktop/narrow real-browser shell, all19 dropdown consumers+workspace, keyboard/typeahead/disabled options, nested rich popover and native capture dialog, direct Settings hash/Back/reload.",
+      "expected": "Full-height canonical sidebar, no topbar, same control everywhere, atomic Saved count, inner popup Escape first, page-based Settings, preserved workspace state.",
+      "boundary": "Rendered UI evidence distinguished from typecheck and source inventory."
+    },
+    {
+      "id": "T27",
+      "requirements": [
+        "R8",
+        "R23",
+        "R34",
+        "R35",
+        "R40"
+      ],
+      "method": "Actual server credential/session tests with isolated D1 storage: bootstrap authorization/concurrency, invited registration, signin/signout, password change/revocation, expired/disabled users, CSRF/rate limits, last-owner protection and protected legacy blob reads. Test previously fetched media GET/HEAD/conditional requests after logout, no immutable cache headers; recovery permission, recipient binding, expiry, replay rejection, changed-password login and prior-session revocation.",
+      "expected": "No private metadata/bytes for denied sessions; real password hash/session persistence and revocation; no self-escalation.",
+      "boundary": "Synthetic accounts only; hosted owner setup requires user password; outer Site gate unchanged."
+    },
+    {
+      "id": "T28",
+      "requirements": [
+        "R5",
+        "R7",
+        "R8",
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R23",
+        "R31",
+        "R32",
+        "R40",
+        "R41"
+      ],
+      "method": "Two independent authenticated client/storage contexts import and reload same files/folders/icons/recolor; interrupted upload, missing blob, stale revision, mutation failure, migration retry and logout/back.",
+      "expected": "Same IDs/bytes/state for all members; publish atomically, conflicts explicit, original browser data retained, duplicate-free retry, no stale protected UI after signout.",
+      "boundary": "Legacy R2 catalogue is not downloaded/reingested; production media not used as fixtures."
+    },
+    {
+      "id": "T29",
+      "requirements": [
+        "R33",
+        "R39",
+        "R40"
+      ],
+      "method": "Color validator/contrast/token tests plus native UI default/dark/vivid save/reload/reset across sidebar/tree/popovers/settings/dialogs. Compare artwork bytes unchanged.",
+      "expected": "Appearance settings persist through shared owner; surfaces remain readable and icons/previews unchanged.",
+      "boundary": "Finite safe CSS colors only; declared selected palette pairs are tested."
+    },
+    {
+      "id": "T30",
+      "requirements": [
+        "R1",
+        "R5",
+        "R7",
+        "R8",
+        "R9",
+        "R12",
+        "R15",
+        "R17",
+        "R19",
+        "R23",
+        "R24",
+        "R25",
+        "R26",
+        "R28",
+        "R31",
+        "R32",
+        "R33",
+        "R34",
+        "R35",
+        "R36",
+        "R37",
+        "R38",
+        "R39",
+        "R40",
+        "R41"
+      ],
+      "method": "Independent implemented-diff code/security/a11y review, existing tests and focused new suite, final typecheck/build/privacy.",
+      "expected": "No unresolved material findings; preserved native PNG/WebP conversion and explicit-only AI behavior; evidence bound to final changes.",
+      "boundary": "Do not rerun unavailable real CLI inference or claim it from mocks."
+    },
+    {
+      "id": "T31",
+      "requirements": [
+        "R8",
+        "R11",
+        "R12",
+        "R13",
+        "R14",
+        "R29",
+        "R34",
+        "R35",
+        "R40",
+        "R41"
+      ],
+      "method": "Remote tree/head readback after each checkpoint; native Site build/package/migration/publication receipt; hosted bootstrap state and accessible UI without creating production credentials.",
+      "expected": "Source checkpointed on GitHub, same Site/project/R2/privacy, additive D1, truthful setup/teammate/AI handoff.",
+      "boundary": "User password and unidentified teammate are not automated; actual hosted cookie login remains open until owner activates."
     }
   ],
   "planHashes": {
@@ -926,7 +1291,7 @@
     "test-plan.md": "22a181b962ae10d9ef5acea1dbaf9723754432aee85b67be0584055e3eec9bb7"
   },
   "createdAt": "2026-10-29T20:48:01.318190+08:00",
-  "updatedAt": "2026-10-31T16:44:29.172720+00:00",
+  "updatedAt": "2026-10-31T18:12:35.085144+00:00",
   "files": [
     "checklist.md",
     "fix-plan.md",

@@ -1,55 +1,67 @@
-# Revision 9 verification
+# Revision 10 — decisive verification
 
-Retain prior checks T1–T19 where unchanged. Affected prior outcomes require the following new targeted evidence. Run test/build/privacy after stable inputs; no duplicated full builds.
+T1–T25 retained in record.json and revision9 archive support unchanged requirements; their superseded topbar/modal/local-only assertions do not govern S5. Current checks below cover every affected outcome. Synthetic data only; each report separates source/unit, native browser and hosted evidence.
 
-## T20 — R25, R28, R29, R8
+## T26
 
-Method: Companion Node integration with injected fake executable, plus explicit real-host test
+Requirements: R1, R15, R16, R33, R36, R37, R38.
 
-Expected: Origin/Host/token and bad-body/model/engine rejected before subprocess; bound output/files/time/concurrency, kill escalation and cleanup; package source integration and capability gating. Real authentication/inference remains separately witnessed.
+Method: Desktop/narrow real-browser shell, all19 dropdown consumers+workspace, keyboard/typeahead/disabled options, nested rich popover and native capture dialog, direct Settings hash/Back/reload.
 
-Boundary: Fixtures prove adapter/security behavior, not the user’s OpenAI entitlement or local installation.
+Expected: Full-height canonical sidebar, no topbar, same control everywhere, atomic Saved count, inner popup Escape first, page-based Settings, preserved workspace state.
 
-## T21 — R26, R27, R9, R11, R30
+Boundary: Rendered UI evidence distinguished from typecheck and source inventory.
 
-Method: SVG validator tests and actual native render / Images-to-AI selection journey
+## T27
 
-Expected: Reject scripts/external references/bitmap/foreignObject/style entities; preserve safe editable geometry/native viewport; actual attached source and correct original bytes; candidate comparison and meaningful prompt; pixel status from measured bytes only.
+Requirements: R8, R23, R34, R35, R40.
 
-Boundary: AI output is approximate; fixture returns are not a model quality test.
+Method: Actual server credential/session tests with isolated D1 storage: bootstrap authorization/concurrency, invited registration, signin/signout, password change/revocation, expired/disabled users, CSRF/rate limits, last-owner protection and protected legacy blob reads.
 
-## T22 — R31, R32, R7, R19
+Expected: No private metadata/bytes for denied sessions; real password hash/session persistence and revocation; no self-escalation.
 
-Method: Real IndexedDB v1-to-v2 preservation, save/reload/recolor/reset/delete/export tests
+Boundary: Synthetic accounts only; hosted owner setup requires user password; outer Site gate unchanged.
 
-Expected: Saved artwork survives conversion retry/deletion/navigation/reload, retains source identity and favorite/folder operations; actual download bytes match preview color, including alpha/none/gradient behavior and collision-safe ZIP.
+## T28
 
-Boundary: Browser persistence remains subject to clearing/quota; no cross-device cloud sync promised.
+Requirements: R5, R7, R8, R17, R18, R19, R20, R23, R31, R32, R40, R41.
 
-## T23 — R1, R6, R8, R15, R16, R23, R28, R30, R33
+Method: Two independent authenticated client/storage contexts import and reload same files/folders/icons/recolor; interrupted upload, missing blob, stale revision, mutation failure, migration retry and logout/back.
 
-Method: Browser desktop/narrow journeys and focused regression checks
+Expected: Same IDs/bytes/state for all members; publish atomically, conflicts explicit, original browser data retained, duplicate-free retry, no stale protected UI after signout.
 
-Expected: Single shared tree and existing conversion controls retained; settings keyboard/focus/errors/loading; no auto AI transmission; deliberate source-action preview; safe stale/cancel results and original preservation.
+Boundary: Legacy R2 catalogue is not downloaded/reingested; production media not used as fixtures.
 
-Boundary: Published loopback permissions require the user’s actual browser/companion.
+## T29
 
-## T24 — R34, R35
+Requirements: R33, R39, R40.
 
-Method: Worker identity unit tests plus real Site account view when signed in
+Method: Color validator/contrast/token tests plus native UI default/dark/vivid save/reload/reset across sidebar/tree/popovers/settings/dialogs. Compare artwork bytes unchanged.
 
-Expected: Private uncached identity endpoint, missing identity not invented, correct encoded name and auth paths; Profile shows authority; password flow stays at provider.
+Expected: Appearance settings persist through shared owner; surfaces remain readable and icons/previews unchanged.
 
-Boundary: Do not change passwords or pretend a local display-name setting creates authentication.
+Boundary: Finite safe CSS colors only; declared selected palette pairs are tested.
 
-## T25 — R12, R13, R14, R25, R29
+## T30
 
-Method: Independent review, repository/privacy/build, remote readback and private Site release, real user-account SVG test
+Requirements: R1, R5, R7, R8, R9, R12, R15, R17, R19, R23, R24, R25, R26, R28, R31, R32, R33, R34, R35, R36, R37, R38, R39, R40, R41.
 
-Expected: Pushed milestone SHAs, package/source license/closure, verified deployment version; real inference separately checked or blocked with exact local activation prerequisite.
+Method: Independent implemented-diff code/security/a11y review, existing tests and focused new suite, final typecheck/build/privacy.
 
-Boundary: Prepared/pushed/deployed/real-account-tested are distinct states.
+Expected: No unresolved material findings; preserved native PNG/WebP conversion and explicit-only AI behavior; evidence bound to final changes.
 
-## Required F9–F11 assertions
+Boundary: Do not rerun unavailable real CLI inference or claim it from mocks.
 
-T20: unsupported controls, effective inherited/legacy conflicts, incomplete generation, tool-event termination, and zero inference calls before successful isolation gate. T22: immutable saved source/base independent of conversion and folder deletion, no orphaned records, forced transaction abort/no false success, embedded-only trusted save with recolor disabled, and exact reset bytes. T23: late results after navigation/retry/cancel/discard/deletion never attach to a new source. Each real account/installed CLI assertion must have separate nonfixture evidence.
+## T31
+
+Requirements: R8, R11, R12, R13, R14, R29, R34, R35, R40, R41.
+
+Method: Remote tree/head readback after each checkpoint; native Site build/package/migration/publication receipt; hosted bootstrap state and accessible UI without creating production credentials.
+
+Expected: Source checkpointed on GitHub, same Site/project/R2/privacy, additive D1, truthful setup/teammate/AI handoff.
+
+Boundary: User password and unidentified teammate are not automated; actual hosted cookie login remains open until owner activates.
+
+### T27 review additions
+
+Exercise cached GET/HEAD/conditional media access after logout and confirm no immutable response caching. Test password reset authority, recipient binding, expiry, replay rejection, new-password login and old-session revocation. These use isolated test identities; no production account is created.

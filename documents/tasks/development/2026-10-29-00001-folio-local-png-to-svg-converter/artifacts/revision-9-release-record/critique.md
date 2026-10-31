@@ -1,0 +1,73 @@
+# Independent critique — revision 1
+
+Reviewer: `/root/fidelity_research`; planner: `/root`.
+Verdict: **revised**. Evidence and exact reviewed hashes are in artifacts/plan-review.md.
+
+- **F1 (medium, open):** Strengthen T4 to require actual zero-difference positive results for all six required standard PNG categories in the tested browser, plus an embedded-mode partial-alpha native render check. Keep intentional mismatches and unsupported/profile cases separate. Add R3/R4 to T4's traceability. Current wording can accept universal positive-fixture mismatches as long as they are counted honestly, which does not prove the prioritized exact visual match.
+- **F2 (advisory, covered):** Cancellation/removal must suppress stale async results at every decode/generation/render boundary; T3 already owns the check.
+- **F3 (advisory, covered):** Keep native canvas dimensions independent from CSS/DPR presentation and explicitly gate existing library drop/keyboard handlers; P2/P3 and T5/T6 already own these checks.
+
+Scope, source privacy, current component ownership, bounds, independent browser evidence, checkpoint pushes and same-private-Site publication are otherwise suitable. No application or test implementation was performed by this reviewer. Final criticized readiness is pending the bounded F1 correction and focused reviewer readback, with no new permission gate.
+
+## Revision 2 — focused readback
+
+Reviewer `/root/fidelity_research` inspected actual revision-2 fix-plan.md, test-plan.md, record.json and unchanged request/checklist/source hashes. **Verdict: ready / approved for execution.** F1 is resolved: all six positive standard PNG categories must match exactly in the tested browser; partial-alpha embedded output also receives native rendering verification; the one-pixel negative case is separate; T4 maps R3/R4/R9/R10/R11. No open material findings remain. F2/F3 are covered implementation obligations. Exact current hashes and evidence are appended in artifacts/plan-review.md. Root still must refresh criticized metadata/hashes and pass the execution gate before source implementation.
+
+## Revision 3 — independent plan review, 2026-10-29
+
+Reviewer: `/root/converter_engine`; planner: `/root`. **Verdict: blocked pending three bounded plan corrections (REVISE).** This is not a request for new user permission. Application execution remains unauthorized by this review until the parent incorporates corrections and receives focused readback. Exact reviewed hashes, scope reconciliation and evidence are in `artifacts/revision-3-plan-review.md`. The unchanged revision-2 critique is also preserved in `artifacts/revision-2-complete/critique.md`.
+
+- **F4 — high; unresolved; R21/R22, P3/P5, T5:** T5 requires improved 4× contours but then permits “otherwise retain an honest measured option and report limitation.” That alternative can mark the user's requested quality improvement complete even if every candidate is worse than pixel geometry. Remove that success escape. Require an actual accepted candidate on the motivating class: a generated 96px antialiased single-color silhouette with a curved hole and thin/small details, compared with independently generated 4× ground truth. Record a defined improvement metric plus preserved topology/details and actual native RGBA count. A failed candidate must be revised/replaced or left unaccepted; truthful approximation alone is not proof of improvement. For the optional alpha-mask route, explicitly require stable foreground/opaque-interior eligibility and a negative soft-shadow/uniform-translucency case so arbitrary transparency is not thresholded.
+- **F5 — medium; unresolved; R5/R19/R20/R23, P2/P5, T2/T4/T6:** The latest narrative correctly adds atomic multi-tab leases, interrupted recovery, quota handling and saved-check provenance, but tests still permit a single-tab happy path plus a broad source review. Add decisive assertions: opening a second tab cannot steal a live claim; lease expiry permits one new claim and rejects the old completion; delete/retry/cancel suppress stale commits; a forced source/result transaction failure leaves prior committed records intact and never presents an unsaved import as saved; reopening shows historical verification context and unchanged artifact bytes. These protect the newly durable user collection, not optional extra functionality.
+- **F6 — medium; unresolved; R8/R14/R21/R22, P3/P5/P6, T5/T6/T7:** The selected `vtracer-browser` archive resolves its entry, worker and WASM relative to one another. Current checks explicitly build and run browser comparisons but do not require the comparisons to execute from production asset output. Add an actual opaque smooth conversion using the final built artifact layout, plus the alpha route when shipped, before release. Verify worker/WASM success, final SVG geometry and no CDN/file upload. A dev server pass or successful build alone cannot satisfy this gate. If this candidate fails, remove it and adopt only a route that passes the same output/quality gates; do not publish a broken unused dependency or claim its engine ran.
+- **F7 — advisory; implementation detail:** Bound total traversed directory entries, depth and folder count as well as PNG file/byte intake. The 100-PNG bound alone does not bound empty/non-PNG directory trees. Preserve empty folders when the drop API supplies directory entries; a file-only `webkitRelativePath` picker cannot reveal empty directories, so qualify that fallback rather than claiming unavailable hierarchy was preserved.
+
+The current architecture, actual shared-sidebar reuse, isolated local database, strict pixel default, measured optional curves, and same-private-Site release are within S1/S2. Root's latest lease/budget/saved-check clarifications address the storage-design omissions seen in the first draft; F5 requests decisive execution evidence for those now-adopted obligations. No application, test, dependency, plan mapping, build or Git change was made by this review.
+
+## Revision 4 — focused correction readback, 2026-10-29T14:40:14Z
+
+Reviewer: `/root/converter_engine`; planner: `/root`. **Current verdict: revised / approved for execution of plan revision 4, subject to root's normal criticized finalization and execution gate.** No open material plan findings remain. This supersedes the blocked revision-3 verdict for the newly reviewed plan; it does not claim any new application behavior or test passed.
+
+- **F4 — fixed_in_plan.** T5 and its exact record mapping now require measured improvement on the independent 4× 96px antialiased silhouette/curved-hole/thin-detail oracle, preserve topology/details, reject unsuccessful candidates, and test classifier negatives for multicolor, soft alpha fields and arbitrary translucent interiors. The permissive “otherwise” success alternative is removed. The original strict native RGBA check remains unchanged.
+- **F5 — fixed_in_plan.** T2 and its record mapping explicitly require two connection/tab owners, live-claim non-stealing, expired-claim recovery rejecting the old owner, claim invalidation after cancel/delete/retry, source/result transaction-abort atomicity, and historical browser/time/engine verification labels. T4 retains reopened artifact/download byte identity. These are now decisive obligations, not a happy-path-only acceptance.
+- **F6 — fixed_in_plan.** T6 and its record mapping require an actual smooth conversion from the final production asset layout for every retained engine, its real identity, bundled worker/WASM success, and no acceptance from dev-only results. The plan retains the option to reject a failed candidate rather than advertise an engine that did not execute.
+- **F7 — incorporated.** The revision-4 correction section explicitly bounds discovered entries/depth independently of accepted files and qualifies empty-folder reporting for file-only directory pickers.
+
+Exact current SHA-256: `fix-plan.md` = `6b9cacc1007c26d7315bc2e616f7e68efd026b07f6af29e0345df3d8cd0292e2`; `test-plan.md` = `bb721f23d9c4d02d218aab9f3a6d4af1c1e52d7501e10bfd12680b7e7c28f1b5`; `checklist.md` = `7d2dc27b4f15a7307b19418a9555496e0b89157a7b99a07e3fb8b5896e92860c`; `record.json` before root finalization = `05cab306af7614d086d0246aed02ebc2a040eaf02b855c80ecb6f7cc4fac0adf`. Relevant App/tree/types/database/converter/worker/CSS source fingerprints match the reviewed baseline. Full readback receipt is appended in `artifacts/revision-3-plan-review.md`.
+
+## Revision 5 — bounded corrective plan review, 2026-10-29 16:10 UTC
+
+Reviewer: `/root/fidelity_research`; planner: `/root`. **Verdict: ready / approved for revision-5 execution after the coordinator's normal criticized finalization and admission. No unresolved material plan finding and no new user-permission gate.** Full reasoning, boundaries and source fingerprints are in `artifacts/revision-5-plan-review.md`.
+
+The live resampled-icon observation reopens existing S2/R22 quality acceptance. The correction preserves the four-opaque-pixel prerequisite, alpha-zero background, premultiplied color tolerance, mask threshold, curve parameters, exact modes and strict native comparison. Radius-three directed alpha support is feasible within existing input bounds and prevents crossing a transparent gap to borrow opaque support. It remains an inference about a narrow fringe, not universal recognition of artistic transparency.
+
+P5/T5 freeze a new independent procedural source/reference before implementation, require old-predicate rejection, actual bumped-profile routing, at most 16 paths, improved 4× alpha MAE, four components/two holes and preserved stroke/island probes. Existing quality gates remain unchanged. Negative cases cover broad opaque-anchored fades, enclosed translucent pockets, detached islands, distinct colors and prior alpha fixtures. Changed production code must execute through final built assets; original failed observations stay in the record. These preserve the previously resolved F4/F6 acceptance obligations.
+
+The local guard-reason message is accepted as existing Smooth provenance, with representative negative-case reason assertions and a direct actual-guard-to-warning path. No private data is exported and the message must not invent a semantic diagnosis of the unavailable image. No application/test/source edit or new test execution was performed by this review.
+
+Reviewed SHA-256: `fix-plan.md` = `d38d1b06f1abc6506b1e63bd2990c6323267b4b2395bafd8f104e19da1d52ebe`; `test-plan.md` = `c6d4485fb466088c98094825be0d31467a202504a1454e7d1176128cef871711`; `checklist.md` = `efc17110f52d0998ce4a7b1a9a91a5c897a224747731a59844b39d8827efc60c`; `record.json` before coordinator finalization = `9f2c2fec7338dd0c710bdfd8cbcfaabc40cf1d79f8ba11dca2969c21c964a3cd`. These include the final device-local eligibility-reason wording and P3 mapping.
+
+## Revision 7 — combined contour/WebP plan review, 2026-10-29 16:41 UTC
+
+Reviewer: `/root/fidelity_research`; planner: `/root`. **Verdict: revised / ready after the coordinator's normal criticized finalization and execution admission. No unresolved material plan finding.** The substantive review and exact source fingerprints are in `artifacts/revision-7-plan-review.md`. This covers both the pending revision-6 contour amendment and revision-7 WebP extension; no separate unreviewed revision-6 implementation is admitted.
+
+- **F8 — medium; fixed_in_plan; R24/P7/T8.** The original T8 mapping overclaimed that every invalid WebP would fail before decode allocation. The final mapping and test clarification now require structural/header/animation/dimension rejection before decode, while structurally valid corrupt compressed content fails at the browser-decode stage with recoverable state and no verification. Both stages have an explicit acceptance case. No custom entropy decoder is required.
+
+The alpha-contour method is concrete and bounded: native pixel-center interpolation, transparent padding, canonical shared edges, deterministic saddles, retained evenodd loops, pinned cubic fitting, shared seam tangents and supported corners. All fitter/contour/output limits are explicit. The new independently calibrated four-boundary ring gate rejects long facets and decorative collinear curves while preserving original native, MAE, topology and sharp-detail gates. Actual enlarged visual review and final production execution remain mandatory. The earlier revision-5 classifier source approval is preserved; numeric success is not treated as proof that its previous geometry was visually accepted.
+
+S3 is the sole added request source; earlier request objects and stored hashes match baseline `af5614eb49c19878480437d84f20d66e8435ab53`. WebP uses the same persistent local Icons workflow, actual-byte recognition, browser-decoded native reference and original-byte MIME embedding. T8 covers real lossy/lossless/alpha files, renamed inputs, animation/malformed failures, old PNG records, mixed folder/drop, same-stem names, reload, exports and final production routes. The clarified ownership makes root the sole editor of the shared browser adapter. The updated checklist correctly retains unaffected baseline evidence while leaving combined regression, quality and release outcomes open.
+
+Reviewed SHA-256: `fix-plan.md` = `c1804f4db03baad895d40010ba2321a6695b9bde17a26ce1dc3620af6399456c`; `test-plan.md` = `e33338cb4511e4dc295937006180eee75848e9ff277cc951eb2e54e905f1f926`; `checklist.md` = `5f0e8e8a12db6606c8a4563849b10c99de54f07937b8774b9b5159e8188ac91a`; `record.json` before coordinator finalization = `ac40f2752ab5db61808754b1281abd789eeb43dd216afa394aac87c41b0d7357`. No app/test/package/build/browser mutation or new runtime pass is claimed by this review.
+
+
+## Revision 8 — review pending
+
+Current S4 plan awaits independent review of scope, source ownership, local companion/auth, SVG safety and saved data migration. Prior revision7 review does not admit new implementation.
+
+
+## Revision 9 — coordinator reconciliation
+
+Independent reviewer /root/ai_package_audit identified F9 effective isolation and F10 saved source/folder ownership as blockers. Both are fixed_in_plan in the explicit review reconciliation and matching T20/T22/T23 metadata; F11 trusted embedded save/recolor state is also clarified. No extra user approval needed. Independent readback pending before finalization. Raw review retained in artifacts/revision-8-plan-review.md.
+
+
+Independent readback by /root/ai_package_audit: revision9 revised/ready, F9/F10/F11 resolved in plan, no material blockers. See artifacts/revision-9-plan-review.md for reviewed hashes. Real user account test remains a later completion dependency, not execution admission.

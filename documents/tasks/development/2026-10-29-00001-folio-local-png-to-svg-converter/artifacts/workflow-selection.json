@@ -1,7 +1,7 @@
 {
   "catalogueFingerprint": "d63fbcf49cfaa9b52b23f035c1496263a66709e786ecb7803354a66fd562e0e7",
   "intent": "implement",
-  "request": "Extend existing Folio with supplied CLI-based shared AI, same-page SVG cleanup, saved/recolorable icons and real Site account/settings; preserve UI and frequently push checkpoints.",
+  "request": "S5: full-height sidebar workspace dropdown, one custom select, proper Settings page, real Folio accounts sharing one dataset and configurable design-system colors.",
   "evaluated": [
     {
       "id": "command:G0",
@@ -366,107 +366,107 @@
     {
       "id": "specialist:react-frontend",
       "disposition": "selected",
-      "reason": "Shared React App settings/modal/candidate UI state and cleanup."
+      "reason": "Directly covers revision10 react-frontend ownership and verification."
     },
     {
       "id": "specialist:editor-schema",
-      "disposition": "selected",
-      "reason": "Independent saved artwork identities, additive IDB migration, recolor round trips."
+      "disposition": "not-applicable",
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:wordpress-woocommerce",
       "disposition": "not-applicable",
-      "reason": "No WordPress or WooCommerce runtime."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:whmcs",
       "disposition": "not-applicable",
-      "reason": "No billing/WHMCS module."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:vscode-agents-pro",
       "disposition": "not-applicable",
-      "reason": "No extension or Agents Pro host is being changed."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:plugins-mcp",
       "disposition": "not-applicable",
-      "reason": "Supplied package is a Node library, not a plugin/MCP product; integration uses infrastructure lens."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:browser-extraction",
       "disposition": "not-applicable",
-      "reason": "No website extraction or browser-extension changes."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:native-yaml-archives",
       "disposition": "not-applicable",
-      "reason": "No native YAML or archive reconstruction requested."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:content-seo",
       "disposition": "not-applicable",
-      "reason": "No SEO or content migration."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:python-data",
       "disposition": "not-applicable",
-      "reason": "Product runtime is TypeScript/Node, not a Python pipeline."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:database",
-      "disposition": "not-applicable",
-      "reason": "Additive IndexedDB saved document schema is covered by editor-schema; no SQL/query migration."
+      "disposition": "selected",
+      "reason": "Directly covers revision10 database ownership and verification."
     },
     {
       "id": "specialist:infrastructure",
       "disposition": "selected",
-      "reason": "Paired loopback Node execution and existing Cloudflare/Sites identity/release boundaries."
+      "reason": "Directly covers revision10 infrastructure ownership and verification."
     },
     {
       "id": "specialist:migration-release",
-      "disposition": "not-applicable",
-      "reason": "Root Sites/source helper owns same-site release; existing record/checkpoint rules cover resume without a separate migration specialist."
+      "disposition": "selected",
+      "reason": "Directly covers revision10 migration-release ownership and verification."
     },
     {
       "id": "specialist:realtime-native",
       "disposition": "not-applicable",
-      "reason": "No device-media/native app integration; subprocess lifecycle covered by infrastructure."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:reference-fidelity",
       "disposition": "not-applicable",
-      "reason": "No new screenshot reconstruction; existing components remain canonical."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:design-system",
-      "disposition": "not-applicable",
-      "reason": "No new theme/preset rollout; React lens reuses existing styles."
+      "disposition": "selected",
+      "reason": "Directly covers revision10 design-system ownership and verification."
     },
     {
       "id": "specialist:image-art-direction",
       "disposition": "not-applicable",
-      "reason": "No generated raster asset set; SVG candidates are user-triggered product outputs."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:motion-interaction",
       "disposition": "not-applicable",
-      "reason": "No requested motion reconstruction."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:media-library",
       "disposition": "selected",
-      "reason": "Reuse existing tree/source blobs/folders and exact fidelity/privacy contract."
+      "reason": "Directly covers revision10 media-library ownership and verification."
     },
     {
       "id": "specialist:artifact-delivery",
       "disposition": "not-applicable",
-      "reason": "Root existing Sites packaging provides release closure; no separate multi-format artifact bundle."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "specialist:usage-learning",
       "disposition": "not-applicable",
-      "reason": "No plugin/workflow learning update requested."
+      "reason": "No revision10 changes in this specialist domain; preserve existing implementation."
     },
     {
       "id": "recipe:reference-rebuild",
@@ -476,12 +476,12 @@
     {
       "id": "recipe:visual-correction",
       "disposition": "not-applicable",
-      "reason": "Repair precise visual feedback is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+      "reason": "Relevant procedure used within the composed design/implementation/verification chain; no duplicate execution."
     },
     {
       "id": "recipe:design-system-rollout",
       "disposition": "not-applicable",
-      "reason": "Roll out shared design changes is not run as a whole: the selected mixed-runtime atomic chain covers needed operations once and excludes unrelated preset behavior."
+      "reason": "Relevant procedure used within the composed design/implementation/verification chain; no duplicate execution."
     },
     {
       "id": "recipe:native-yaml-conversion",
@@ -505,7 +505,7 @@
         "stage:extract-behaviour-spec",
         "stage:verify-goal"
       ],
-      "reason": "Borrow preservation and final outcome checks; equivalent assessment/plan/build/test operations use atomic G commands once."
+      "reason": "Relevant procedure used within the composed design/implementation/verification chain; no duplicate execution."
     },
     {
       "id": "recipe:content-site-delivery",
@@ -526,74 +526,76 @@
   "chain": [
     {
       "id": "command:GAS",
-      "why": "Trace the current shared App/sidebar, icon storage, Worker identity and supplied package before additions."
+      "why": "Trace current sidebar, all19 native selects, route/storage/account owners."
     },
     {
       "id": "command:GRS",
-      "why": "Verify current Codex account/vision/permissions, provider capability and hosted loopback constraints from primary docs."
+      "why": "Primary shadcn/Base UI and real credential/D1/Worker research."
     },
     {
       "id": "stage:extract-behaviour-spec",
-      "why": "Preserve source/result identities, retry invalidation, local privacy, zero-difference verification and shared navigation."
+      "why": "Preserve imports, folders, conversion, focus and AI/privacy behavior."
     },
     {
       "id": "command:GAA",
-      "why": "Resolve the real browser/Worker/Node/CLI authentication and execution boundary."
+      "why": "Define credential/session, shared metadata/media and migration boundaries."
     },
     {
       "id": "command:GDA",
-      "why": "Map existing menu, Modal, toolbar and tree; distinguish source audit from live sign-in-blocked UI."
+      "why": "Assess current compact shell, popup layers and literal-color ownership."
     },
     {
       "id": "command:GDS",
-      "why": "Specify a compact shared AI/Profile dialog, Convert/Saved view and same-page candidate review."
+      "why": "Specify full-height canonical sidebar, routed settings and semantic palette."
     },
     {
       "id": "command:GPP",
-      "why": "Map S4 and retained constraints into implementation steps and decisive checks on existing owners."
+      "why": "Map S5 and retained constraints to concrete implementations and tests."
     },
     {
       "id": "command:GPR",
-      "why": "Independently review AI scope, auth, SVG handling, data migration and real-account verification before implementation."
+      "why": "Independently review accounts, shared persistence and exact requested UI before execution."
     },
     {
       "id": "command:GEX",
-      "why": "Implement reviewed shared AI, saved artwork, UI and platform-account integration with partitioned ownership."
+      "why": "Implement the reviewed UI/auth/shared/theme change with disjoint delegation."
     },
     {
       "id": "command:GUT",
-      "why": "Verify process/body/schema/auth bounds and actual storage/recolor logic with focused regression checks."
+      "why": "Verify real account/session, shared writes/conflicts/migration and theme contracts."
     },
     {
       "id": "command:GVE",
-      "why": "Exercise same-page SVG candidate, settings, save/reload/recolor/download and existing categories in supported browser."
+      "why": "Exercise rendered dropdowns, settings routing, two-client shared data and logout."
     },
     {
       "id": "command:GVR",
-      "why": "Independently review the implemented diff and original preservation/cancellation across modules."
+      "why": "Review the implemented diff independently, especially storage consistency."
     },
     {
       "id": "command:GVS",
-      "why": "Verify concrete local execution authentication, credential handling and untrusted SVG boundaries."
+      "why": "Check credential/session/CSRF/membership/blob boundaries and private data handling."
     },
     {
       "id": "command:GVA",
-      "why": "Check new modal/menu keyboard focus and responsive controls using existing accessible patterns."
+      "why": "Check keyboard/focus/portal/mobile behavior and readable palettes."
     },
     {
       "id": "command:GVD",
-      "why": "Document actual companion setup, supported providers, account distinction, privacy and storage limits."
+      "why": "Document real account activation, shared data, migration, and host access limits."
     },
     {
       "id": "stage:verify-goal",
-      "why": "Separate implementation, fixture tests, pushed/private release and actual user-account inference evidence."
+      "why": "Reconcile published UI/data and scoped user-controlled activation evidence."
     }
   ],
   "specialists": [
     "specialist:react-frontend",
-    "specialist:editor-schema",
     "specialist:media-library",
-    "specialist:infrastructure"
+    "specialist:database",
+    "specialist:infrastructure",
+    "specialist:design-system",
+    "specialist:migration-release"
   ],
   "existingEvidence": [
     {
@@ -602,7 +604,7 @@
     },
     {
       "artifact": "repo.snapshot",
-      "record": "GitHub ca95e01eec08cc9607f3dff3e6693e77785bbe94"
+      "record": "GitHub bdf73305ff51dcd59c2b7c9a94a66501845ca560"
     }
   ]
 }
